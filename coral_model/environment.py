@@ -298,6 +298,10 @@ class Constants:
 
 
 class Environment:
+    # TODO: Make this class robust
+
+    # TODO: Make it possible to set constant values for all environmental conditions
+    #  > using @property and @setter
 
     def __init__(self, light=None, light_attenuation=None, temperature=None, acidity=None, storm_category=None):
         self.light = light
@@ -333,10 +337,19 @@ class Environment:
 
     @property
     def dates(self):
-        d = self.temp.reset_index().drop('sst', axis=1)
+        if self.light is not None:
+            # TODO: Check column name of light-file
+            d = self.light.reset_index().drop('light', axis=1)
+        elif self.temp is not None:
+            d = self.temp.reset_index().drop('sst', axis=1)
+        else:
+            msg = f'No initial data on dates provided.'
+            raise ValueError(msg)
         return pd.to_datetime(d['date'])
 
     def from_file(self, param, file, file_dir=None):
+        # TODO: Include functionality to check file's existence
+        #  > certain files are necessary: light, temperature
 
         def date2index(parameter):
             """Function applicable to time-series in Pandas."""

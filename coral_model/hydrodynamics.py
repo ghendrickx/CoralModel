@@ -378,4 +378,3 @@ if __name__ == '__main__':
     plt.plot(model.x, -model.depth)
     plt.plot(model.x, model.wave_celerity)
     plt.plot(model.x, model.group_celerity)
-    
