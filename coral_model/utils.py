@@ -5,6 +5,7 @@ coral_model v3 - utils
 """
 
 import numpy as np
+from netCDF4 import Dataset
 
 
 class SpaceTime:
@@ -226,6 +227,59 @@ class DataReshape(SpaceTime):
             return getattr(matrix, conversion)(axis=0)
 
 
+class Output:
+    def __init__(self, coral, spacetime, first_year):
+        """Generate output files of CoralModel simulation. Output files are formatted as NetCDF4-files.
+
+        :param coral: coral animal
+        :param spacetime: spacetime dimensions
+        :param first_year: first simulation year
+
+        :type coral: Coral
+        :type spacetime: SpaceTime, DataReshape
+        :type first_year: bool
+        """
+        self.coral = coral
+        self.space, self.time = spacetime
+        self.first_year = first_year
+
+    def map(self, parameters, file_name=None):
+        """Write data as annual output covering the whole model domain.
+
+        :param parameters: parameters to be exported
+        :param file_name: file name (excl. file extension), defaults to None
+
+        :type parameters: dict
+        :type file_name: str
+        """
+        # default file name and file extension
+        if file_name is None:
+            file_name = 'CoralModel_map.nc'
+        elif not file_name.endswith('.nc'):
+            file_name += '.nc'
+
+        # TODO: Write mapped output
+
+    def his(self, parameters, stations, file_name=None):
+        """Write data as daily output at predefined locations within the model domain.
+
+        :param parameters: parameters to be exported
+        :param stations: location of virtual stations
+        :param file_name: file name (excl. file extension), defaults to None
+
+        :type parameters: dict
+        :type stations: list
+        :type file_name: str
+        """
+        # default file name and file extension
+        if file_name is None:
+            file_name = 'CoralModel_his.nc'
+        elif not file_name.endswith('.nc'):
+            file_name += '.nc'
+
+        # TODO: Write history output
+
+
 def coral_only_function(coral, function, args, no_cover_value=0):
     """Only execute the function when there is coral cover.
 
@@ -256,5 +310,3 @@ def coral_only_function(coral, function, args, no_cover_value=0):
         arg[coral.cover > 0] for arg in args
     ])
     return output
-
-# TODO: Include methods on writing the output files here in "utils.py"
