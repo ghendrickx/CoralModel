@@ -243,6 +243,28 @@ class Output:
         self.space, self.time = spacetime
         self.first_year = first_year
 
+    @staticmethod
+    def define_output(lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
+        """Define output dictionary.
+
+        :param lme: light micro-environment, defaults to True
+        :param fme: flow micro-environment, defaults to True
+        :param tme: thermal micro-environment, defaults to True
+        :param pd: photosynthetic dependencies, defaults to True
+        :param ps: population states, defaults to True
+        :param calc: calcification rates, defaults to True
+        :param md: morphological development, defaults to True
+
+        :type lme: bool, optional
+        :type fme: bool, optional
+        :type tme: bool, optional
+        :type pd: bool, optional
+        :type ps: bool, optional
+        :type calc: bool, optional
+        :type md: bool, optional
+        """
+        return locals()
+
     def map(self, parameters, file_name=None):
         """Write data as annual output covering the whole model domain.
 
