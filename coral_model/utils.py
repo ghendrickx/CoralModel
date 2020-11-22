@@ -1,5 +1,5 @@
 """
-coral_model v3 - utils
+coral_model - utils
 
 @author: Gijs G. Hendrickx
 """
@@ -228,6 +228,11 @@ class DataReshape(SpaceTime):
 
 
 class Output:
+
+    _f_map = 'CoralModel_map.nc'
+    _f_his = 'CoralModel_his.nc'
+    _folder = None
+
     def __init__(self, coral, dates, first_year):
         """Generate output files of CoralModel simulation. Output files are formatted as NetCDF4-files.
 
@@ -266,6 +271,26 @@ class Output:
         :type md: bool, optional
         """
         return locals()
+
+    @property
+    def folder(self):
+        """
+        :return: output directory
+        :rtype: str
+        """
+        return self._folder
+
+    def initiate_map(self, parameters, xy_coordinate, file_name=None):
+        """Initiate mapping output file in which annual output covering the whole model domain is stored.
+
+        :param parameters: parameters to be exported
+        :param xy_coordinate: (x,y)-coordinates, tuple(array(x), array(y))
+        :param file_name: file name, defaults to None
+
+        :type parameters: dict
+        :type xy_coordinate: tuple
+        :type file_name: str
+        """
 
     def map(self, parameters, xy_coordinates, file_name=None):
         """Write data as annual output covering the whole model domain.
