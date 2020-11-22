@@ -47,8 +47,8 @@ class DirConfig:
         if self.__home is None:
             return self.__current_dir
 
-        home_dir = self._as_list(self.__home)
-        return self._dir2abs(home_dir)
+        list_dir = self._as_list(self.__home)
+        return self._dir2abs(list_dir)
 
     @staticmethod
     def _str2list(str_dir):
@@ -77,9 +77,9 @@ class DirConfig:
         elif isinstance(folder, (list, tuple)):
             list_dir = []
             for i in folder:
-                list_dir.extend(*self._str2list(i))
+                list_dir.extend(self._str2list(i))
             return list_dir
-        
+
         else:
             msg = f'Directory must be str, list, or tuple; {type(folder)} is given.'
             raise TypeError(msg)
