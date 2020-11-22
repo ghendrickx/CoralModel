@@ -7,6 +7,8 @@ coral_model - utils
 import numpy as np
 from netCDF4 import Dataset
 
+from utils.config_directory import DirConfig
+
 
 class SpaceTime:
     """Spacetime-object, which validates the definition of the spacetime dimensions."""
@@ -229,9 +231,9 @@ class DataReshape(SpaceTime):
 
 class Output:
 
-    _f_map = 'CoralModel_map.nc'
-    _f_his = 'CoralModel_his.nc'
-    _folder = None
+    _file_name_map = None
+    _file_name_his = None
+    _folder = DirConfig()
 
     def __init__(self, coral, dates, first_year):
         """Generate output files of CoralModel simulation. Output files are formatted as NetCDF4-files.
@@ -272,13 +274,24 @@ class Output:
         """
         return locals()
 
+    @staticmethod
+    def __file_ext(file_name):
+        """Ensure NetCDF file extension.
+
+        :param file_name: file name
+        :type file_name: str
+        """
+        if not file_name.endswith('.nc'):
+            return f'{file_name}.nc'
+        return file_name
+
     @property
     def folder(self):
         """
         :return: output directory
         :rtype: str
         """
-        return self._folder
+        return self._folder.__str__()
 
     @folder.setter
     def folder(self, output_folder):
@@ -287,36 +300,79 @@ class Output:
         :param output_folder: output folder for output files
         :type output_folder: None, str, list, tuple
         """
-        self._folder = output_folder
+        self._folder = DirConfig(home_dir=output_folder)
 
-    def initiate_map(self, parameters, xy_coordinate, file_name=None):
+    @property
+    def file_name_map(self):
+        """File name of mapping output.
+
+        :rtype: str
+        """
+        if self._file_name_map is None:
+            return 'CoralModel_map.nc'
+        return self._file_name_map
+
+    @file_name_map.setter
+    def file_name_map(self, file_name):
+        """
+        :param file_name: file name of mapping output
+        :type file_name: None, str
+        """
+        self._file_name_map = self.__file_ext(file_name)
+
+    @property
+    def file_name_his(self):
+        """File name of history output.
+
+        :rtype: str
+        """
+        if self._file_name_his is None:
+            return 'CoralModel_his.nc'
+        return self._file_name_his
+
+    @file_name_his.setter
+    def file_name_his(self, file_name):
+        """
+        :param file_name: file name of history output
+        :type file_name: str
+        """
+        self._file_name_his = self.__file_ext(file_name)
+
+    @property
+    def file_dir_map(self):
+        """Full file directory of mapping output.
+
+        :rtype: str
+        """
+        return self._folder.config_dir(self._file_name_map)
+
+    @property
+    def file_dir_his(self):
+        """Full file directory of history output.
+
+        :rtype: str
+        """
+        return self._folder.config_dir(self._file_name_his)
+
+    def initiate_map(self, parameters, xy_coordinate):
         """Initiate mapping output file in which annual output covering the whole model domain is stored.
 
         :param parameters: parameters to be exported
         :param xy_coordinate: (x,y)-coordinates, tuple(array(x), array(y))
-        :param file_name: file name, defaults to None
 
         :type parameters: dict
         :type xy_coordinate: tuple
-        :type file_name: str
         """
 
-    def map(self, parameters, xy_coordinates, file_name=None):
+    def map(self, parameters, xy_coordinates):
         """Write data as annual output covering the whole model domain.
 
         :param parameters: parameters to be exported
         :param xy_coordinates: (x,y)-coordinates, tuple(array(x), array(y))
-        :param file_name: file name (excl. file extension), defaults to None
 
         :type parameters: dict
         :type xy_coordinates: tuple
-        :type file_name: str
         """
-        # default file name and file extension
-        if file_name is None:
-            file_name = 'CoralModel_map.nc'
-        elif not file_name.endswith('.nc'):
-            file_name += '.nc'
 
         # TODO: Reformat output structure in a more efficient way
         #  > initiation of map object (i.e. NetCDF-file)
