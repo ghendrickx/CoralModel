@@ -235,22 +235,25 @@ class Output:
     _file_name_his = None
     _folder = DirConfig()
 
+    __map_data = None
+    __his_data = None
+
     def __init__(self, coral, dates, first_year):
         """Generate output files of CoralModel simulation. Output files are formatted as NetCDF4-files.
 
         :param coral: coral animal
         :param dates: dates in simulation year
-        :param first_year: first simulation year
+        :param first_year: first year of simulation
 
         :type coral: Coral
         :type dates: Environment
-        :type first_year: bool
+        :type first_year: int
         """
         self.coral = coral
         self.dates = dates
-        self.first_year = first_year
         self.space = int(coral.cover.shape)
         self.time = len(dates)
+        self.first_year = first_year
 
     @staticmethod
     def define_output(lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
@@ -354,18 +357,8 @@ class Output:
         """
         return self._folder.config_dir(self._file_name_his)
 
-    def initiate_map(self, parameters, xy_coordinate):
+    def initiate_map(self, parameters, xy_coordinates):
         """Initiate mapping output file in which annual output covering the whole model domain is stored.
-
-        :param parameters: parameters to be exported
-        :param xy_coordinate: (x,y)-coordinates, tuple(array(x), array(y))
-
-        :type parameters: dict
-        :type xy_coordinate: tuple
-        """
-
-    def map(self, parameters, xy_coordinates):
-        """Write data as annual output covering the whole model domain.
 
         :param parameters: parameters to be exported
         :param xy_coordinates: (x,y)-coordinates, tuple(array(x), array(y))
@@ -373,185 +366,165 @@ class Output:
         :type parameters: dict
         :type xy_coordinates: tuple
         """
-
-        # TODO: Reformat output structure in a more efficient way
-        #  > initiation of map object (i.e. NetCDF-file)
-        #  > write initial conditions as part of initiation
-        #  > write all following conditions as update-method
-        #  > implement this methodology for the his-file as well
-        #  (Output-class has to be rewritten to accommodate this)
         if any(parameters.values()):
-            if self.first_year:
-                dataset = Dataset(file_name, 'w', format='NETCDF4')
-                dataset.description = 'Mapped simulation data of the CoralModel.'
+            self.__map_data = Dataset(self.file_name_map, 'w', format='NETCDF4')
+            self.__map_data.description = 'Mapped simulation data of the CoralModel.'
 
-                # dimension
-                dataset.createDimension('time', None)
-                dataset.createDimension('nmesh2d_face', self.space)
+            # dimensions
+            self.__map_data.createDimension('time', None)
+            self.__map_data.createDimension('nmesh2d_face', self.space)
 
-                # variables
-                t = dataset.createVariable('time', int, ('time',))
-                t.long_name = 'year'
-                t.units = 'years since 0 B.C.'
+            # variables
+            t = self.__map_data.createVariable('time', int, ('time',))
+            t.long_name = 'year'
+            t.units = 'years since 0 B.C.'
 
-                x = dataset.createVariable('mesh2d_x', 'f8', ('nmesh2d_face',))
-                x.long_name = 'x-coordinate'
-                x.units = 'm'
+            x = self.__map_data.createVariable('nmesh2d_x', 'f8', ('nmesh2d_face',))
+            x.long_name = 'x-coordinate'
+            x.units = 'm'
 
-                y = dataset.createVariable('mesh2d_y', 'f8', ('nmesh2d_face',))
-                y.long_name = 'y-coordinate'
-                y.units = 'm'
+            y = self.__map_data.createVariable('nmesh2d_y', 'f8', ('nmesh2d_face',))
+            y.long_name = 'y-coordinate'
+            y.units = 'm'
 
-                t[:] = np.array([self.dates.year - 1])
-                x[:], y[:] = xy_coordinates
+            t[:] = self.first_year
+            x[:], y[:] = xy_coordinates
 
-                if parameters['lme']:
-                    light_set = dataset.createVariable('Iz', 'f8', ('time', 'nmesh2d_face'))
-                    light_set.long_name = 'annual mean representative light-intensity'
-                    light_set.units = 'micro-mol photons m-2 s-1'
-                    light_set[:, :] = np.array([
-                        np.zeros(self.space), self.coral.light.mean(axis=1)
-                    ])
-                if parameters['fme']:
-                    flow_set = dataset.createVariable('ucm', 'f8', ('time', 'nmesh2d_face'))
-                    flow_set.long_name = 'annual mean in-canopy flow'
-                    flow_set.units = 'm s-1'
-                    flow_set[:, :] = np.array([
-                        np.zeros(self.space), self.coral.ucm
-                    ])
-                if parameters['tme']:
-                    temp_set = dataset.createVariable('Tc', 'f8', ('time', 'nmesh2d_face'))
-                    temp_set.long_name = 'annual mean coral temperature'
-                    temp_set.units = 'K'
-                    temp_set[:, :] = np.array([
-                        np.zeros(self.space), self.coral.temp.mean(axis=1)
-                    ])
-                    low_temp_set = dataset.createVariable('Tlo', 'f8', ('time', 'nmesh2d_face'))
-                    low_temp_set.long_name = 'annual mean lower thermal limit'
-                    low_temp_set.units = 'K'
-                    low_temp_set[:, :] = np.array([
-                        np.zeros(self.space),
-                        self.coral.Tlo if len(self.coral.Tlo) > 1 else self.coral.Tlo * np.ones(self.space)
-                    ])
-                    high_temp_set = dataset.createVariable('Thi', 'f8', ('time', 'nmesh2d_face'))
-                    high_temp_set.long_name = 'annual mean upper thermal limit'
-                    high_temp_set.units = 'K'
-                    high_temp_set[:, :] = np.array([
-                        np.zeros(self.space),
-                        self.coral.Thi if len(self.coral.Thi) > 1 else self.coral.Thi * np.ones(self.space)
-                    ])
-                if parameters['pd']:
-                    pd_set = dataset.createVariable('PD', 'f8', ('time', 'nmesh2d_face'))
-                    pd_set.long_name = 'annual sum photosynthetic rate'
-                    pd_set.units = '-'
-                    pd_set[:, :] = np.array([
-                        np.zeros(self.space), self.coral.photo_rate.mean(axis=1)
-                    ])
-                if parameters['ps']:
-                    pt_set = dataset.createVariable('PT', 'f8', ('time', 'nmesh2d_face'))
-                    pt_set.long_name = 'total living coral population at the end of the year'
-                    pt_set.units = '-'
-                    pt_set[:, :] = np.array([
-                        self.coral.living_cover, self.coral.pop_states[:, -1, :].sum(axis=1)
-                    ])
-                    ph_set = dataset.createVariable('PH', 'f8', ('time', 'nmesh2d_face'))
-                    ph_set.long_name = 'healthy coral population at the end of the year'
-                    ph_set.units = '-'
-                    ph_set[:, :] = np.array([
-                        self.coral.living_cover, self.coral.pop_states[:, -1, 0]
-                    ])
-                    pr_set = dataset.createVariable('PR', 'f8', ('time', 'nmesh2d_face'))
-                    pr_set.long_name = 'recovering coral population at the end of the year'
-                    pr_set.units = '-'
-                    pr_set[:, :] = np.array([
-                        np.zeros(self.space), self.coral.pop_states[:, -1, 1]
-                    ])
-                    pp_set = dataset.createVariable('PP', 'f8', ('time', 'nmesh2d_face'))
-                    pp_set.long_name = 'pale coral population at the end of the year'
-                    pp_set.units = '-'
-                    pp_set[:, :] = np.array([
-                        np.zeros(self.space), self.coral.pop_states[:, -1, 2]
-                    ])
-                    pb_set = dataset.createVariable('PB', 'f8', ('time', 'nmesh2d_face'))
-                    pb_set.long_name = 'bleached coral population at the end of the year'
-                    pb_set.units = '-'
-                    pb_set[:, :] = np.array([
-                        np.zeros(self.space), self.coral.pop_states[:, -1, 3]
-                    ])
-                if parameters['calc']:
-                    calc_set = dataset.createVariable('G', 'f8', ('time', 'nmesh2d_face'))
-                    calc_set.long_name = 'annual sum calcification rate'
-                    calc_set.units = 'kg m-2 yr-1'
-                    calc_set[:, :] = np.array([
-                        np.zeros(self.space), self.coral.calc.sum(axis=1)
-                    ])
-                if parameters['md']:
-                    dc_set = dataset.createVariable('dc', 'f8', ('time', 'nmesh2d_face'))
-                    dc_set.long_name = 'coral plate diameter'
-                    dc_set.units = 'm'
-                    dc_set[:, :] = np.array([
-                        self.coral.dc, self.coral.dc
-                    ])
-                    hc_set = dataset.createVariable('hc', 'f8', ('time', 'nmesh2d_face'))
-                    hc_set.long_name = 'coral height'
-                    hc_set.units = 'm'
-                    hc_set[:, :] = np.array([
-                        self.coral.hc, self.coral.hc
-                    ])
-                    bc_set = dataset.createVariable('bc', 'f8', ('time', 'nmesh2d_face'))
-                    bc_set.long_name = 'coral base diameter'
-                    bc_set.units = 'm'
-                    bc_set[:, :] = np.array([
-                        self.coral.bc, self.coral.bc
-                    ])
-                    tc_set = dataset.createVariable('tc', 'f8', ('time', 'nmesh2d_face'))
-                    tc_set.long_name = 'coral plate thickness'
-                    tc_set.units = 'm'
-                    tc_set[:, :] = np.array([
-                        self.coral.tc, self.coral.tc
-                    ])
-                    ac_set = dataset.createVariable('ac', 'f8', ('time', 'nmesh2d_face'))
-                    ac_set.long_name = 'coral axial distance'
-                    ac_set.units = 'm'
-                    ac_set[:, :] = np.array([
-                        self.coral.ac, self.coral.ac
-                    ])
-                    vc_set = dataset.createVariable('Vc', 'f8', ('time', 'nmesh2d_face'))
-                    vc_set.long_name = 'coral volume'
-                    vc_set.units = 'm3'
-                    vc_set[:, :] = np.array([
-                        self.coral.volume, self.coral.volume
-                    ])
+            # initial conditions
+            if parameters['lme']:
+                light_set = self.__map_data.createVariable('Iz', 'f8', ('time', 'nmesh2d_face'))
+                light_set.long_name = 'annual mean representative light-intensity'
+                light_set.units = 'micro-mol photons m-2 s-1'
+                light_set[:, :] = np.zeros(self.space)
+            if parameters['fme']:
+                flow_set = self.__map_data.createVariable('ucm', 'f8', ('time', 'nmesh2d_face'))
+                flow_set.long_name = 'annual mean in-canopy flow'
+                flow_set.units = 'm s-1'
+                flow_set[:, :] = np.zeros(self.space)
+            if parameters['tme']:
+                temp_set = self.__map_data.createVariable('Tc', 'f8', ('time', 'nmesh2d_face'))
+                temp_set.long_name = 'annual mean coral temperature'
+                temp_set.units = 'K'
+                temp_set[:, :] = np.zeros(self.space)
 
-            else:
-                dataset = Dataset(file_name, mode='a')
-                dataset['time'][:] = np.append(dataset['time'][:], self.dates.year)
-                if parameters['lme']:
-                    dataset['Iz'][-1, :] = self.coral.light
-                if parameters['fme']:
-                    dataset['ucm'][-1, :] = self.coral.ucm
-                if parameters['tme']:
-                    dataset['Tc'][-1, :] = self.coral.temp[:, -1]
-                    dataset['Tlo'][-1, :] = self.coral.Tlo if len(self.coral.Tlo) > 1 else self.coral.Tlo * np.ones(self.space)
-                    dataset['Thi'][-1, :] = self.coral.Thi if len(self.coral.Thi) > 1 else self.coral.Thi * np.ones(self.space)
-                if parameters['pd']:
-                    dataset['PD'][-1, :] = self.coral.photo_rate.mean(axis=1)
-                if parameters['ps']:
-                    dataset['PT'][-1, :] = self.coral.pop_states[:, -1, :].sum(axis=1)
-                    dataset['PH'][-1, :] = self.coral.pop_states[:, -1, 0]
-                    dataset['PR'][-1, :] = self.coral.pop_states[:, -1, 1]
-                    dataset['PP'][-1, :] = self.coral.pop_states[:, -1, 2]
-                    dataset['PB'][-1, :] = self.coral.pop_states[:, -1, 3]
-                if parameters['calc']:
-                    dataset['calc'][-1, :] = self.coral.calc.sum(axis=1)
-                if parameters['md']:
-                    dataset['dc'][-1, :] = self.coral.dc
-                    dataset['hc'][-1, :] = self.coral.hc
-                    dataset['bc'][-1, :] = self.coral.bc
-                    dataset['tc'][-1, :] = self.coral.tc
-                    dataset['ac'][-1, :] = self.coral.ac
-                    dataset['Vc'][-1, :] = self.coral.volume
-            dataset.close()
+                low_temp_set = self.__map_data.createVariable('Tlo', 'f8', ('time', 'nmesh2d_face'))
+                low_temp_set.long_name = 'annual mean lower thermal limit'
+                low_temp_set.units = 'K'
+                low_temp_set[:, :] = np.zeros(self.space)
+
+                high_temp_set = self.__map_data.createVariable('Thi', 'f8', ('time', 'nmesh2d_face'))
+                high_temp_set.long_name = 'annual mean upper thermal limit'
+                high_temp_set.units = 'K'
+                high_temp_set[:, :] = np.zeros(self.space)
+            if parameters['pd']:
+                pd_set = self.__map_data.createVariable('PD', 'f8', ('time', 'nmesh2d_face'))
+                pd_set.long_name = 'annual sum photosynthetic rate'
+                pd_set.units = '-'
+                pd_set[:, :] = np.zeros(self.space)
+            if parameters['ps']:
+                pt_set = self.__map_data.createVariable('PT', 'f8', ('time', 'nmesh2d_face'))
+                pt_set.long_name = 'total living coral population at the end of the year'
+                pt_set.units = '-'
+                pt_set[:, :] = self.coral.living_cover
+
+                ph_set = self.__map_data.createVariable('PH', 'f8', ('time', 'nmesh2d_face'))
+                ph_set.long_name = 'healthy coral population at the end of the year'
+                ph_set.units = '-'
+                ph_set[:, :] = self.coral.living_cover
+
+                pr_set = self.__map_data.createVariable('PR', 'f8', ('time', 'nmesh2d_face'))
+                pr_set.long_name = 'recovering coral population at the end of the year'
+                pr_set.units = '-'
+                pr_set[:, :] = np.zeros(self.space)
+
+                pp_set = self.__map_data.createVariable('PP', 'f8', ('time', 'nmesh2d_face'))
+                pp_set.long_name = 'pale coral population at the end of the year'
+                pp_set.units = '-'
+                pp_set[:, :] = np.zeros(self.space)
+
+                pb_set = self.__map_data.createVariable('PB', 'f8', ('time', 'nmesh2d_face'))
+                pb_set.long_name = 'bleached coral population at the end of the year'
+                pb_set.units = '-'
+                pb_set[:, :] = np.zeros(self.space)
+            if parameters['calc']:
+                calc_set = self.__map_data.createVariable('G', 'f8', ('time', 'nmesh2d_face'))
+                calc_set.long_name = 'annual sum calcification rate'
+                calc_set.units = 'kg m-2 yr-1'
+                calc_set[:, :] = np.zeros(self.space)
+            if parameters['md']:
+                dc_set = self.__map_data.createVariable('dc', 'f8', ('time', 'nmesh2d_face'))
+                dc_set.long_name = 'coral plate diameter'
+                dc_set.units = 'm'
+                dc_set[:, :] = self.coral.dc
+
+                hc_set = self.__map_data.createVariable('hc', 'f8', ('time', 'nmesh2d_face'))
+                hc_set.long_name = 'coral height'
+                hc_set.units = 'm'
+                hc_set[:, :] = self.coral.hc
+
+                bc_set = self.__map_data.createVariable('bc', 'f8', ('time', 'nmesh2d_face'))
+                bc_set.long_name = 'coral base diameter'
+                bc_set.units = 'm'
+                bc_set[:, :] = self.coral.bc
+
+                tc_set = self.__map_data.createVariable('tc', 'f8', ('time', 'nmesh2d_face'))
+                tc_set.long_name = 'coral plate thickness'
+                tc_set.units = 'm'
+                tc_set[:, :] = self.coral.tc
+
+                ac_set = self.__map_data.createVariable('ac', 'f8', ('time', 'nmesh2d_face'))
+                ac_set.long_name = 'coral axial distance'
+                ac_set.units = 'm'
+                ac_set[:, :] = self.coral.ac
+
+                vc_set = self.__map_data.createVariable('Vc', 'f8', ('time', 'nmesh2d_face'))
+                vc_set.long_name = 'coral volume'
+                vc_set.units = 'm3'
+                vc_set[:, :] = self.coral.volume
+            self.__map_data.close()
+            self.__map_data = Dataset(self.file_dir_map, mode='a')
+
+    def initiate_his(self, parameters, stations):
+        pass
+
+    def update_map(self, parameters, year):
+        """Write data as annual output covering the whole model domain.
+
+        :param parameters: parameters to be exported
+        :param year: simulation year
+
+        :type parameters: dict
+        :type year: int
+        """
+        if any(parameters.values()):
+            i = year - self.first_year
+            self.__map_data['time'][i] = year
+            if parameters['lme']:
+                self.__map_data['Iz'][-1, :] = self.coral.light
+            if parameters['fme']:
+                self.__map_data['ucm'][-1, :] = self.coral.ucm
+            if parameters['tme']:
+                self.__map_data['Tc'][-1, :] = self.coral.temp[:, -1]
+                self.__map_data['Tlo'][-1, :] = self.coral.Tlo if len(self.coral.Tlo) > 1 else self.coral.Tlo * np.ones(self.space)
+                self.__map_data['Thi'][-1, :] = self.coral.Thi if len(self.coral.Thi) > 1 else self.coral.Thi * np.ones(self.space)
+            if parameters['pd']:
+                self.__map_data['PD'][-1, :] = self.coral.photo_rate.mean(axis=1)
+            if parameters['ps']:
+                self.__map_data['PT'][-1, :] = self.coral.pop_states[:, -1, :].sum(axis=1)
+                self.__map_data['PH'][-1, :] = self.coral.pop_states[:, -1, 0]
+                self.__map_data['PR'][-1, :] = self.coral.pop_states[:, -1, 1]
+                self.__map_data['PP'][-1, :] = self.coral.pop_states[:, -1, 2]
+                self.__map_data['PB'][-1, :] = self.coral.pop_states[:, -1, 3]
+            if parameters['calc']:
+                self.__map_data['calc'][-1, :] = self.coral.calc.sum(axis=1)
+            if parameters['md']:
+                self.__map_data['dc'][-1, :] = self.coral.dc
+                self.__map_data['hc'][-1, :] = self.coral.hc
+                self.__map_data['bc'][-1, :] = self.coral.bc
+                self.__map_data['tc'][-1, :] = self.coral.tc
+                self.__map_data['ac'][-1, :] = self.coral.ac
+                self.__map_data['Vc'][-1, :] = self.coral.volume
+            self.__map_data.flush()
 
     def his(self, parameters, stations, file_name=None):
         """Write data as daily output at predefined locations within the model domain.
@@ -564,6 +537,11 @@ class Output:
         :type stations: list
         :type file_name: str
         """
+        # TODO: Reformat output structure in a more efficient way
+        #  > initiation of his object (i.e. NetCDF-file)
+        #  > write initial conditions as part of initiation
+        #  > write all following conditions as update-method
+
         # default file name and file extension
         if file_name is None:
             file_name = 'CoralModel_his.nc'
@@ -571,6 +549,13 @@ class Output:
             file_name += '.nc'
 
         # TODO: Write history output
+
+    def close(self):
+        """Close all output files."""
+        if isinstance(self.__map_data, Dataset):
+            self.__map_data.close()
+        if isinstance(self.__his_data, Dataset):
+            self.__his_data.close()
 
 
 def coral_only_function(coral, function, args, no_cover_value=0):
