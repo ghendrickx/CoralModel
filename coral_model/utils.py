@@ -280,6 +280,15 @@ class Output:
         """
         return self._folder
 
+    @folder.setter
+    def folder(self, output_folder):
+        """Output folder.
+
+        :param output_folder: output folder for output files
+        :type output_folder: None, str, list, tuple
+        """
+        self._folder = output_folder
+
     def initiate_map(self, parameters, xy_coordinate, file_name=None):
         """Initiate mapping output file in which annual output covering the whole model domain is stored.
 
