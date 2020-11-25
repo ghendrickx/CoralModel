@@ -9,11 +9,19 @@ import os
 import pandas as pd
 import numpy as np
 
+from utils.config_directory import DirConfig
+
 
 class Processes:
     """Processes included in coral_model simulations."""
     # TODO: Include the on/off-switch for more processes:
-    #  (1) hydrodynamic coupling; (2) acidity; (3) light; (4) temperature; (5) dislodgement; (6) recruitment; (7) etc.
+    #  (1) hydrodynamic coupling;
+    #  (2) acidity;
+    #  (3) light;
+    #  (4) temperature;
+    #  (5) dislodgement;
+    #  (6) recruitment;
+    #  (7) etc.
 
     def __init__(self, fme=True, tme=True, pfd=True):
         """
@@ -315,16 +323,14 @@ class Environment:
         """Temperature in Kelvin."""
         if all(self.temp) < 100.:
             return self.temp + 273.15
-        else:
-            return self.temp
+        return self.temp
 
     @property
     def temp_celsius(self):
         """Temperature in Celsius."""
         if all(self.temp) > 100.:
             return self.temp - 273.15
-        else:
-            return self.temp
+        return self.temp
 
     @property
     def temp_mmm(self):
@@ -347,32 +353,54 @@ class Environment:
             raise ValueError(msg)
         return pd.to_datetime(d['date'])
 
-    def from_file(self, param, file, file_dir=None):
+    def from_file(self, parameter, file, folder=None):
+        """Read the time-series data from a file.
+
+        Included parameters:
+            light       :   incoming light-intensity [umol photons m-2 s-1]
+            LAC         :   light attenuation coefficient [m-1]
+            temperature :   sea surface temperature [K]
+            acidity     :   aragonite saturation state [-]
+            storm       :   storm category, annually [-]
+
+        :param parameter: parameter to be read from file
+        :param file: file name, incl. file extension
+        :param folder: folder directory, defaults to None
+
+        :type parameter: str
+        :type file: str
+        :type folder: str, DirConfig, optional
+        """
         # TODO: Include functionality to check file's existence
         #  > certain files are necessary: light, temperature
 
-        def date2index(parameter):
+        def date2index(time_series):
             """Function applicable to time-series in Pandas."""
-            parameter['date'] = pd.to_datetime(parameter['date'])
-            parameter.set_index('date', inplace=True)
+            time_series['date'] = pd.to_datetime(time_series['date'])
+            time_series.set_index('date', inplace=True)
 
-        if file_dir is None:
+        if folder is None:
             f = file
+        elif isinstance(folder, DirConfig):
+            f = folder.config_dir(file)
         else:
-            f = os.path.join(file_dir, file)
+            f = os.path.join(folder, file)
 
-        if param == 'light':
+        if parameter == 'light':
             self.light = pd.read_csv(f, sep='\t')
             date2index(self.light)
-        elif param == 'LAC':
+        elif parameter == 'LAC':
             self.light_attenuation = pd.read_csv(f, sep='\t')
             date2index(self.light_attenuation)
-        elif param == 'temperature':
+        elif parameter == 'temperature':
             self.temp = pd.read_csv(f, sep='\t')
             date2index(self.temp)
-        elif param == 'acidity':
+        elif parameter == 'acidity':
             self.acid = pd.read_csv(f, sep='\t')
             date2index(self.acid)
-        elif param == 'storm':
+        elif parameter == 'storm':
             self.storm_category = pd.read_csv(f, sep='\t')
             self.storm_category.set_index('year', inplace=True)
+        else:
+            msg = f'Entered parameter ({parameter}) not included. See documentation.'
+            print(msg)
