@@ -486,7 +486,6 @@ class Output:
                 vc_set.units = 'm3'
                 vc_set[:, :] = coral.volume
             self.__map_data.close()
-            self.__map_data = Dataset(self.file_dir_map, mode='a')
 
     def update_map(self, coral, parameters, year):
         """Write data as annual output covering the whole model domain.
@@ -500,6 +499,8 @@ class Output:
         :type year: int
         """
         if any(parameters.values()):
+            self.__map_data = Dataset(self.file_dir_map, mode='a')
+
             i = int(year - self.first_year)
             self.__map_data['time'][i] = year
             if parameters['lme']:
@@ -527,6 +528,8 @@ class Output:
                 self.__map_data['tc'][-1, :] = coral.tc
                 self.__map_data['ac'][-1, :] = coral.ac
                 self.__map_data['Vc'][-1, :] = coral.volume
+
+            self.__map_data.close()
 
     @property
     def idx_stations(self):
@@ -661,7 +664,6 @@ class Output:
                 vc_set.long_name = 'coral volume'
                 vc_set.units = 'm3'
             self.__his_data.close()
-            self.__his_data = Dataset(self.file_dir_his, mode='a')
 
     def update_his(self, coral, parameters, dates):
         """Write data as daily output at predefined locations within the model domain.
@@ -675,6 +677,8 @@ class Output:
         :type dates: pandas
         """
         if any(parameters.values()):
+            self.__his_data = Dataset(self.file_dir_his, mode='a')
+
             y_dates = dates.reset_index(drop=True)
             ti = (y_dates - self.first_date).dt.days.values
             self.__his_data['time'][ti] = y_dates.values
@@ -708,11 +712,6 @@ class Output:
                 self.__his_data['ac'][ti, :] = np.tile(coral.ac, (len(y_dates), 1))[:, self.idx_stations]
                 self.__his_data['Vc'][ti, :] = np.tile(coral.volume, (len(y_dates), 1))[:, self.idx_stations]
 
-    def close(self):
-        """Close all output files."""
-        if isinstance(self.__map_data, Dataset):
-            self.__map_data.close()
-        if isinstance(self.__his_data, Dataset):
             self.__his_data.close()
 
 
