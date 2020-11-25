@@ -44,6 +44,7 @@ class DirConfig:
 
         :rtype: list
         """
+        # TODO: Ensure this to be a folder, and not a file
         if self.__home is None:
             return self.__current_dir
 

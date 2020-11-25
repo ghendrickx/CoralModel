@@ -238,20 +238,21 @@ class Output:
     __map_data = None
     __his_data = None
 
-    def __init__(self, coral, dates, first_date):
+    _idx_stations = None
+
+    def __init__(self, space, dates, first_date):
         """Generate output files of CoralModel simulation. Output files are formatted as NetCDF4-files.
 
-        :param coral: coral animal
+        :param space: space-domain
         :param dates: dates in simulation year
         :param first_date: first date of simulation
 
-        :type coral: Coral
+        :type space: int
         :type dates: Environment
         :type first_date: pandas
         """
-        self.coral = coral
         self.dates = dates
-        self.space = int(coral.cover.shape)
+        self.space = space
         self.time = len(dates)
         self.first_date = first_date
         self.first_year = first_date.dt.year
@@ -358,12 +359,14 @@ class Output:
         """
         return self._folder.config_dir(self._file_name_his)
 
-    def initiate_map(self, parameters, xy_coordinates):
+    def initiate_map(self, coral, parameters, xy_coordinates):
         """Initiate mapping output file in which annual output covering the whole model domain is stored.
 
+        :param coral: coral animal
         :param parameters: parameters to be exported
         :param xy_coordinates: (x,y)-coordinates, tuple(array(x), array(y))
 
+        :type coral: Coral
         :type parameters: dict
         :type xy_coordinates: tuple
         """
@@ -426,12 +429,12 @@ class Output:
                 pt_set = self.__map_data.createVariable('PT', 'f8', ('time', 'nmesh2d_face'))
                 pt_set.long_name = 'total living coral population at the end of the year'
                 pt_set.units = '-'
-                pt_set[:, :] = self.coral.living_cover
+                pt_set[:, :] = coral.living_cover
 
                 ph_set = self.__map_data.createVariable('PH', 'f8', ('time', 'nmesh2d_face'))
                 ph_set.long_name = 'healthy coral population at the end of the year'
                 ph_set.units = '-'
-                ph_set[:, :] = self.coral.living_cover
+                ph_set[:, :] = coral.living_cover
 
                 pr_set = self.__map_data.createVariable('PR', 'f8', ('time', 'nmesh2d_face'))
                 pr_set.long_name = 'recovering coral population at the end of the year'
@@ -456,32 +459,32 @@ class Output:
                 dc_set = self.__map_data.createVariable('dc', 'f8', ('time', 'nmesh2d_face'))
                 dc_set.long_name = 'coral plate diameter'
                 dc_set.units = 'm'
-                dc_set[:, :] = self.coral.dc
+                dc_set[:, :] = coral.dc
 
                 hc_set = self.__map_data.createVariable('hc', 'f8', ('time', 'nmesh2d_face'))
                 hc_set.long_name = 'coral height'
                 hc_set.units = 'm'
-                hc_set[:, :] = self.coral.hc
+                hc_set[:, :] = coral.hc
 
                 bc_set = self.__map_data.createVariable('bc', 'f8', ('time', 'nmesh2d_face'))
                 bc_set.long_name = 'coral base diameter'
                 bc_set.units = 'm'
-                bc_set[:, :] = self.coral.bc
+                bc_set[:, :] = coral.bc
 
                 tc_set = self.__map_data.createVariable('tc', 'f8', ('time', 'nmesh2d_face'))
                 tc_set.long_name = 'coral plate thickness'
                 tc_set.units = 'm'
-                tc_set[:, :] = self.coral.tc
+                tc_set[:, :] = coral.tc
 
                 ac_set = self.__map_data.createVariable('ac', 'f8', ('time', 'nmesh2d_face'))
                 ac_set.long_name = 'coral axial distance'
                 ac_set.units = 'm'
-                ac_set[:, :] = self.coral.ac
+                ac_set[:, :] = coral.ac
 
                 vc_set = self.__map_data.createVariable('Vc', 'f8', ('time', 'nmesh2d_face'))
                 vc_set.long_name = 'coral volume'
                 vc_set.units = 'm3'
-                vc_set[:, :] = self.coral.volume
+                vc_set[:, :] = coral.volume
             self.__map_data.close()
             self.__map_data = Dataset(self.file_dir_map, mode='a')
 
@@ -496,39 +499,44 @@ class Output:
         :type parameters: dict
         :type year: int
         """
-        # TODO: Replace "self.coral" by "coral"
         if any(parameters.values()):
             i = int(year - self.first_year)
             self.__map_data['time'][i] = year
             if parameters['lme']:
-                self.__map_data['Iz'][-1, :] = self.coral.light
+                self.__map_data['Iz'][-1, :] = coral.light
             if parameters['fme']:
-                self.__map_data['ucm'][-1, :] = self.coral.ucm
+                self.__map_data['ucm'][-1, :] = coral.ucm
             if parameters['tme']:
-                self.__map_data['Tc'][-1, :] = self.coral.temp[:, -1]
-                self.__map_data['Tlo'][-1, :] = self.coral.Tlo if len(self.coral.Tlo) > 1 else self.coral.Tlo * np.ones(self.space)
-                self.__map_data['Thi'][-1, :] = self.coral.Thi if len(self.coral.Thi) > 1 else self.coral.Thi * np.ones(self.space)
+                self.__map_data['Tc'][-1, :] = coral.temp[:, -1]
+                self.__map_data['Tlo'][-1, :] = coral.Tlo if len(coral.Tlo) > 1 else coral.Tlo * np.ones(self.space)
+                self.__map_data['Thi'][-1, :] = coral.Thi if len(coral.Thi) > 1 else coral.Thi * np.ones(self.space)
             if parameters['pd']:
-                self.__map_data['PD'][-1, :] = self.coral.photo_rate.mean(axis=1)
+                self.__map_data['PD'][-1, :] = coral.photo_rate.mean(axis=1)
             if parameters['ps']:
-                self.__map_data['PT'][-1, :] = self.coral.pop_states[:, -1, :].sum(axis=1)
-                self.__map_data['PH'][-1, :] = self.coral.pop_states[:, -1, 0]
-                self.__map_data['PR'][-1, :] = self.coral.pop_states[:, -1, 1]
-                self.__map_data['PP'][-1, :] = self.coral.pop_states[:, -1, 2]
-                self.__map_data['PB'][-1, :] = self.coral.pop_states[:, -1, 3]
+                self.__map_data['PT'][-1, :] = coral.pop_states[:, -1, :].sum(axis=1)
+                self.__map_data['PH'][-1, :] = coral.pop_states[:, -1, 0]
+                self.__map_data['PR'][-1, :] = coral.pop_states[:, -1, 1]
+                self.__map_data['PP'][-1, :] = coral.pop_states[:, -1, 2]
+                self.__map_data['PB'][-1, :] = coral.pop_states[:, -1, 3]
             if parameters['calc']:
-                self.__map_data['calc'][-1, :] = self.coral.calc.sum(axis=1)
+                self.__map_data['calc'][-1, :] = coral.calc.sum(axis=1)
             if parameters['md']:
-                self.__map_data['dc'][-1, :] = self.coral.dc
-                self.__map_data['hc'][-1, :] = self.coral.hc
-                self.__map_data['bc'][-1, :] = self.coral.bc
-                self.__map_data['tc'][-1, :] = self.coral.tc
-                self.__map_data['ac'][-1, :] = self.coral.ac
-                self.__map_data['Vc'][-1, :] = self.coral.volume
-            self.__map_data.flush()
+                self.__map_data['dc'][-1, :] = coral.dc
+                self.__map_data['hc'][-1, :] = coral.hc
+                self.__map_data['bc'][-1, :] = coral.bc
+                self.__map_data['tc'][-1, :] = coral.tc
+                self.__map_data['ac'][-1, :] = coral.ac
+                self.__map_data['Vc'][-1, :] = coral.volume
 
     @property
-    def idx_stations(self, xy_coordinates, xy_stations):
+    def idx_stations(self):
+        """Space indices based on the (x,y)-coordinates of the stations.
+
+        :rtype: tuple
+        """
+        return self._idx_stations
+
+    def set_idx_stations(self, xy_coordinates, xy_stations):
         """Determine space indices based on the (x,y)-coordinates of the stations.
 
         :param xy_coordinates: (x,y)-coordinates full domain
@@ -547,17 +555,17 @@ class Output:
         for s in range(len(idx)):
             idx[s] = np.argmin((x - x_station[s]) ** 2 + (y - y_station[s]) ** 2)
 
-        return idx.astype(int)
+        self._idx_stations = idx.astype(int)
 
-    def initiate_his(self, parameters, stations, xy_coordinates):
+    def initiate_his(self, parameters, xy_stations, xy_coordinates):
         """Initiate history output file in which daily output at predefined locations within the model is stored.
 
         :param parameters: parameters to be exported
-        :param stations: (x,y)-coordinates of virtual stations
+        :param xy_stations: (x,y)-coordinates of virtual stations
         :param xy_coordinates: (x,y)-coordinates full domain
 
         :type parameters: dict
-        :type stations: tuple
+        :type xy_stations: tuple
         :type xy_coordinates: tuple
         """
         if any(parameters.values()):
@@ -577,6 +585,9 @@ class Output:
             y = self.__his_data.createVariable('station_y_coordinate', 'f8', ('stations',))
 
             # setup data set
+            self.set_idx_stations(xy_coordinates, xy_stations)
+            x[:], y[:] = xy_stations
+
             if parameters['lme']:
                 light_set = self.__his_data.createVariable('Iz', 'f8', ('time', 'stations'))
                 light_set.long_name = 'representative light-intensity'
@@ -663,26 +674,22 @@ class Output:
         :type parameters: dict
         :type dates: pandas
         """
-        # TODO: Reformat output structure in a more efficient way
-        #  > initiation of his object (i.e. NetCDF-file)
-        #  > write initial conditions as part of initiation
-        #  > write all following conditions as update-method
         if any(parameters.values()):
-            idates = dates.reset_index(drop=True)
-            ti = (idates - self.first_date).dt.days.values
-            self.__his_data['time'][ti] = idates.values
+            y_dates = dates.reset_index(drop=True)
+            ti = (y_dates - self.first_date).dt.days.values
+            self.__his_data['time'][ti] = y_dates.values
             if parameters['lme']:
                 self.__his_data['Iz'][ti, :] = coral.light[self.idx_stations, :].transpose()
             if parameters['fme']:
-                self.__his_data['ucm'][ti, :] = np.tile(coral.ucm, (len(idates), 1))[:, self.idx_stations]
+                self.__his_data['ucm'][ti, :] = np.tile(coral.ucm, (len(y_dates), 1))[:, self.idx_stations]
             if parameters['tme']:
                 self.__his_data['Tc'][ti, :] = coral.temp[self.idx_stations, :].transpose()
                 if len(coral.Tlo) > 1 and len(coral.Thi) > 1:
-                    self.__his_data['Tlo'][ti, :] = np.tile(coral.Tlo, (len(idates), 1))[:, self.idx_stations]
-                    self.__his_data['Thi'][ti, :] = np.tile(coral.Thi, (len(idates), 1))[:, self.idx_stations]
+                    self.__his_data['Tlo'][ti, :] = np.tile(coral.Tlo, (len(y_dates), 1))[:, self.idx_stations]
+                    self.__his_data['Thi'][ti, :] = np.tile(coral.Thi, (len(y_dates), 1))[:, self.idx_stations]
                 else:
-                    self.__his_data['Tlo'][ti, :] = coral.Tlo * np.ones((len(idates), len(self.idx_stations)))
-                    self.__his_data['Thi'][ti, :] = coral.Thi * np.ones((len(idates), len(self.idx_stations)))
+                    self.__his_data['Tlo'][ti, :] = coral.Tlo * np.ones((len(y_dates), len(self.idx_stations)))
+                    self.__his_data['Thi'][ti, :] = coral.Thi * np.ones((len(y_dates), len(self.idx_stations)))
             if parameters['pd']:
                 self.__his_data['PD'][ti, :] = coral.photo_rate[self.idx_stations, :].transpose()
             if parameters['ps']:
@@ -694,13 +701,12 @@ class Output:
             if parameters['calc']:
                 self.__his_data['G'][ti, :] = coral.calc[self.idx_stations, :].transpose()
             if parameters['md']:
-                self.__his_data['dc'][ti, :] = np.tile(coral.dc, (len(idates), 1))[:, self.idx_stations]
-                self.__his_data['hc'][ti, :] = np.tile(coral.hc, (len(idates), 1))[:, self.idx_stations]
-                self.__his_data['bc'][ti, :] = np.tile(coral.bc, (len(idates), 1))[:, self.idx_stations]
-                self.__his_data['tc'][ti, :] = np.tile(coral.tc, (len(idates), 1))[:, self.idx_stations]
-                self.__his_data['ac'][ti, :] = np.tile(coral.ac, (len(idates), 1))[:, self.idx_stations]
-                self.__his_data['Vc'][ti, :] = np.tile(coral.volume, (len(idates), 1))[:, self.idx_stations]
-        self.__his_data.flush()
+                self.__his_data['dc'][ti, :] = np.tile(coral.dc, (len(y_dates), 1))[:, self.idx_stations]
+                self.__his_data['hc'][ti, :] = np.tile(coral.hc, (len(y_dates), 1))[:, self.idx_stations]
+                self.__his_data['bc'][ti, :] = np.tile(coral.bc, (len(y_dates), 1))[:, self.idx_stations]
+                self.__his_data['tc'][ti, :] = np.tile(coral.tc, (len(y_dates), 1))[:, self.idx_stations]
+                self.__his_data['ac'][ti, :] = np.tile(coral.ac, (len(y_dates), 1))[:, self.idx_stations]
+                self.__his_data['Vc'][ti, :] = np.tile(coral.volume, (len(y_dates), 1))[:, self.idx_stations]
 
     def close(self):
         """Close all output files."""
