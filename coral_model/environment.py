@@ -308,9 +308,6 @@ class Constants:
 class Environment:
     # TODO: Make this class robust
 
-    # TODO: Make it possible to set constant values for all environmental conditions
-    #  > using @property and @setter
-
     def __init__(self, light=None, light_attenuation=None, temperature=None, acidity=None, storm_category=None):
         self.light = light
         self.light_attenuation = light_attenuation
@@ -352,6 +349,42 @@ class Environment:
             msg = f'No initial data on dates provided.'
             raise ValueError(msg)
         return pd.to_datetime(d['date'])
+
+    def set_default_value(self, parameter, value):
+        """Set the time-series data to a default value.
+
+        Included parameters:
+            light       :   incoming light-intensity [umol photons m-2 s-1]
+            LAC         :   light attenuation coefficient [m-1]
+            temperature :   sea surface temperature [K]
+            acidity     :   aragonite saturation state [-]
+            storm       :   storm category, annually [-]
+
+        :param parameter: parameter to be set
+        :param value: default value
+
+        :type parameter: str
+        :type value: float
+        """
+
+        def set_value(val):
+            """Function to set default value."""
+            return pd.DataFrame(data=val, index=self.dates)
+
+        if parameter == 'light':
+            self.light = set_value(value)
+        elif parameter == 'LAC':
+            self.light_attenuation = set_value(value)
+        elif parameter == 'temperature':
+            self.temp = set_value(value)
+        elif parameter == 'acidity':
+            self.acid = set_value(value)
+        elif parameter == 'storm':
+            years = set(self.dates.dt.year)
+            self.storm_category = pd.DataFrame(data=value, index=years)
+        else:
+            msg = f'Entered parameter ({parameter}) not included. See documentation.'
+            print(msg)
 
     def from_file(self, parameter, file, folder=None):
         """Read the time-series data from a file.
