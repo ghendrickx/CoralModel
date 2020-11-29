@@ -9,11 +9,6 @@ import numpy as np
 from coral_model import core, utils
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics
-
-
-# TODO: Write the model execution as a function to be called in "interface.py".
-# TODO: Include a model execution in which all processes can be switched on and off; based on Processes. This also
-#  includes the main environmental factors, etc.
 from coral_model.utils import Output
 from utils.config_directory import DirConfig
 
@@ -36,7 +31,7 @@ class Simulation:
     __working_dir = DirConfig()
     __input_dir = None
 
-    output = None
+    __output = None
 
     def __init__(self, environment, processes, constants, hydrodynamics=None):
         """CoralModel initiation.
@@ -56,7 +51,9 @@ class Simulation:
         core.CONSTANTS = constants
         self.hydrodynamics = Hydrodynamics(hydrodynamics)
 
-        self.output = Output(self.hydrodynamics.xy_coordinates, environment.dates[0])
+        core.RESHAPE.space = len(self.hydrodynamics.xy_coordinates)
+
+        self.__output = Output(self.hydrodynamics.xy_coordinates, environment.dates[0])
         [self.define_output(output_type) for output_type in ('map', 'his')]
 
     @property
@@ -109,7 +106,6 @@ class Simulation:
 
     def make_directories(self):
         """Create directories if not existing."""
-        pass
 
     def define_output(self, output_type, lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
         """Initiate output files based on requested output data.
@@ -137,10 +133,44 @@ class Simulation:
             msg = f'{output_type} not in {types}.'
             raise ValueError(msg)
 
-        self.output.define_output(**locals())
+        self.__output.define_output(**locals())
 
-    def initiate(self, coral):
-        pass
+    def initiate(self, coral, x_range=None, y_range=None, value=None):
+        """Initiate the coral distribution.
+
+        :param coral: coral animal
+        :param x_range: minimum and maximum x-coordinate
+        :param y_range: minimum and maximum y-coordinate
+        :param value: coral cover
+
+        :type coral: Coral
+        :type x_range: tuple
+        :type y_range: tuple
+        :type value: float
+
+        :return: coral animal initiated
+        :rtype: Coral
+        """
+        xy = self.hydrodynamics.xy_coordinates
+
+        if value is None:
+            value = 1
+
+        cover = value * np.ones(core.RESHAPE.space)
+
+        if x_range is not None:
+            x_min = x_range[0] if x_range[0] is not None else min(xy[:][0])
+            x_max = x_range[1] if x_range[1] is not None else max(xy[:][0])
+            cover[np.logical_or(xy[:][0] <= x_min, xy[:][0] >= x_max)] = 0
+
+        if y_range is not None:
+            y_min = y_range[0] if y_range[0] is not None else min(xy[:][1])
+            y_max = y_range[1] if y_range[1] is not None else max(xy[:][1])
+            cover[np.logical_or(xy[:][1] <= y_min, xy[:][1] >= y_max)] = 0
+
+        coral.initiate_spatial_morphology(cover)
+
+        return coral
 
     def exec(self, coral, duration):
         """Execute simulation.
