@@ -371,6 +371,7 @@ class Environment:
             """Function to set default value."""
             return pd.DataFrame(data=val, index=self.dates)
 
+        # TODO: Circumvent if-statements to clean up code
         if parameter == 'light':
             self.light = set_value(value)
         elif parameter == 'LAC':
@@ -419,6 +420,7 @@ class Environment:
         else:
             f = os.path.join(folder, file)
 
+        # TODO: Circumvent if-statements to clean up code
         if parameter == 'light':
             self.light = pd.read_csv(f, sep='\t')
             date2index(self.light)
