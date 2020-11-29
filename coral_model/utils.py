@@ -235,28 +235,33 @@ class Output:
     _file_name_his = None
     _folder = DirConfig()
 
+    __map_output = None
+    __his_output = None
+
     __map_data = None
     __his_data = None
 
     _idx_stations = None
 
-    def __init__(self, space, first_date):
+    def __init__(self, xy_coordinates, first_date):
         """Generate output files of CoralModel simulation. Output files are formatted as NetCDF4-files.
 
-        :param space: space-domain
+        :param xy_coordinates: (x,y)-coordinates
         :param first_date: first date of simulation
 
-        :type space: int
+        :type xy_coordinates: tuple
         :type first_date: pandas
         """
-        self.space = space
+        self.xy_coordinates = xy_coordinates
+        self.space = len(xy_coordinates)
+
         self.first_date = first_date
         self.first_year = first_date.dt.year
 
-    @staticmethod
-    def define_output(lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
+    def define_output(self, output_type, lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
         """Define output dictionary.
 
+        :param output_type: mapping or history output
         :param lme: light micro-environment, defaults to True
         :param fme: flow micro-environment, defaults to True
         :param tme: thermal micro-environment, defaults to True
@@ -265,6 +270,7 @@ class Output:
         :param calc: calcification rates, defaults to True
         :param md: morphological development, defaults to True
 
+        :type output_type: str
         :type lme: bool, optional
         :type fme: bool, optional
         :type tme: bool, optional
@@ -273,7 +279,12 @@ class Output:
         :type calc: bool, optional
         :type md: bool, optional
         """
-        return locals()
+        types = ('map', 'his')
+        if output_type not in types:
+            msg = f'{output_type} not in {types}.'
+            raise ValueError(msg)
+
+        setattr(self, f'__{output_type}_output', locals())
 
     @staticmethod
     def __file_ext(file_name):
@@ -355,16 +366,14 @@ class Output:
         """
         return self._folder.config_dir(self._file_name_his)
 
-    def initiate_map(self, coral, parameters, xy_coordinates):
+    def initiate_map(self, coral, parameters):
         """Initiate mapping output file in which annual output covering the whole model domain is stored.
 
         :param coral: coral animal
         :param parameters: parameters to be exported
-        :param xy_coordinates: (x,y)-coordinates, tuple(array(x), array(y))
 
         :type coral: Coral
         :type parameters: dict
-        :type xy_coordinates: tuple
         """
         if any(parameters.values()):
             self.__map_data = Dataset(self.file_name_map, 'w', format='NETCDF4')
@@ -388,7 +397,7 @@ class Output:
             y.units = 'm'
 
             t[:] = self.first_year
-            x[:], y[:] = xy_coordinates
+            x[:], y[:] = self.xy_coordinates
 
             # initial conditions
             if parameters['lme']:
@@ -535,19 +544,13 @@ class Output:
         """
         return self._idx_stations
 
-    def set_idx_stations(self, xy_coordinates, xy_stations):
+    def set_idx_stations(self, xy_stations):
         """Determine space indices based on the (x,y)-coordinates of the stations.
 
-        :param xy_coordinates: (x,y)-coordinates full domain
         :param xy_stations: (x,y)-coordinates stations
-
-        :type xy_coordinates: tuple
         :type xy_stations: tuple
-
-        :return: space indices for stations
-        :rtype: numpy.array
         """
-        x, y = xy_coordinates
+        x, y = self.xy_coordinates
         x_station, y_station = xy_stations
         idx = np.zeros(len(xy_stations[0]))
 
@@ -556,16 +559,14 @@ class Output:
 
         self._idx_stations = idx.astype(int)
 
-    def initiate_his(self, parameters, xy_stations, xy_coordinates):
+    def initiate_his(self, parameters, xy_stations):
         """Initiate history output file in which daily output at predefined locations within the model is stored.
 
         :param parameters: parameters to be exported
         :param xy_stations: (x,y)-coordinates of virtual stations
-        :param xy_coordinates: (x,y)-coordinates full domain
 
         :type parameters: dict
         :type xy_stations: tuple
-        :type xy_coordinates: tuple
         """
         if any(parameters.values()):
             self.__his_data = Dataset(self.file_dir_his, 'w', format='NETCDF4')
@@ -584,7 +585,7 @@ class Output:
             y = self.__his_data.createVariable('station_y_coordinate', 'f8', ('stations',))
 
             # setup data set
-            self.set_idx_stations(xy_coordinates, xy_stations)
+            self.set_idx_stations(xy_stations)
             x[:], y[:] = xy_stations
 
             if parameters['lme']:
