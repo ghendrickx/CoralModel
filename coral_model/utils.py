@@ -240,20 +240,16 @@ class Output:
 
     _idx_stations = None
 
-    def __init__(self, space, dates, first_date):
+    def __init__(self, space, first_date):
         """Generate output files of CoralModel simulation. Output files are formatted as NetCDF4-files.
 
         :param space: space-domain
-        :param dates: dates in simulation year
         :param first_date: first date of simulation
 
         :type space: int
-        :type dates: Environment
         :type first_date: pandas
         """
-        self.dates = dates
         self.space = space
-        self.time = len(dates)
         self.first_date = first_date
         self.first_year = first_date.dt.year
 
