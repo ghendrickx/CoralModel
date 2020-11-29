@@ -14,6 +14,7 @@ from coral_model.hydrodynamics import Hydrodynamics
 # TODO: Write the model execution as a function to be called in "interface.py".
 # TODO: Include a model execution in which all processes can be switched on and off; based on Processes. This also
 #  includes the main environmental factors, etc.
+from utils.config_directory import DirConfig
 
 spacetime = (4, 10)
 core.RESHAPE = utils.DataReshape(spacetime)
@@ -32,9 +33,11 @@ class Simulation:
     """CoralModel simulation."""
 
     __working_dir = None
-    __figures_dir = None
     __input_dir = None
+    __figures_dir = None
     __output_dir = None
+
+    output = None
 
     def __init__(self, environment, processes, constants, hydrodynamics=None):
         """CoralModel initiation.
@@ -63,23 +66,39 @@ class Simulation:
         :type working_dir: str, list, tuple, DirConfig
         :type input_dir: str, list, tuple, DirConfig
         """
-        self.__working_dir = working_dir
-        self.__input_dir = input_dir
+        self.__working_dir = working_dir if isinstance(working_dir, DirConfig) else DirConfig(working_dir)
+        # TODO: Not sure if input_dir is needed in the new setup; check this!
+        if input_dir is None:
+            self.__input_dir = self.__working_dir.config_dir('input')
+        else:
+            self.__input_dir = str(input_dir) if isinstance(input_dir, DirConfig) else DirConfig().config_dir(input_dir)
 
-    def set_initial_conditions(self, coral):
-        """Define coral animal(s) and set their initial conditions.
+        self.__figures_dir = self.__working_dir.config_dir('figures')
+        self.__output_dir = self.__working_dir.config_dir('output')
 
-        :param coral: coral animal
-        :type coral: Coral
+    def make_directories(self):
+        """Create directories if not existing."""
+        pass
+
+    def define_output(self, map_data, his_data, map_file=None, his_file=None):
+        """Initiate and define output files based on requested output data.
+
+
         """
         pass
 
-    def define_output(self, map_file, his_file):
+    def initiate(self):
         pass
 
-    def exec(self):
-        """Execute simulation."""
-        pass
+    def exec(self, coral, duration):
+        """Execute simulation.
+
+        :param coral: coral animal
+        :param duration: simulation duration [yrs]
+
+        :type coral: Coral
+        :type duration: int
+        """
 
     def finalise(self):
         """Finalise simulation."""
