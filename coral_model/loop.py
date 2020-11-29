@@ -25,6 +25,19 @@ lme = core.Light(I0, Kd, h)
 
 print(lme.I0.shape)
 
+
+class Simulation:
+    def __init__(self, environment, processes, constants):
+        self.environment = environment
+        self.processes = processes
+        self.constants = constants
+
+    def exec(self, coral):
+        pass
+
+    def finalise(self):
+        pass
+
 # TODO: Define folder structure
 #  > working directory
 #  > figures directory
