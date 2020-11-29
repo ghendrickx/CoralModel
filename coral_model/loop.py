@@ -6,7 +6,9 @@ coral_model v3 - loop
 
 import numpy as np
 
-from coral_model import core, utils, environment, hydrodynamics
+from coral_model import core, utils
+from coral_model.environment import Processes, Constants, Environment
+from coral_model.hydrodynamics import Hydrodynamics
 
 
 # TODO: Write the model execution as a function to be called in "interface.py".
@@ -27,16 +29,61 @@ print(lme.I0.shape)
 
 
 class Simulation:
-    def __init__(self, environment, processes, constants):
-        self.environment = environment
-        self.processes = processes
-        self.constants = constants
+    """CoralModel simulation."""
 
-    def exec(self, coral):
+    __working_dir = None
+    __figures_dir = None
+    __input_dir = None
+    __output_dir = None
+
+    def __init__(self, environment, processes, constants, hydrodynamics=None):
+        """CoralModel initiation.
+
+        :param environment: environmental conditions
+        :param processes: included processes
+        :param constants: simulation constants
+        :param hydrodynamics: hydrodynamic model, defaults to None
+
+        :type environment: Environment
+        :type processes: Processes
+        :type constants: Constants
+        :type hydrodynamics: None, Hydrodynamics, optional
+        """
+        self.environment = environment
+        core.PROCESSES = processes
+        core.CONSTANTS = constants
+        self.hydrodynamics = Hydrodynamics(hydrodynamics)
+
+    def set_directories(self, working_dir, input_dir=None):
+        """Set directories based on working directory.
+
+        :param working_dir: working directory
+        :param input_dir: input directory, defaults to None
+
+        :type working_dir: str, list, tuple, DirConfig
+        :type input_dir: str, list, tuple, DirConfig
+        """
+        self.__working_dir = working_dir
+        self.__input_dir = input_dir
+
+    def set_initial_conditions(self, coral):
+        """Define coral animal(s) and set their initial conditions.
+
+        :param coral: coral animal
+        :type coral: Coral
+        """
+        pass
+
+    def define_output(self, map_file, his_file):
+        pass
+
+    def exec(self):
+        """Execute simulation."""
         pass
 
     def finalise(self):
-        pass
+        """Finalise simulation."""
+        self.hydrodynamics.finalise()
 
 # TODO: Define folder structure
 #  > working directory
@@ -100,3 +147,7 @@ class Simulation:
 #  > write his-file
 
 # TODO: Model finalisation
+
+
+if __name__ == '__main__':
+    run = Simulation(Environment, Processes, Constants)
