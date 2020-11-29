@@ -13,6 +13,20 @@ import faulthandler
 faulthandler.enable()
 
 
+class Hydrodynamics:
+    def __init__(self, mode):
+        self.mode = mode
+
+    def input_check(self):
+        pass
+
+    def update(self):
+        pass
+
+    def finalise(self):
+        pass
+
+
 class Delft3D:
     """Coupling of coral_model to Delft3D using the BMI wrapper."""
     
