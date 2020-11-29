@@ -1,5 +1,5 @@
 """
-coral_model v3 - loop
+coral_model - loop
 
 @author: Gijs G. Hendrickx
 """

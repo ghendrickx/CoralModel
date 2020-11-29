@@ -1,5 +1,5 @@
 """
-coral_model v3 - core
+coral_model - core
 
 @author: Gijs G. Hendrickx
 """
