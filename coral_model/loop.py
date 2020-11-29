@@ -32,10 +32,8 @@ print(lme.I0.shape)
 class Simulation:
     """CoralModel simulation."""
 
-    __working_dir = None
+    __working_dir = DirConfig()
     __input_dir = None
-    __figures_dir = None
-    __output_dir = None
 
     output = None
 
@@ -57,6 +55,38 @@ class Simulation:
         core.CONSTANTS = constants
         self.hydrodynamics = Hydrodynamics(hydrodynamics)
 
+    @property
+    def working_dir(self):
+        """Working directory.
+
+        :rtype: str
+        """
+        return self.__working_dir.__str__()
+
+    @working_dir.setter
+    def working_dir(self, directory):
+        """
+        :param directory: working directory
+        :type directory: str, list, tuple, DirConfig
+        """
+        self.__working_dir = directory if isinstance(directory, DirConfig) else DirConfig(directory)
+
+    @property
+    def figures_dir(self):
+        """Figures directory.
+
+        :rtype: str
+        """
+        return self.__working_dir.config_dir('figures')
+
+    @property
+    def output_dir(self):
+        """Output directory.
+
+        :rtype: str
+        """
+        return self.__working_dir.config_dir('output')
+
     def set_directories(self, working_dir, input_dir=None):
         """Set directories based on working directory.
 
@@ -72,9 +102,6 @@ class Simulation:
             self.__input_dir = self.__working_dir.config_dir('input')
         else:
             self.__input_dir = str(input_dir) if isinstance(input_dir, DirConfig) else DirConfig().config_dir(input_dir)
-
-        self.__figures_dir = self.__working_dir.config_dir('figures')
-        self.__output_dir = self.__working_dir.config_dir('output')
 
     def make_directories(self):
         """Create directories if not existing."""
