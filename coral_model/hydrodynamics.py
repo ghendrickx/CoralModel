@@ -17,6 +17,15 @@ class Hydrodynamics:
     def __init__(self, mode):
         self.mode = mode
 
+    @property
+    def xy_coordinates(self):
+        # TODO: Have the (x,y)-coordinates be based on the model
+        return None
+
+    def set_coordinates(self):
+        # TODO: If the (x,y)-coordinates cannot be retrieved from the model
+        pass
+
     def input_check(self):
         pass
 
