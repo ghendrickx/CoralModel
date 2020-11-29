@@ -22,7 +22,7 @@ class Hydrodynamics:
         # TODO: Have the (x,y)-coordinates be based on the model
         return None
 
-    def set_coordinates(self):
+    def set_coordinates(self, xy_coordinates):
         # TODO: If the (x,y)-coordinates cannot be retrieved from the model
         pass
 

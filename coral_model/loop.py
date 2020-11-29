@@ -14,6 +14,7 @@ from coral_model.hydrodynamics import Hydrodynamics
 # TODO: Write the model execution as a function to be called in "interface.py".
 # TODO: Include a model execution in which all processes can be switched on and off; based on Processes. This also
 #  includes the main environmental factors, etc.
+from coral_model.utils import Output
 from utils.config_directory import DirConfig
 
 spacetime = (4, 10)
@@ -24,9 +25,9 @@ Kd = np.ones(10)
 h = np.ones(4)
 
 
-lme = core.Light(I0, Kd, h)
+lm_env = core.Light(I0, Kd, h)
 
-print(lme.I0.shape)
+print(lm_env.I0.shape)
 
 
 class Simulation:
@@ -54,6 +55,9 @@ class Simulation:
         core.PROCESSES = processes
         core.CONSTANTS = constants
         self.hydrodynamics = Hydrodynamics(hydrodynamics)
+
+        self.output = Output(self.hydrodynamics.xy_coordinates, environment.dates[0])
+        [self.define_output(output_type) for output_type in ('map', 'his')]
 
     @property
     def working_dir(self):
@@ -107,14 +111,35 @@ class Simulation:
         """Create directories if not existing."""
         pass
 
-    def define_output(self, map_data, his_data, map_file=None, his_file=None):
-        """Initiate and define output files based on requested output data.
+    def define_output(self, output_type, lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
+        """Initiate output files based on requested output data.
 
+        :param output_type: mapping or history output
+        :param lme: light micro-environment, defaults to True
+        :param fme: flow micro-environment, defaults to True
+        :param tme: thermal micro-environment, defaults to True
+        :param pd: photosynthetic dependencies, defaults to True
+        :param ps: population states, defaults to True
+        :param calc: calcification rates, defaults to True
+        :param md: morphological development, defaults to True
 
+        :type output_type: str
+        :type lme: bool, optional
+        :type fme: bool, optional
+        :type tme: bool, optional
+        :type pd: bool, optional
+        :type ps: bool, optional
+        :type calc: bool, optional
+        :type md: bool, optional
         """
-        pass
+        types = ('map', 'his')
+        if output_type not in types:
+            msg = f'{output_type} not in {types}.'
+            raise ValueError(msg)
 
-    def initiate(self):
+        self.output.define_output(**locals())
+
+    def initiate(self, coral):
         pass
 
     def exec(self, coral, duration):
@@ -138,15 +163,8 @@ class Simulation:
 #  > output directory
 #  > etc.
 
-# TODO: Model initiation I: Processes and Constants
-#  > specify processes
-#  > specify constants
-
-# TODO: Model initiation II: Environment
-#  > specify environmental factors (i.e. define file names and directories)
-
 # TODO: Model initiation III: Hydrodynamics
-#  > define hydrodynamic module (Delft3D, 1DReef, None)
+#  > define hydrodynamic module (Delft3D, Reef1D, Reef0D, None)
 #  > initiate hydrodynamic module
 
 # TODO: Model initiation IV: OutputFiles
