@@ -13,6 +13,29 @@ import faulthandler
 faulthandler.enable()
 
 
+class Hydrodynamics:
+    def __init__(self, mode):
+        self.mode = mode
+
+    @property
+    def xy_coordinates(self):
+        # TODO: Have the (x,y)-coordinates be based on the model
+        return None
+
+    def set_coordinates(self, xy_coordinates):
+        # TODO: If the (x,y)-coordinates cannot be retrieved from the model
+        pass
+
+    def input_check(self):
+        pass
+
+    def update(self):
+        pass
+
+    def finalise(self):
+        pass
+
+
 class Delft3D:
     """Coupling of coral_model to Delft3D using the BMI wrapper."""
     
