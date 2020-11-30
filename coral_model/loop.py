@@ -106,6 +106,9 @@ class Simulation:
 
     def make_directories(self):
         """Create directories if not existing."""
+        self.__working_dir.create_dir(self.working_dir)
+        self.__working_dir.create_dir(self.output_dir)
+        self.__working_dir.create_dir(self.figures_dir)
 
     def define_output(self, output_type, lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
         """Initiate output files based on requested output data.
@@ -244,4 +247,4 @@ class Simulation:
 
 
 if __name__ == '__main__':
-    run = Simulation(Environment, Processes, Constants)
+    run = Simulation(Environment(), Processes(), Constants(Processes()))
