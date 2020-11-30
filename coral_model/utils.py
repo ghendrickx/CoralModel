@@ -249,7 +249,7 @@ class Output:
         :param xy_coordinates: (x,y)-coordinates
         :param first_date: first date of simulation
 
-        :type xy_coordinates: tuple
+        :type xy_coordinates: numpy.ndarray
         :type first_date: pandas
         """
         self.xy_coordinates = xy_coordinates

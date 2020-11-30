@@ -14,19 +14,70 @@ faulthandler.enable()
 
 
 class Hydrodynamics:
+    """Interface for all hydrodynamic model modes."""
+
     def __init__(self, mode):
-        self.mode = mode
+        """
+        :param mode: choice of hydrodynamic model
+        :type mode: None, str
+        """
+        self.mode = self.set_mode(mode)
+
+    def set_mode(self, mode):
+        """Function that verifies if the mode is included.
+
+        :param mode: choice of hydrodynamic model
+        :type mode: None, str
+        """
+        modes = (None, 'Reef0D', 'Reef1D', 'Delft3D')
+        if self.mode not in modes:
+            msg = f'{self.mode} not in {modes}.'
+            raise ValueError(msg)
+        return mode
 
     @property
     def xy_coordinates(self):
+        """The (x,y)-coordinates of the model domain,
+        retrieved from hydrodynamic model; otherwise based on provided definition.
+
+        :rtype: numpy.ndarray
+        """
         # TODO: Have the (x,y)-coordinates be based on the model
-        return None
+        if self.mode is None:
+            raise NotImplementedError
+        elif self.mode == 'Reef0D':
+            raise NotImplementedError
+        elif self.mode == 'Reef1D':
+            raise NotImplementedError
+        elif self.mode == 'Delft3D':
+            raise NotImplementedError
+
+    @property
+    def water_depth(self):
+        """Water depth, retrieved from hydrodynamic model; otherwise based on provided definition.
+
+        :rtype: numpy.ndarray
+        """
+        if self.mode is None:
+            raise NotImplementedError
+        elif self.mode == 'Reef0D':
+            raise NotImplementedError
+        elif self.mode == 'Reef1D':
+            raise NotImplementedError
+        elif self.mode == 'Delft3D':
+            raise NotImplementedError
 
     def set_coordinates(self, xy_coordinates):
         # TODO: If the (x,y)-coordinates cannot be retrieved from the model
         pass
 
+    def set_water_depth(self, water_depth):
+        pass
+
     def input_check(self):
+        """Check if all requested content is provided, depending on the mode chosen."""
+
+    def initiate(self):
         pass
 
     def update(self):
@@ -312,7 +363,7 @@ class Reef1D:
     
     @property
     def vel_wave(self):
-        pass
+        return 0
     
     @property
     def vel_curr_mn(self):
