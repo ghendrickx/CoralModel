@@ -87,6 +87,26 @@ class Hydrodynamics:
         pass
 
 
+class BaseHydro:
+    """Basic, empty hydrodynamic model."""
+
+    def __init__(self):
+        pass
+
+    def initiate(self):
+        """Initiate hydrodynamic model."""
+
+    def update(self, mt_per_vt=None):
+        """Update hydrodynamic model.
+
+        :param mt_per_vt: model time-steps per vegetation time-step
+        :type mt_per_vt: int
+        """
+
+    def finalise(self):
+        """Finalise hydrodynamic model."""
+
+
 class Delft3D:
     """Coupling of coral_model to Delft3D using the BMI wrapper."""
     
