@@ -19,6 +19,9 @@ class Hydrodynamics:
 
     __model = None
 
+    _xy_coordinates = None
+    _water_depth = None
+
     def __init__(self, mode):
         """
         :param mode: choice of hydrodynamic model
@@ -57,12 +60,19 @@ class Hydrodynamics:
         :rtype: numpy.ndarray
         """
         # TODO: Have the (x,y)-coordinates be based on the model
-        if self.mode is None:
-            raise NotImplementedError
+        msg = f'(x,y)-coordinates has to be provided. ' \
+            f'Use method \"set_coordinates\" ' \
+            f'and assure agreement with \"water_depth\".'
+        manual_modes = (None, 'Reef1D')
+        if self.mode in manual_modes:
+            if self._xy_coordinates is None:
+                raise ValueError(msg)
+            return self._xy_coordinates
         elif self.mode == 'Reef0D':
-            raise NotImplementedError
-        elif self.mode == 'Reef1D':
-            raise NotImplementedError
+            if self._xy_coordinates is None:
+                print('WARNING: Default (x,y)-coordinates used: (0,0)')
+                return np.array([[0, 0]])
+            return self._xy_coordinates
         elif self.mode == 'Delft3D':
             raise NotImplementedError
 
@@ -72,36 +82,47 @@ class Hydrodynamics:
 
         :rtype: numpy.ndarray
         """
-        if self.mode is None:
-            raise NotImplementedError
-        elif self.mode == 'Reef0D':
-            raise NotImplementedError
-        elif self.mode == 'Reef1D':
-            raise NotImplementedError
+        msg = f'Water depth has to be provided. ' \
+            f'Use method \"set_water_depth\" ' \
+            f'and assure agreement with \"xy_coordinates\".'
+        manual_modes = (None, 'Reef0D', 'Reef1D')
+        if self.mode in manual_modes:
+            if self._water_depth is None:
+                raise ValueError(msg)
+            return self._water_depth
         elif self.mode == 'Delft3D':
             raise NotImplementedError
 
     def set_coordinates(self, xy_coordinates):
-        # TODO: If the (x,y)-coordinates cannot be retrieved from the model
-        pass
+        """Set (x,y)-coordinates if not provided by hydrodynamic model.
+
+        :param xy_coordinates: (x,y)-coordinates [m]
+        :type xy_coordinates: tuple, numpy.ndarray
+        """
+        self._xy_coordinates = xy_coordinates
 
     def set_water_depth(self, water_depth):
-        pass
+        """Set water depth if not provided by hydrodynamic model.
+
+        :param water_depth: water depth [m]
+        :type water_depth: float, numpy.ndarray
+        """
+        self._water_depth = water_depth
 
     def input_check(self):
         """Check if all requested content is provided, depending on the mode chosen."""
 
     def initiate(self):
         """Initiate hydrodynamic model."""
-        self.model.initiate()
+        self.__model.initiate()
 
     def update(self, mt_per_vt=None):
         """Update hydrodynamic model."""
-        self.model.update(mt_per_vt=mt_per_vt)
+        self.__model.update(mt_per_vt=mt_per_vt)
 
     def finalise(self):
         """Finalise hydrodynamic model."""
-        self.model.finalise()
+        self.__model.finalise()
 
 
 class BaseHydro:
