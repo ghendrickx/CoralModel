@@ -121,7 +121,12 @@ class Hydrodynamics:
         :param water_depth: water depth [m]
         :type water_depth: float, numpy.ndarray
         """
-        self._water_depth = water_depth
+        try:
+            _ = len(water_depth)
+        except TypeError:
+            self._water_depth = np.array([water_depth])
+        else:
+            self._water_depth = np.array([*water_depth])
 
     def input_check(self):
         """Check if all requested content is provided, depending on the mode chosen."""
