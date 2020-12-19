@@ -43,10 +43,9 @@ class Hydrodynamics:
         :param mode: choice of hydrodynamic model
         :type mode: None, str
         """
-        if mode is None:
-            mode = 'BaseHydro'
+        model_cls = 'BaseHydro' if mode is None else mode
 
-        modes = ('BaseHydro', 'Reef0D', 'Reef1D', 'Delft3D')
+        modes = (None, 'Reef0D', 'Reef1D', 'Delft3D')
         if mode not in modes:
             msg = f'{mode} not in {modes}.'
             raise ValueError(msg)
@@ -56,7 +55,7 @@ class Hydrodynamics:
             msg = f'{mode} not yet implemented.'
             raise NotImplementedError(msg)
 
-        self.__model = getattr(sys.modules[__name__], mode)()
+        self.__model = getattr(sys.modules[__name__], model_cls)()
 
         return mode
 
@@ -105,9 +104,16 @@ class Hydrodynamics:
         """Set (x,y)-coordinates if not provided by hydrodynamic model.
 
         :param xy_coordinates: (x,y)-coordinates [m]
-        :type xy_coordinates: tuple, numpy.ndarray
+        :type xy_coordinates: tuple, list, numpy.ndarray
         """
-        self._xy_coordinates = xy_coordinates
+        try:
+            _ = len(xy_coordinates[0])
+        except TypeError:
+            self._xy_coordinates = np.array([[*xy_coordinates]])
+        else:
+            self._xy_coordinates = np.array([
+                [*xy] for xy in xy_coordinates
+            ])
 
     def set_water_depth(self, water_depth):
         """Set water depth if not provided by hydrodynamic model.
