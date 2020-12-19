@@ -12,17 +12,17 @@ from coral_model.hydrodynamics import Hydrodynamics
 from coral_model.utils import Output
 from utils.config_directory import DirConfig
 
-spacetime = (4, 10)
-core.RESHAPE = utils.DataReshape(spacetime)
-
-I0 = np.ones(10)
-Kd = np.ones(10)
-h = np.ones(4)
-
-
-lm_env = core.Light(I0, Kd, h)
-
-print(lm_env.I0.shape)
+# spacetime = (4, 10)
+# core.RESHAPE = utils.DataReshape(spacetime)
+#
+# I0 = np.ones(10)
+# Kd = np.ones(10)
+# h = np.ones(4)
+#
+#
+# lm_env = core.Light(I0, Kd, h)
+#
+# print(lm_env.I0.shape)
 
 
 class Simulation:
@@ -126,6 +126,10 @@ class Simulation:
         self.__working_dir.create_dir(self.output_dir)
         self.__working_dir.create_dir(self.figures_dir)
 
+    def set_delft3d_environment(self):
+        """Set directories and files of hydrodynamic mode 'Delft3D'."""
+        # TODO: Set D3D-files and -directories
+
     def define_output(self, output_type, lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
         """Initiate output files based on requested output data.
 
@@ -155,17 +159,19 @@ class Simulation:
         self.__output.define_output(**locals())
 
     def initiate(self, coral, x_range=None, y_range=None, value=None):
-        """Initiate the coral distribution.
+        """Initiate the coral distribution. The default coral distribution is a full coral cover over the whole domain.
+        More complex initial conditions of the coral cover cannot be realised with this method. See the documentation on
+        workarounds to achieve this anyway.
 
         :param coral: coral animal
-        :param x_range: minimum and maximum x-coordinate
-        :param y_range: minimum and maximum y-coordinate
-        :param value: coral cover
+        :param x_range: minimum and maximum x-coordinate, defaults to None
+        :param y_range: minimum and maximum y-coordinate, defaults to None
+        :param value: coral cover, defaults to None
 
         :type coral: Coral
-        :type x_range: tuple
-        :type y_range: tuple
-        :type value: float
+        :type x_range: tuple, optional
+        :type y_range: tuple, optional
+        :type value: float, optional
 
         :return: coral animal initiated
         :rtype: Coral
@@ -213,10 +219,6 @@ class Simulation:
 #  > input directory
 #  > output directory
 #  > etc.
-
-# TODO: Model initiation III: Hydrodynamics
-#  > define hydrodynamic module (Delft3D, Reef1D, Reef0D, None)
-#  > initiate hydrodynamic module
 
 # TODO: Model initiation IV: OutputFiles
 #  > specify output files (i.e. define file names and directories)
