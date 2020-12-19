@@ -66,7 +66,6 @@ class Hydrodynamics:
 
         :rtype: numpy.ndarray
         """
-        # TODO: Have the (x,y)-coordinates be based on the model
         msg = f'(x,y)-coordinates have to be provided. ' \
             f'Use method \"set_coordinates\" ' \
             f'and assure agreement with \"water_depth\".'
@@ -81,6 +80,7 @@ class Hydrodynamics:
                 return np.array([[0, 0]])
             return self._xy_coordinates
         elif self.mode == 'Delft3D':
+            # TODO: Have the (x,y)-coordinates be based on the model
             raise NotImplementedError
 
     @property

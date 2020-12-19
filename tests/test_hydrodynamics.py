@@ -1,5 +1,7 @@
 import unittest
 
+import numpy
+
 from coral_model.hydrodynamics import Hydrodynamics
 
 
@@ -69,3 +71,78 @@ class TestHydrodynamics(unittest.TestCase):
         model.set_coordinates((0, 0))
         model.set_water_depth(10)
         model.input_check()
+
+    # TODO: test input_check Reef1D
+    # TODO: test input_check Delft3D
+
+    def test_coordinates01(self):
+        model = Hydrodynamics(mode=None)
+        model.set_coordinates((0, 0))
+        answer = numpy.array([[0, 0]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates02(self):
+        model = Hydrodynamics(mode=None)
+        model.set_coordinates([0, 0])
+        answer = numpy.array([[0, 0]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates03(self):
+        model = Hydrodynamics(mode=None)
+        model.set_coordinates(numpy.array([0, 0]))
+        answer = numpy.array([[0, 0]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates04(self):
+        model = Hydrodynamics(mode=None)
+        model.set_coordinates([(0, 0), (0, 1)])
+        answer = numpy.array([[0, 0], [0, 1]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates05(self):
+        model = Hydrodynamics(mode=None)
+        model.set_coordinates(((0, 0), (0, 1)))
+        answer = numpy.array([[0, 0], [0, 1]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates06(self):
+        model = Hydrodynamics(mode=None)
+        model.set_coordinates(numpy.array([[0, 0], [0, 1]]))
+        answer = numpy.array([[0, 0], [0, 1]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates11(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_coordinates((0, 0))
+        answer = numpy.array([[0, 0]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates12(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_coordinates([0, 0])
+        answer = numpy.array([[0, 0]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates13(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_coordinates(numpy.array([0, 0]))
+        answer = numpy.array([[0, 0]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates14(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_coordinates([(0, 0), (0, 1)])
+        answer = numpy.array([[0, 0], [0, 1]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates15(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_coordinates(((0, 0), (0, 1)))
+        answer = numpy.array([[0, 0], [0, 1]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    def test_coordinates16(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_coordinates(numpy.array([[0, 0], [0, 1]]))
+        answer = numpy.array([[0, 0], [0, 1]])
+        self.assertEqual(model.xy_coordinates.all(), answer.all())
