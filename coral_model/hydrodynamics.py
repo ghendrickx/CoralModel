@@ -51,6 +51,11 @@ class Hydrodynamics:
             msg = f'{mode} not in {modes}.'
             raise ValueError(msg)
 
+        # TODO: Facilitate Reef1D and Delft3D as well
+        if mode in ('Reef1D', 'Delft3D'):
+            msg = f'{mode} not yet implemented.'
+            raise NotImplementedError(msg)
+
         self.__model = getattr(sys.modules[__name__], mode)()
 
         return mode
@@ -130,9 +135,6 @@ class Hydrodynamics:
 
 class BaseHydro:
     """Basic, empty hydrodynamic model."""
-
-    # def __init__(self):
-    #     pass
 
     def initiate(self):
         """Initiate hydrodynamic model."""
