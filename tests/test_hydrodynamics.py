@@ -39,3 +39,33 @@ class TestHydrodynamics(unittest.TestCase):
             model.input_check()
 
         self.assertTrue('(x,y)-coordinates have to be provided' in str(context.exception))
+
+    def test_input_check04(self):
+        model = Hydrodynamics(mode=None)
+        model.set_coordinates((0, 0))
+        model.set_water_depth(10)
+        model.input_check()
+
+    def test_input_check11(self):
+        model = Hydrodynamics(mode='Reef0D')
+        with self.assertRaises(ValueError):
+            model.input_check()
+
+    def test_input_check12(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_coordinates((0, 0))
+        with self.assertRaises(ValueError) as context:
+            model.input_check()
+
+        self.assertTrue('Water depth has to be provided' in str(context.exception))
+
+    def test_input_check13(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_water_depth(10)
+        model.input_check()
+
+    def test_input_check14(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_coordinates((0, 0))
+        model.set_water_depth(10)
+        model.input_check()
