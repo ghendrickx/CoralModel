@@ -170,6 +170,8 @@ class Simulation:
         :return: coral animal initiated
         :rtype: Coral
         """
+        self.hydrodynamics.initiate()
+
         xy = self.hydrodynamics.xy_coordinates
 
         if value is None:
