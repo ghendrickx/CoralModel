@@ -43,12 +43,15 @@ class Hydrodynamics:
         :param mode: choice of hydrodynamic model
         :type mode: None, str
         """
-        modes = (None, 'Reef0D', 'Reef1D', 'Delft3D')
-        if self.mode not in modes:
-            msg = f'{self.mode} not in {modes}.'
+        if mode is None:
+            mode = 'BaseHydro'
+
+        modes = ('BaseHydro', 'Reef0D', 'Reef1D', 'Delft3D')
+        if mode not in modes:
+            msg = f'{mode} not in {modes}.'
             raise ValueError(msg)
 
-        self.__model = getattr(sys.modules[__name__], mode)
+        self.__model = getattr(sys.modules[__name__], mode)()
 
         return mode
 
@@ -128,8 +131,8 @@ class Hydrodynamics:
 class BaseHydro:
     """Basic, empty hydrodynamic model."""
 
-    def __init__(self):
-        pass
+    # def __init__(self):
+    #     pass
 
     def initiate(self):
         """Initiate hydrodynamic model."""
