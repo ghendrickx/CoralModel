@@ -44,17 +44,33 @@ class Simulation:
         :type environment: Environment
         :type processes: Processes
         :type constants: Constants
-        :type hydrodynamics: None, Hydrodynamics, optional
+        :type hydrodynamics: None, str, Hydrodynamics, optional
         """
         self.environment = environment
         core.PROCESSES = processes
         core.CONSTANTS = constants
-        self.hydrodynamics = Hydrodynamics(hydrodynamics)
+        self.hydrodynamics = hydrodynamics if isinstance(hydrodynamics, Hydrodynamics) else Hydrodynamics(hydrodynamics)
 
         core.RESHAPE.space = len(self.hydrodynamics.xy_coordinates)
 
         self.__output = Output(self.hydrodynamics.xy_coordinates, environment.dates[0])
         [self.define_output(output_type) for output_type in ('map', 'his')]
+
+    def set_coordinates(self, xy_coordinates):
+        """Set (x,y)-coordinates if nt provided by hydrodynamic model.
+
+        :param xy_coordinates: (x,y)-coordinates [m]
+        :type xy_coordinates: tuple, list, numpy.ndarray
+        """
+        self.hydrodynamics.set_coordinates(xy_coordinates)
+
+    def set_water_depth(self, water_depth):
+        """Set water depth if not provided by hydrodynamic model.
+
+        :param water_depth: water depth [m]
+        :type water_depth: float, tuple, list, numpy.ndarray
+        """
+        self.hydrodynamics.set_water_depth(water_depth)
 
     @property
     def working_dir(self):

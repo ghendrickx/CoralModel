@@ -119,7 +119,7 @@ class Hydrodynamics:
         """Set water depth if not provided by hydrodynamic model.
 
         :param water_depth: water depth [m]
-        :type water_depth: float, numpy.ndarray
+        :type water_depth: float, tuple, list, numpy.ndarray
         """
         try:
             _ = len(water_depth)
