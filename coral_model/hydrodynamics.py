@@ -130,9 +130,12 @@ class Hydrodynamics:
 
     def input_check(self):
         """Check if all requested content is provided, depending on the mode chosen."""
+        _ = self.xy_coordinates
+        _ = self.water_depth
 
     def initiate(self):
         """Initiate hydrodynamic model."""
+        self.input_check()
         self.__model.initiate()
 
     def update(self, mt_per_vt=None):
