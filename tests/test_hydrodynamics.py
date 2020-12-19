@@ -146,3 +146,90 @@ class TestHydrodynamics(unittest.TestCase):
         model.set_coordinates(numpy.array([[0, 0], [0, 1]]))
         answer = numpy.array([[0, 0], [0, 1]])
         self.assertEqual(model.xy_coordinates.all(), answer.all())
+
+    # TODO: test set_coordinates Reef1D
+    # TODO: test set_coordinates Delft3D
+
+    def test_water_depth01(self):
+        model = Hydrodynamics(mode=None)
+        model.set_water_depth(10)
+        answer = numpy.array([10])
+        self.assertEqual(model.water_depth, answer)
+
+    def test_water_depth02(self):
+        model = Hydrodynamics(mode=None)
+        model.set_water_depth((10,))
+        answer = numpy.array([10])
+        self.assertEqual(model.water_depth, answer)
+
+    def test_water_depth03(self):
+        model = Hydrodynamics(mode=None)
+        model.set_water_depth([10])
+        answer = numpy.array([10])
+        self.assertEqual(model.water_depth, answer)
+
+    def test_water_depth04(self):
+        model = Hydrodynamics(mode=None)
+        model.set_water_depth(numpy.array([10]))
+        answer = numpy.array([10])
+        self.assertEqual(model.water_depth, answer)
+
+    def test_water_depth05(self):
+        model = Hydrodynamics(mode=None)
+        model.set_water_depth((10, 10))
+        answer = numpy.array([10, 10])
+        self.assertEqual(model.water_depth.all(), answer.all())
+
+    def test_water_depth06(self):
+        model = Hydrodynamics(mode=None)
+        model.set_water_depth([10, 10])
+        answer = numpy.array([10, 10])
+        self.assertEqual(model.water_depth.all(), answer.all())
+
+    def test_water_depth07(self):
+        model = Hydrodynamics(mode=None)
+        model.set_water_depth(numpy.array([10, 10]))
+        answer = numpy.array([10, 10])
+        self.assertEqual(model.water_depth.all(), answer.all())
+
+    def test_water_depth11(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_water_depth(10)
+        answer = numpy.array([10])
+        self.assertEqual(model.water_depth, answer)
+
+    def test_water_depth12(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_water_depth((10,))
+        answer = numpy.array([10])
+        self.assertEqual(model.water_depth, answer)
+
+    def test_water_depth13(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_water_depth([10])
+        answer = numpy.array([10])
+        self.assertEqual(model.water_depth, answer)
+
+    def test_water_depth14(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_water_depth(numpy.array([10]))
+        answer = numpy.array([10])
+        self.assertEqual(model.water_depth, answer)
+
+    def test_water_depth15(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_water_depth((10, 10))
+        answer = numpy.array([10, 10])
+        self.assertEqual(model.water_depth.all(), answer.all())
+
+    def test_water_depth16(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_water_depth([10, 10])
+        answer = numpy.array([10, 10])
+        self.assertEqual(model.water_depth.all(), answer.all())
+
+    def test_water_depth17(self):
+        model = Hydrodynamics(mode='Reef0D')
+        model.set_water_depth(numpy.array([10, 10]))
+        answer = numpy.array([10, 10])
+        self.assertEqual(model.water_depth.all(), answer.all())
