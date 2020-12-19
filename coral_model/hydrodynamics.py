@@ -67,7 +67,7 @@ class Hydrodynamics:
         :rtype: numpy.ndarray
         """
         # TODO: Have the (x,y)-coordinates be based on the model
-        msg = f'(x,y)-coordinates has to be provided. ' \
+        msg = f'(x,y)-coordinates have to be provided. ' \
             f'Use method \"set_coordinates\" ' \
             f'and assure agreement with \"water_depth\".'
         manual_modes = (None, 'Reef1D')
