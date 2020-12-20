@@ -1,5 +1,7 @@
 import unittest
 
+import pandas
+
 from coral_model.environment import Processes, Constants, Environment
 
 
@@ -133,3 +135,7 @@ class TestEnvironment(unittest.TestCase):
         self.assertIsNone(environment.temperature)
         self.assertIsNone(environment.aragonite)
         self.assertIsNone(environment.storm_category)
+
+    def test_dates(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')

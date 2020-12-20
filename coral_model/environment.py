@@ -4,8 +4,6 @@ coral_model - environment
 @author: Gijs G. Hendrickx
 """
 
-import os
-
 import pandas as pd
 import numpy as np
 
@@ -380,14 +378,17 @@ class Environment:
             raise ValueError(msg)
         return pd.to_datetime(d['date'])
 
-    @dates.setter
-    def dates(self, daily_dates):
+    def set_dates(self, start_date, end_date):
         """Set dates manually, ignoring possible dates in environmental time-series.
 
-        :param daily_dates: dates
-        :type daily_dates: list, tuple, pandas.DataFrame
+        :param start_date: first date of time-series
+        :param end_date: last date of time-series
+
+        :type start_date: str, datetime.date
+        :type end_date: str, datetime.date
         """
-        self.__dates = pd.DataFrame(data=daily_dates, columns='date')
+        dates = pd.date_range(start_date, end_date, freq='D')
+        self.__dates = pd.DataFrame({'date': dates})
 
     def set_parameter_values(self, parameter, value, pre_date=None):
         """Set the time-series data to a time-series, or a default value. In case :param value: is not iterable, the
@@ -414,7 +415,7 @@ class Environment:
             """Function to set default value."""
             if pre_date is None:
                 return pd.DataFrame(data=val, index=self.dates)
-            
+
             dates = pd.date_range(self.dates[0] - pd.DateOffset(years=pre_date), self.dates[-1], freq='D')
             return pd.DataFrame(data=val, index=dates)
 
