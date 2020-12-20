@@ -322,70 +322,25 @@ class Environment:
         """Light-intensity in micro-mol photons per square metre-second."""
         return self.__light
 
-    @light.setter
-    def light(self, light_intensity):
-        """Set light-intensity time-series.
-
-        :param light_intensity: light-intensity time-series [umol photons m-2 s-1]
-        :type light_intensity: list, tuple, pandas.DataFrame
-        """
-        # TODO: Define setter
-
     @property
     def light_attenuation(self):
         """Light-attenuation coefficient in per metre."""
         return self.__light_attenuation
-
-    @light_attenuation.setter
-    def light_attenuation(self, attenuation_coefficient):
-        """Set light-attenuation coefficient time-series.
-
-        :param attenuation_coefficient: light-attenuation coefficient [m-1]
-        :type attenuation_coefficient: list, tuple, pandas.DataFrame
-        """
-        # TODO: Define setter
 
     @property
     def temperature(self):
         """Temperature time-series in either Celsius or Kelvin."""
         return self.__temperature
 
-    @temperature.setter
-    def temperature(self, water_temperature):
-        """Set temperature time-series.
-
-        :param water_temperature: temperature [degC / K]
-        :type water_temperature: list, tuple, pandas.DataFrame
-        """
-        # TODO: Define setter
-
     @property
     def aragonite(self):
         """Aragonite saturation state."""
         return self.__aragonite
 
-    @aragonite.setter
-    def aragonite(self, arag):
-        """Set aragonite saturation state time-series.
-
-        :param arag: aragonite saturation state [-]
-        :type arag: list, tuple, pandas.DataFrame
-        """
-        # TODO: Define setter
-
     @property
     def storm_category(self):
         """Storm category time-series."""
         return self.__storm_category
-
-    @storm_category.setter
-    def storm_category(self, categories):
-        """Set storm category time-series.
-
-        :param categories: annual storm categories
-        :type categories: list, tuple, pandas.DataFrame
-        """
-        # TODO: Define setter
 
     @property
     def temp_kelvin(self):
@@ -434,36 +389,35 @@ class Environment:
         """
         self.__dates = pd.DataFrame(data=daily_dates, columns='date')
 
-    def set_default_value(self, parameter, value):
-        """Set the time-series data to a default value.
+    def set_parameter_values(self, parameter, value):
+        """Set the time-series data to a time-series, or a default value. In case :param value: is not iterable, the
+        :param parameter: is assumed to be constant over time. In case :param value: is iterable, make sure its length
+        complies with the simulation length.
 
         Included parameters:
-            light       :   incoming light-intensity [umol photons m-2 s-1]
-            LAC         :   light attenuation coefficient [m-1]
-            temperature :   sea surface temperature [K]
-            acidity     :   aragonite saturation state [-]
-            storm       :   storm category, annually [-]
+            light                       :   incoming light-intensity [umol photons m-2 s-1]
+            LAC / light_attenuation     :   light attenuation coefficient [m-1]
+            temperature                 :   sea surface temperature [K]
+            aragonite                   :   aragonite saturation state [-]
+            storm                       :   storm category, annually [-]
 
         :param parameter: parameter to be set
         :param value: default value
 
         :type parameter: str
-        :type value: float
+        :type value: float, list, tuple, numpy.ndarray, pandas.DataFrame
         """
 
         def set_value(val):
             """Function to set default value."""
             return pd.DataFrame(data=val, index=self.dates)
 
-        # TODO: Circumvent if-statements to clean up code
-        if parameter == 'light':
-            self.__light = set_value(value)
-        elif parameter == 'LAC':
-            self.__light_attenuation = set_value(value)
-        elif parameter == 'temperature':
-            self.__temperature = set_value(value)
-        elif parameter == 'acidity':
-            self.__aragonite = set_value(value)
+        if parameter == 'LAC':
+            parameter = 'light_attenuation'
+
+        daily_params = ('light', 'light_attenuation', 'temperature', 'aragonite')
+        if parameter in daily_params:
+            setattr(self, f'__{parameter}', set_value(value))
         elif parameter == 'storm':
             years = set(self.dates.dt.year)
             self.__storm_category = pd.DataFrame(data=value, index=years)
