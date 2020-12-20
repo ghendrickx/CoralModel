@@ -308,6 +308,8 @@ class Constants:
 class Environment:
     # TODO: Make this class robust
 
+    __dates = None
+
     def __init__(self, light=None, light_attenuation=None, temperature=None, acidity=None, storm_category=None):
         self.light = light
         self.light_attenuation = light_attenuation
@@ -340,7 +342,10 @@ class Environment:
 
     @property
     def dates(self):
-        if self.light is not None:
+        """Dates of time-series."""
+        if self.__dates is not None:
+            d = self.__dates
+        elif self.light is not None:
             # TODO: Check column name of light-file
             d = self.light.reset_index().drop('light', axis=1)
         elif self.temp is not None:
@@ -349,6 +354,15 @@ class Environment:
             msg = f'No initial data on dates provided.'
             raise ValueError(msg)
         return pd.to_datetime(d['date'])
+
+    @dates.setter
+    def dates(self, daily_dates):
+        """Set dates manually, ignoring possible dates in environmental time-series.
+
+        :param daily_dates: dates
+        :type daily_dates: list, tuple, pandas.DataFrame
+        """
+        self.__dates = pd.DataFrame(data=daily_dates, columns='date')
 
     def set_default_value(self, parameter, value):
         """Set the time-series data to a default value.
