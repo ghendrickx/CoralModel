@@ -8,7 +8,7 @@ import numpy as np
 
 from coral_model import core
 from coral_model.environment import Processes, Constants, Environment
-from coral_model.hydrodynamics import Hydrodynamics
+from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
 from coral_model.utils import Output
 from utils.config_directory import DirConfig
 
@@ -140,8 +140,47 @@ class Simulation:
             raise ValueError(msg)
         self._output.define_output(
             output_type=output_type, lme=lme, fme=fme, tme=tme, pd=pd, ps=ps, calc=calc, md=md
-
         )
+
+    def input_check(self):
+        """Check input; if all required data is provided."""
+        if self.environment.light is None:
+            msg = f'CoralModel simulation cannot run without data on light conditions.'
+            raise ValueError(msg)
+
+        if self.environment.temperature is None:
+            msg = f'CoralModel simulation cannot run without data on temperature conditions.'
+            raise ValueError(msg)
+
+        if self.environment.light_attenuation is None:
+            self.environment.set_parameter_values('light_attenuation', core.CONSTANTS.Kd0)
+            print(f'Light attenuation coefficient set to default: Kd = {core.CONSTANTS.Kd0} [m-1]')
+
+        if self.environment.aragonite is None:
+            self.environment.set_parameter_values('aragonite', core.CONSTANTS.omegaA0)
+            print(f'Aragonite saturation state set to default: omega_a0 = {core.CONSTANTS.omegaA0} [-]')
+
+        # TODO: if core.PROCESSES.lme: light, light_attenuation
+
+        if core.PROCESSES.fme:
+            if isinstance(self.hydrodynamics.model, BaseHydro):
+                msg = f'Flow micro-environment requires the coupling with a hydrodynamic model, ' \
+                    f'none is specified. See documentation.'
+                raise TypeError(msg)
+
+        if core.PROCESSES.tme:
+            if isinstance(self.hydrodynamics.model, BaseHydro):
+                msg = f'Thermal micro-environment requires the coupling with a hydrodynamic model, ' \
+                    f'none is specified. See documentation.'
+                raise TypeError(msg)
+
+        if core.PROCESSES.pfd:
+            if isinstance(self.hydrodynamics.model, BaseHydro):
+                msg = f'Photosynthetic flow dependency requires the coupling with a hydrodynamic model, ' \
+                    f'none is specified. See documentation.'
+                raise TypeError(msg)
+
+        # TODO: add other dependencies based on Processes if required
 
     def initiate(self, coral, x_range=None, y_range=None, value=None):
         """Initiate the coral distribution. The default coral distribution is a full coral cover over the whole domain.
@@ -161,6 +200,8 @@ class Simulation:
         :return: coral animal initiated
         :rtype: Coral
         """
+        self.input_check()
+
         self.hydrodynamics.initiate()
         core.RESHAPE.space = len(self.hydrodynamics.xy_coordinates)
 
