@@ -306,51 +306,49 @@ class Constants:
 class Environment:
     # TODO: Make this class robust
 
-    __dates = None
-
-    def __init__(self, light=None, light_attenuation=None, temperature=None, aragonite=None, storm_category=None):
-        self.__light = light
-        self.__light_attenuation = light_attenuation
-        self.__temperature = temperature
-        self.__aragonite = aragonite
-        self.__storm_category = storm_category
+    _dates = None
+    _light = None
+    _light_attenuation = None
+    _temperature = None
+    _aragonite = None
+    _storm_category = None
 
     @property
     def light(self):
         """Light-intensity in micro-mol photons per square metre-second."""
-        return self.__light
+        return self._light
 
     @property
     def light_attenuation(self):
         """Light-attenuation coefficient in per metre."""
-        return self.__light_attenuation
+        return self._light_attenuation
 
     @property
     def temperature(self):
         """Temperature time-series in either Celsius or Kelvin."""
-        return self.__temperature
+        return self._temperature
 
     @property
     def aragonite(self):
         """Aragonite saturation state."""
-        return self.__aragonite
+        return self._aragonite
 
     @property
     def storm_category(self):
         """Storm category time-series."""
-        return self.__storm_category
+        return self._storm_category
 
     @property
     def temp_kelvin(self):
         """Temperature in Kelvin."""
-        if all(self.temperature) < 100 and self.temperature is not None:
+        if all(self.temperature.values < 100) and self.temperature is not None:
             return self.temperature + 273.15
         return self.temperature
 
     @property
     def temp_celsius(self):
         """Temperature in Celsius."""
-        if all(self.temperature) > 100 and self.temperature is not None:
+        if all(self.temperature.values > 100) and self.temperature is not None:
             return self.temperature - 273.15
         return self.temperature
 
@@ -366,8 +364,8 @@ class Environment:
     @property
     def dates(self):
         """Dates of time-series."""
-        if self.__dates is not None:
-            d = self.__dates
+        if self._dates is not None:
+            d = self._dates
         elif self.light is not None:
             # TODO: Check column name of light-file
             d = self.light.reset_index().drop('light', axis=1)
@@ -388,7 +386,7 @@ class Environment:
         :type end_date: str, datetime.date
         """
         dates = pd.date_range(start_date, end_date, freq='D')
-        self.__dates = pd.DataFrame({'date': dates})
+        self._dates = pd.DataFrame({'date': dates})
 
     def set_parameter_values(self, parameter, value, pre_date=None):
         """Set the time-series data to a time-series, or a default value. In case :param value: is not iterable, the
@@ -414,12 +412,12 @@ class Environment:
         def set_value(val):
             """Function to set default value."""
             if pre_date is None:
-                return pd.DataFrame(data=val, index=self.dates)
+                return pd.DataFrame({parameter: val}, index=self.dates)
 
             dates = pd.date_range(self.dates[0] - pd.DateOffset(years=pre_date), self.dates[-1], freq='D')
             return pd.DataFrame(data=val, index=dates)
 
-        if self.dates is None:
+        if self._dates is None:
             msg = f'No dates are defined. ' \
                 f'Please, first specify the dates before setting the time-series of {parameter}; ' \
                 f'or make use of the \"from_file\"-method (preferred).'
@@ -430,13 +428,13 @@ class Environment:
 
         daily_params = ('light', 'light_attenuation', 'temperature', 'aragonite')
         if parameter in daily_params:
-            setattr(self, f'__{parameter}', set_value(value))
+            setattr(self, f'_{parameter}', set_value(value))
         elif parameter == 'storm':
             years = set(self.dates.dt.year)
-            self.__storm_category = pd.DataFrame(data=value, index=years)
+            self._storm_category = pd.DataFrame(data=value, index=years)
         else:
             msg = f'Entered parameter ({parameter}) not included. See documentation.'
-            print(msg)
+            raise ValueError(msg)
 
     def from_file(self, parameter, file, folder=None):
         """Read the time-series data from a file.
@@ -474,8 +472,8 @@ class Environment:
             setattr(self, f'__{parameter}', pd.read_csv(f, sep='\t'))
             date2index(getattr(self, f'__{parameter}'))
         elif parameter == 'storm':
-            self.__storm_category = pd.read_csv(f, sep='\t')
-            self.__storm_category.set_index('year', inplace=True)
+            self._storm_category = pd.read_csv(f, sep='\t')
+            self._storm_category.set_index('year', inplace=True)
         else:
             msg = f'Entered parameter ({parameter}) not included. See documentation.'
             print(msg)

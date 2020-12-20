@@ -1,5 +1,7 @@
+import datetime
 import unittest
 
+import numpy
 import pandas
 
 from coral_model.environment import Processes, Constants, Environment
@@ -136,6 +138,100 @@ class TestEnvironment(unittest.TestCase):
         self.assertIsNone(environment.aragonite)
         self.assertIsNone(environment.storm_category)
 
-    def test_dates(self):
+    def test_dates1(self):
         environment = Environment()
         environment.set_dates('2000-01-01', '2001-01-01')
+        self.assertIn('2000-01-01', str(environment.dates[0]))
+        self.assertIn('2001-01-01', str(environment.dates[366]))
+
+    def test_dates2(self):
+        environment = Environment()
+        environment.set_dates(
+            datetime.date(2000, 1, 1), datetime.date(2001, 1, 1)
+        )
+        self.assertIn('2000-01-01', str(environment.dates[0]))
+        self.assertIn('2001-01-01', str(environment.dates[366]))
+
+    def test_set_parameter1(self):
+        environment = Environment()
+        with self.assertRaises(TypeError) as context:
+            environment.set_parameter_values('light', 600)
+        self.assertTrue('No dates are defined.' in str(context.exception))
+
+    def test_set_parameter2(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        with self.assertRaises(ValueError) as context:
+            environment.set_parameter_values('keyword', 1)
+        self.assertTrue('Entered parameter' in str(context.exception))
+
+    def test_set_parameter3(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        environment.set_parameter_values('light', 600)
+        for d, date in enumerate(environment.dates):
+            self.assertEqual(date, environment.light.index[d])
+
+    def test_set_parameter4(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        environment.set_parameter_values('light', 600)
+        for light in environment.light.values:
+            self.assertEqual(light, 600)
+
+    def test_set_parameter5(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        light_list = [300 * (1 + numpy.cos(.1 * t)) for t in range(len(environment.dates))]
+        environment.set_parameter_values('light', light_list)
+        for i, light in enumerate(environment.light.values):
+            self.assertEqual(light, light_list[i])
+
+    def test_set_parameter6(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        environment.set_parameter_values('LAC', .1)
+        for lac in environment.light_attenuation.values:
+            self.assertEqual(lac, .1)
+
+    def test_set_parameter7(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        environment.set_parameter_values('temperature', 300)
+        for temp in environment.temperature.values:
+            self.assertEqual(temp, 300)
+
+    def test_set_parameter8(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        environment.set_parameter_values('temperature', 300)
+        for temp in environment.temp_kelvin.values:
+            self.assertEqual(float(temp), 300)
+
+    def test_set_parameter9(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        environment.set_parameter_values('temperature', 300)
+        for temp in environment.temp_celsius.values:
+            self.assertEqual(float(temp), 300 - 273.15)
+
+    def test_set_parameter10(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        environment.set_parameter_values('temperature', 30)
+        for temp in environment.temp_kelvin.values:
+            self.assertEqual(float(temp), 30 + 273.15)
+
+    def test_set_parameter11(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        environment.set_parameter_values('temperature', 30)
+        for temp in environment.temp_celsius.values:
+            self.assertEqual(float(temp), 30)
+
+    def test_set_parameter12(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        environment.set_parameter_values('aragonite', 5)
+        for arag in environment.aragonite.values:
+            self.assertEqual(float(arag), 5)
