@@ -15,6 +15,7 @@ class DirConfig:
         :param home_dir: home directory
         :type home_dir: list, tuple, str
         """
+        # TODO: allow home_dir to be of type DirConfig
         self.__home = home_dir
 
     def __repr__(self):
@@ -72,8 +73,8 @@ class DirConfig:
         :return: list-based directory
         :rtype: list
         """
-        if isinstance(folder, str):
-            return self._str2list(folder)
+        if isinstance(folder, (str, DirConfig)):
+            return self._str2list(str(folder))
 
         elif isinstance(folder, (list, tuple)):
             list_dir = []

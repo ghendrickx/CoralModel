@@ -411,7 +411,7 @@ class Environment:
         def set_value(val):
             """Function to set default value."""
             return pd.DataFrame(data=val, index=self.dates)
-        
+
         if self.dates is None:
             msg = f'No dates are defined. ' \
                 f'Please, first specify the dates before setting the time-series of {parameter}; ' \
@@ -435,11 +435,11 @@ class Environment:
         """Read the time-series data from a file.
 
         Included parameters:
-            light       :   incoming light-intensity [umol photons m-2 s-1]
-            LAC         :   light attenuation coefficient [m-1]
-            temperature :   sea surface temperature [K]
-            acidity     :   aragonite saturation state [-]
-            storm       :   storm category, annually [-]
+            light                       :   incoming light-intensity [umol photons m-2 s-1]
+            LAC / light_attenuation     :   light attenuation coefficient [m-1]
+            temperature                 :   sea surface temperature [K]
+            aragonite                   :   aragonite saturation state [-]
+            storm                       :   storm category, annually [-]
 
         :param parameter: parameter to be read from file
         :param file: file name, incl. file extension
@@ -457,26 +457,15 @@ class Environment:
             time_series['date'] = pd.to_datetime(time_series['date'])
             time_series.set_index('date', inplace=True)
 
-        if folder is None:
-            f = file
-        elif isinstance(folder, DirConfig):
-            f = folder.config_dir(file)
-        else:
-            f = os.path.join(folder, file)
+        f = DirConfig(folder).config_dir(file)
 
-        # TODO: Circumvent if-statements to clean up code
-        if parameter == 'light':
-            self.__light = pd.read_csv(f, sep='\t')
-            date2index(self.__light)
-        elif parameter == 'LAC':
-            self.__light_attenuation = pd.read_csv(f, sep='\t')
-            date2index(self.__light_attenuation)
-        elif parameter == 'temperature':
-            self.__temperature = pd.read_csv(f, sep='\t')
-            date2index(self.__temperature)
-        elif parameter == 'acidity':
-            self.__aragonite = pd.read_csv(f, sep='\t')
-            date2index(self.__aragonite)
+        if parameter == 'LAC':
+            parameter = 'light_attenuation'
+
+        daily_params = ('light', 'light_attenuation', 'temperature', 'aragonite')
+        if parameter in daily_params:
+            setattr(self, f'__{parameter}', pd.read_csv(f, sep='\t'))
+            date2index(getattr(self, f'__{parameter}'))
         elif parameter == 'storm':
             self.__storm_category = pd.read_csv(f, sep='\t')
             self.__storm_category.set_index('year', inplace=True)
