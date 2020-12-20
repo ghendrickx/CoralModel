@@ -414,8 +414,8 @@ class Environment:
             if pre_date is None:
                 return pd.DataFrame({parameter: val}, index=self.dates)
 
-            dates = pd.date_range(self.dates[0] - pd.DateOffset(years=pre_date), self.dates[-1], freq='D')
-            return pd.DataFrame(data=val, index=dates)
+            dates = pd.date_range(self.dates.iloc[0] - pd.DateOffset(years=pre_date), self.dates.iloc[-1], freq='D')
+            return pd.DataFrame({parameter: val}, index=dates)
 
         if self._dates is None:
             msg = f'No dates are defined. ' \

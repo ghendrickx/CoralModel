@@ -233,5 +233,11 @@ class TestEnvironment(unittest.TestCase):
         environment = Environment()
         environment.set_dates('2000-01-01', '2001-01-01')
         environment.set_parameter_values('aragonite', 5)
-        for arag in environment.aragonite.values:
-            self.assertEqual(float(arag), 5)
+        for aragonite in environment.aragonite.values:
+            self.assertEqual(float(aragonite), 5)
+
+    def test_set_parameter13(self):
+        environment = Environment()
+        environment.set_dates('2000-01-01', '2001-01-01')
+        environment.set_parameter_values('temperature', 300, pre_date=5)
+        self.assertIn('1995-01-01', str(environment.temperature.index[0]))
