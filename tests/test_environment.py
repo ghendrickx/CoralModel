@@ -241,3 +241,9 @@ class TestEnvironment(unittest.TestCase):
         environment.set_dates('2000-01-01', '2001-01-01')
         environment.set_parameter_values('temperature', 300, pre_date=5)
         self.assertIn('1995-01-01', str(environment.temperature.index[0]))
+
+    def test_file_errors(self):
+        environment = Environment()
+        with self.assertRaises(ValueError) as context:
+            environment.from_file('keyword', 'file')
+        self.assertTrue('Entered parameter' in str(context.exception))

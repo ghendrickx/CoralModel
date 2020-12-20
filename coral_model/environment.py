@@ -420,7 +420,7 @@ class Environment:
         if self._dates is None:
             msg = f'No dates are defined. ' \
                 f'Please, first specify the dates before setting the time-series of {parameter}; ' \
-                f'or make use of the \"from_file\"-method (preferred).'
+                f'or make use of the \"from_file\"-method.'
             raise TypeError(msg)
 
         if parameter == 'LAC':
@@ -476,4 +476,4 @@ class Environment:
             self._storm_category.set_index('year', inplace=True)
         else:
             msg = f'Entered parameter ({parameter}) not included. See documentation.'
-            print(msg)
+            raise ValueError(msg)
