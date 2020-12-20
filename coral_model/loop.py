@@ -6,23 +6,11 @@ coral_model - loop
 
 import numpy as np
 
-from coral_model import core, utils
+from coral_model import core
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics
 from coral_model.utils import Output
 from utils.config_directory import DirConfig
-
-# spacetime = (4, 10)
-# core.RESHAPE = utils.DataReshape(spacetime)
-#
-# I0 = np.ones(10)
-# Kd = np.ones(10)
-# h = np.ones(4)
-#
-#
-# lm_env = core.Light(I0, Kd, h)
-#
-# print(lm_env.I0.shape)
 
 
 class Simulation:
@@ -31,30 +19,25 @@ class Simulation:
     __working_dir = DirConfig()
     __input_dir = None
 
-    __output = None
+    _output = None
 
-    def __init__(self, environment, processes, constants, hydrodynamics=None):
+    def __init__(self, environment, processes=None, constants=None, hydrodynamics=None):
         """CoralModel initiation.
 
         :param environment: environmental conditions
-        :param processes: included processes
-        :param constants: simulation constants
+        :param processes: included processes, defaults to None
+        :param constants: simulation constants, defaults to None
         :param hydrodynamics: hydrodynamic model, defaults to None
 
         :type environment: Environment
-        :type processes: Processes
-        :type constants: Constants
+        :type processes: None, Processes, optional
+        :type constants: None, Constants, optional
         :type hydrodynamics: None, str, Hydrodynamics, optional
         """
         self.environment = environment
-        core.PROCESSES = processes
-        core.CONSTANTS = constants
+        core.PROCESSES = Processes() if processes is None else processes
+        core.CONSTANTS = Constants(core.PROCESSES) if constants is None else constants
         self.hydrodynamics = hydrodynamics if isinstance(hydrodynamics, Hydrodynamics) else Hydrodynamics(hydrodynamics)
-
-        core.RESHAPE.space = len(self.hydrodynamics.xy_coordinates)
-
-        self.__output = Output(self.hydrodynamics.xy_coordinates, environment.dates[0])
-        [self.define_output(output_type) for output_type in ('map', 'his')]
 
     def set_coordinates(self, xy_coordinates):
         """Set (x,y)-coordinates if nt provided by hydrodynamic model.
@@ -155,8 +138,10 @@ class Simulation:
         if output_type not in types:
             msg = f'{output_type} not in {types}.'
             raise ValueError(msg)
+        self._output.define_output(
+            output_type=output_type, lme=lme, fme=fme, tme=tme, pd=pd, ps=ps, calc=calc, md=md
 
-        self.__output.define_output(**locals())
+        )
 
     def initiate(self, coral, x_range=None, y_range=None, value=None):
         """Initiate the coral distribution. The default coral distribution is a full coral cover over the whole domain.
@@ -177,6 +162,11 @@ class Simulation:
         :rtype: Coral
         """
         self.hydrodynamics.initiate()
+        core.RESHAPE.space = len(self.hydrodynamics.xy_coordinates)
+
+        self._output = Output(self.hydrodynamics.xy_coordinates, self.environment.dates.iloc[0])
+        # TODO: line below has to be removed when testing phase is over!!!
+        [self.define_output(output_type) for output_type in ('map', 'his')]
 
         xy = self.hydrodynamics.xy_coordinates
 

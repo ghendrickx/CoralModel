@@ -256,7 +256,7 @@ class Output:
         self.space = len(xy_coordinates)
 
         self.first_date = first_date
-        self.first_year = first_date.dt.year
+        self.first_year = first_date.year
 
     def define_output(self, output_type, lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
         """Define output dictionary.
