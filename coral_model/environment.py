@@ -411,6 +411,12 @@ class Environment:
         def set_value(val):
             """Function to set default value."""
             return pd.DataFrame(data=val, index=self.dates)
+        
+        if self.dates is None:
+            msg = f'No dates are defined. ' \
+                f'Please, first specify the dates before setting the time-series of {parameter}; ' \
+                f'or make use of the \"from_file\"-method (preferred).'
+            raise TypeError(msg)
 
         if parameter == 'LAC':
             parameter = 'light_attenuation'
