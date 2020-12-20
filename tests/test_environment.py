@@ -1,6 +1,6 @@
 import unittest
 
-from coral_model.environment import Processes, Constants
+from coral_model.environment import Processes, Constants, Environment
 
 
 class TestProcesses(unittest.TestCase):
@@ -122,3 +122,14 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(constants.no_larvae, 1e6)
         self.assertEqual(constants.prob_settle, 1e-4)
         self.assertEqual(constants.d_larvae, 1e-3)
+
+
+class TestEnvironment(unittest.TestCase):
+
+    def test_default(self):
+        environment = Environment()
+        self.assertIsNone(environment.light)
+        self.assertIsNone(environment.light_attenuation)
+        self.assertIsNone(environment.temperature)
+        self.assertIsNone(environment.aragonite)
+        self.assertIsNone(environment.storm_category)

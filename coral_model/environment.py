@@ -310,26 +310,96 @@ class Environment:
 
     __dates = None
 
-    def __init__(self, light=None, light_attenuation=None, temperature=None, acidity=None, storm_category=None):
-        self.light = light
-        self.light_attenuation = light_attenuation
-        self.temp = temperature
-        self.acid = acidity
-        self.storm_category = storm_category
+    def __init__(self, light=None, light_attenuation=None, temperature=None, aragonite=None, storm_category=None):
+        self.__light = light
+        self.__light_attenuation = light_attenuation
+        self.__temperature = temperature
+        self.__aragonite = aragonite
+        self.__storm_category = storm_category
+
+    @property
+    def light(self):
+        """Light-intensity in micro-mol photons per square metre-second."""
+        return self.__light
+
+    @light.setter
+    def light(self, light_intensity):
+        """Set light-intensity time-series.
+
+        :param light_intensity: light-intensity time-series [umol photons m-2 s-1]
+        :type light_intensity: list, tuple, pandas.DataFrame
+        """
+        # TODO: Define setter
+
+    @property
+    def light_attenuation(self):
+        """Light-attenuation coefficient in per metre."""
+        return self.__light_attenuation
+
+    @light_attenuation.setter
+    def light_attenuation(self, attenuation_coefficient):
+        """Set light-attenuation coefficient time-series.
+
+        :param attenuation_coefficient: light-attenuation coefficient [m-1]
+        :type attenuation_coefficient: list, tuple, pandas.DataFrame
+        """
+        # TODO: Define setter
+
+    @property
+    def temperature(self):
+        """Temperature time-series in either Celsius or Kelvin."""
+        return self.__temperature
+
+    @temperature.setter
+    def temperature(self, water_temperature):
+        """Set temperature time-series.
+
+        :param water_temperature: temperature [degC / K]
+        :type water_temperature: list, tuple, pandas.DataFrame
+        """
+        # TODO: Define setter
+
+    @property
+    def aragonite(self):
+        """Aragonite saturation state."""
+        return self.__aragonite
+
+    @aragonite.setter
+    def aragonite(self, arag):
+        """Set aragonite saturation state time-series.
+
+        :param arag: aragonite saturation state [-]
+        :type arag: list, tuple, pandas.DataFrame
+        """
+        # TODO: Define setter
+
+    @property
+    def storm_category(self):
+        """Storm category time-series."""
+        return self.__storm_category
+
+    @storm_category.setter
+    def storm_category(self, categories):
+        """Set storm category time-series.
+
+        :param categories: annual storm categories
+        :type categories: list, tuple, pandas.DataFrame
+        """
+        # TODO: Define setter
 
     @property
     def temp_kelvin(self):
         """Temperature in Kelvin."""
-        if all(self.temp) < 100.:
-            return self.temp + 273.15
-        return self.temp
+        if all(self.temperature) < 100 and self.temperature is not None:
+            return self.temperature + 273.15
+        return self.temperature
 
     @property
     def temp_celsius(self):
         """Temperature in Celsius."""
-        if all(self.temp) > 100.:
-            return self.temp - 273.15
-        return self.temp
+        if all(self.temperature) > 100 and self.temperature is not None:
+            return self.temperature - 273.15
+        return self.temperature
 
     @property
     def temp_mmm(self):
@@ -348,8 +418,8 @@ class Environment:
         elif self.light is not None:
             # TODO: Check column name of light-file
             d = self.light.reset_index().drop('light', axis=1)
-        elif self.temp is not None:
-            d = self.temp.reset_index().drop('sst', axis=1)
+        elif self.temperature is not None:
+            d = self.temperature.reset_index().drop('sst', axis=1)
         else:
             msg = f'No initial data on dates provided.'
             raise ValueError(msg)
@@ -387,16 +457,16 @@ class Environment:
 
         # TODO: Circumvent if-statements to clean up code
         if parameter == 'light':
-            self.light = set_value(value)
+            self.__light = set_value(value)
         elif parameter == 'LAC':
-            self.light_attenuation = set_value(value)
+            self.__light_attenuation = set_value(value)
         elif parameter == 'temperature':
-            self.temp = set_value(value)
+            self.__temperature = set_value(value)
         elif parameter == 'acidity':
-            self.acid = set_value(value)
+            self.__aragonite = set_value(value)
         elif parameter == 'storm':
             years = set(self.dates.dt.year)
-            self.storm_category = pd.DataFrame(data=value, index=years)
+            self.__storm_category = pd.DataFrame(data=value, index=years)
         else:
             msg = f'Entered parameter ({parameter}) not included. See documentation.'
             print(msg)
@@ -436,20 +506,20 @@ class Environment:
 
         # TODO: Circumvent if-statements to clean up code
         if parameter == 'light':
-            self.light = pd.read_csv(f, sep='\t')
-            date2index(self.light)
+            self.__light = pd.read_csv(f, sep='\t')
+            date2index(self.__light)
         elif parameter == 'LAC':
-            self.light_attenuation = pd.read_csv(f, sep='\t')
-            date2index(self.light_attenuation)
+            self.__light_attenuation = pd.read_csv(f, sep='\t')
+            date2index(self.__light_attenuation)
         elif parameter == 'temperature':
-            self.temp = pd.read_csv(f, sep='\t')
-            date2index(self.temp)
+            self.__temperature = pd.read_csv(f, sep='\t')
+            date2index(self.__temperature)
         elif parameter == 'acidity':
-            self.acid = pd.read_csv(f, sep='\t')
-            date2index(self.acid)
+            self.__aragonite = pd.read_csv(f, sep='\t')
+            date2index(self.__aragonite)
         elif parameter == 'storm':
-            self.storm_category = pd.read_csv(f, sep='\t')
-            self.storm_category.set_index('year', inplace=True)
+            self.__storm_category = pd.read_csv(f, sep='\t')
+            self.__storm_category.set_index('year', inplace=True)
         else:
             msg = f'Entered parameter ({parameter}) not included. See documentation.'
             print(msg)

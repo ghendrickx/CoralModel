@@ -513,7 +513,7 @@ class Output:
             if parameters['fme']:
                 self.__map_data['ucm'][-1, :] = coral.ucm
             if parameters['tme']:
-                self.__map_data['Tc'][-1, :] = coral.temp[:, -1]
+                self.__map_data['Tc'][-1, :] = coral.temperature[:, -1]
                 self.__map_data['Tlo'][-1, :] = coral.Tlo if len(coral.Tlo) > 1 else coral.Tlo * np.ones(self.space)
                 self.__map_data['Thi'][-1, :] = coral.Thi if len(coral.Thi) > 1 else coral.Thi * np.ones(self.space)
             if parameters['pd']:
@@ -684,7 +684,7 @@ class Output:
             if parameters['fme']:
                 self.__his_data['ucm'][ti, :] = np.tile(coral.ucm, (len(y_dates), 1))[:, self.idx_stations]
             if parameters['tme']:
-                self.__his_data['Tc'][ti, :] = coral.temp[self.idx_stations, :].transpose()
+                self.__his_data['Tc'][ti, :] = coral.temperature[self.idx_stations, :].transpose()
                 if len(coral.Tlo) > 1 and len(coral.Thi) > 1:
                     self.__his_data['Tlo'][ti, :] = np.tile(coral.Tlo, (len(y_dates), 1))[:, self.idx_stations]
                     self.__his_data['Thi'][ti, :] = np.tile(coral.Thi, (len(y_dates), 1))[:, self.idx_stations]

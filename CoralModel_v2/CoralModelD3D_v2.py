@@ -1194,9 +1194,9 @@ class Temperature():
         if processes.tme:
             coral.dTc = ((deltat * constants.ap) /
                          (constants.k * constants.K0)) * coral.light
-            coral.temp = self.T + coral.dTc
+            coral.temperature = self.T + coral.dTc
         else:
-            coral.temp = self.T
+            coral.temperature = self.T
 
 class Photosynthesis():
     
@@ -1313,19 +1313,19 @@ class Photosynthesis():
                 self.spec = 4e-4 * np.exp(-.33 * (self.DT - 10.))
 
             spec(self)
-            self.f1 = - ((coral.temp - coral.Tlo) *
-                         ((coral.temp - coral.Tlo) ** 2 - self.DT ** 2))
+            self.f1 = - ((coral.temperature - coral.Tlo) *
+                         ((coral.temperature - coral.Tlo) ** 2 - self.DT ** 2))
             Tcr = coral.Tlo - (1. / np.sqrt(3.)) * self.DT
             try:
                 if processes.tme:
-                    self.f1[coral.temp <= Tcr] = - (
-                        (2. / (3. * np.sqrt(3.))) *
-                        self.DT[coral.temp <= Tcr] ** 3)
+                    self.f1[coral.temperature <= Tcr] = - (
+                            (2. / (3. * np.sqrt(3.))) *
+                            self.DT[coral.temperature <= Tcr] ** 3)
                 else:
-                    self.f1[coral.temp <= Tcr] = -(
+                    self.f1[coral.temperature <= Tcr] = -(
                         (2. / (3. * np.sqrt(3.))) * self.DT ** 3)
             except TypeError:
-                if coral.temp <= Tcr:
+                if coral.temperature <= Tcr:
                     self.f1 = (2. / (3. * np.sqrt(3.))) * self.DT ** 3
             self.f1 *= self.spec
         
@@ -1830,7 +1830,7 @@ def outputMap(coral, mapLME, mapFME, mapTME, mapPD, mapPS, mapC, mapMD,
                 Uset[:, :] = np.array([np.zeros(ndxi), coral.ucm])
             if mapTME:
                 Tset[:, :] = np.array(
-                    [np.zeros(ndxi), coral.temp.mean(axis=1)])
+                    [np.zeros(ndxi), coral.temperature.mean(axis=1)])
                 if processes.tme:
                     Tloset[:, :] = np.array([np.zeros(ndxi), coral.Tlo])
                     Thiset[:, :] = np.array([np.zeros(ndxi), coral.Thi])
@@ -1871,7 +1871,7 @@ def outputMap(coral, mapLME, mapFME, mapTME, mapPD, mapPS, mapC, mapMD,
             if mapFME:
                 mset['ucm'][-1, :] = coral.ucm
             if mapTME:
-                mset['Tc'][-1, :] = coral.temp[:, -1]
+                mset['Tc'][-1, :] = coral.temperature[:, -1]
                 if processes.tme:
                     mset['Tlo'][-1, :] = coral.Tlo
                     mset['Thi'][-1, :] = coral.Thi
@@ -2069,7 +2069,7 @@ def outputHis(coral, hisLME, hisFME, hisTME, hisPD, hisPS, hisC, hisMD,
             if hisFME:
                 Uset[:, :] = np.tile(coral.ucm, (len(idates), 1))[:, idx]
             if hisTME:
-                Tset[:, :] = coral.temp[idx, :].transpose()
+                Tset[:, :] = coral.temperature[idx, :].transpose()
                 if processes.tme:
                     Tloset[:, :] = np.tile(
                         coral.Tlo, (len(idates), 1))[:, idx]
@@ -2117,7 +2117,7 @@ def outputHis(coral, hisLME, hisFME, hisTME, hisPD, hisPS, hisC, hisMD,
                 hset['ucm'][t, :] = np.tile(
                     coral.ucm, (len(idates), 1))[:, idx]
             if hisTME:
-                hset['Tc'][t, :] = coral.temp[idx, :].transpose()
+                hset['Tc'][t, :] = coral.temperature[idx, :].transpose()
                 if processes.tme:
                     hset['Tlo'][t, :] = np.tile(
                             coral.Tlo, (len(idates), 1))[:, idx]
