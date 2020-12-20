@@ -389,7 +389,7 @@ class Environment:
         """
         self.__dates = pd.DataFrame(data=daily_dates, columns='date')
 
-    def set_parameter_values(self, parameter, value):
+    def set_parameter_values(self, parameter, value, pre_date=None):
         """Set the time-series data to a time-series, or a default value. In case :param value: is not iterable, the
         :param parameter: is assumed to be constant over time. In case :param value: is iterable, make sure its length
         complies with the simulation length.
@@ -403,14 +403,20 @@ class Environment:
 
         :param parameter: parameter to be set
         :param value: default value
+        :param pre_date: time-series start before simulation dates [yrs]
 
         :type parameter: str
         :type value: float, list, tuple, numpy.ndarray, pandas.DataFrame
+        :type pre_date: None, int, optional
         """
 
         def set_value(val):
             """Function to set default value."""
-            return pd.DataFrame(data=val, index=self.dates)
+            if pre_date is None:
+                return pd.DataFrame(data=val, index=self.dates)
+            
+            dates = pd.date_range(self.dates[0] - pd.DateOffset(years=pre_date), self.dates[-1], freq='D')
+            return pd.DataFrame(data=val, index=dates)
 
         if self.dates is None:
             msg = f'No dates are defined. ' \
@@ -447,7 +453,7 @@ class Environment:
 
         :type parameter: str
         :type file: str
-        :type folder: str, DirConfig, optional
+        :type folder: str, DirConfig, list, tuple, optional
         """
         # TODO: Include functionality to check file's existence
         #  > certain files are necessary: light, temperature
