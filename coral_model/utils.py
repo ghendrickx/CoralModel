@@ -130,7 +130,7 @@ class DataReshape(SpaceTime):
         if dimension == 'space':
             return np.tile(variable, (self.time, 1)).transpose()
         elif dimension == 'time':
-            return np.tile(variable, (self.space, 1))
+            return np.tile(variable, (self.space, 1)).transpose()
 
     def dimension_value(self, variable, dimension):
         """Check consistency between variable's dimensions and the defined spacetime dimensions.
