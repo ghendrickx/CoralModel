@@ -44,6 +44,7 @@ class TestSpaceTime(unittest.TestCase):
         self.assertIsInstance(SpaceTime([1, 1]).spacetime, tuple)
 
 
+# noinspection PyTypeChecker
 class TestDataReshape(unittest.TestCase):
 
     def test_default_spacetime(self):
@@ -84,13 +85,37 @@ class TestDataReshape(unittest.TestCase):
         self.assertIsInstance(DataReshape.variable2array((1, 1)), numpy.ndarray)
         self.assertIsInstance(DataReshape.variable2array([1, 1]), numpy.ndarray)
 
-    def test_variable2matrix_shape_space(self):
+    def test_variable2matrix_shape_space1(self):
+        reshape = DataReshape((4, 1))
+        var = [0, 1, 2, 4]
+        matrix = reshape.variable2matrix(var, 'space')
+        self.assertEqual(matrix.shape, (4, 1))
+
+    def test_variable2matrix_shape_space2(self):
+        reshape = DataReshape((1, 5))
+        var = 0
+        matrix = reshape.variable2matrix(var, 'space')
+        self.assertEqual(matrix.shape, (1, 5))
+
+    def test_variable2matrix_shape_space3(self):
         reshape = DataReshape((4, 5))
         var = [0, 1, 2, 4]
         matrix = reshape.variable2matrix(var, 'space')
         self.assertEqual(matrix.shape, (4, 5))
 
-    def test_variable2matrix_shape_time(self):
+    def test_variable2matrix_shape_time1(self):
+        reshape = DataReshape((4, 1))
+        var = 0
+        matrix = reshape.variable2matrix(var, 'time')
+        self.assertEqual(matrix.shape, (4, 1))
+
+    def test_variable2matrix_shape_time2(self):
+        reshape = DataReshape((1, 5))
+        var = [0, 1, 2, 4, 8]
+        matrix = reshape.variable2matrix(var, 'time')
+        self.assertEqual(matrix.shape, (1, 5))
+
+    def test_variable2matrix_shape_time3(self):
         reshape = DataReshape((4, 5))
         var = [0, 1, 2, 4, 8]
         matrix = reshape.variable2matrix(var, 'time')
@@ -100,17 +125,25 @@ class TestDataReshape(unittest.TestCase):
         reshape = DataReshape((4, 5))
         var = [0, 1, 2, 4]
         matrix = reshape.variable2matrix(var, 'space')
-        for i, row in enumerate(matrix):
-            for col in row:
-                self.assertEqual(col, var[i])
+        answer = numpy.array([
+            [0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1],
+            [2, 2, 2, 2, 2],
+            [4, 4, 4, 4, 4]
+        ])
+        self.assertListEqual(matrix.tolist(), answer.tolist())
 
     def test_variable2matrix_value_time(self):
         reshape = DataReshape((4, 5))
         var = [0, 1, 2, 4, 8]
         matrix = reshape.variable2matrix(var, 'time')
-        for row in matrix:
-            for i, col in enumerate(row):
-                self.assertEqual(col, var[i])
+        answer = numpy.array([
+            [0, 1, 2, 4, 8],
+            [0, 1, 2, 4, 8],
+            [0, 1, 2, 4, 8],
+            [0, 1, 2, 4, 8]
+        ])
+        self.assertListEqual(matrix.tolist(), answer.tolist())
 
     def test_raise_error_space(self):
         reshape = DataReshape((4, 5))
