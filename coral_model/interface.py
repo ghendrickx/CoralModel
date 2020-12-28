@@ -23,6 +23,7 @@ run.set_coordinates((0, 0))
 run.set_water_depth(10)
 
 run.define_output('his', fme=False)
+run.output.set_idx_stations((0, 0))
 
 coral = Coral(.1, .1, .05, .05, .2)
 run.initiate(coral)

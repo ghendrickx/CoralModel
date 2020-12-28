@@ -21,7 +21,7 @@ class Simulation:
     __working_dir = DirConfig()
     __input_dir = None
 
-    _output = None
+    output = None
 
     def __init__(self, environment, processes=None, constants=None, hydrodynamics=None):
         """CoralModel initiation.
@@ -141,9 +141,9 @@ class Simulation:
             msg = f'{output_type} not in {types}.'
             raise ValueError(msg)
 
-        if not isinstance(self._output, Output):
-            self._output = Output(self.hydrodynamics.xy_coordinates, self.environment.dates[0])
-        self._output.define_output(
+        if not isinstance(self.output, Output):
+            self.output = Output(self.hydrodynamics.xy_coordinates, self.environment.dates[0])
+        self.output.define_output(
             output_type=output_type, lme=lme, fme=fme, tme=tme, pd=pd, ps=ps, calc=calc, md=md
         )
 
@@ -210,7 +210,7 @@ class Simulation:
         self.hydrodynamics.initiate()
         core.RESHAPE.space = len(self.hydrodynamics.xy_coordinates)
 
-        self._output = Output(self.hydrodynamics.xy_coordinates, self.environment.dates.iloc[0])
+        self.output = Output(self.hydrodynamics.xy_coordinates, self.environment.dates.iloc[0])
         # TODO: line below has to be removed when testing phase is over!!!
         [self.define_output(output_type) for output_type in ('map', 'his')]
 
@@ -318,6 +318,13 @@ class Simulation:
                 # recruitment
                 rec = Recruitment()
                 rec.update(coral)
+
+                # # export results
+                progress.set_postfix(inner_loop='export results')
+                # map-file
+                self.output.update_map(coral, years[i])
+                # his-file
+                self.output.update_his(coral, self.environment.dates[self.environment.dates.dt.year == years[i]])
 
     def finalise(self):
         """Finalise simulation."""
