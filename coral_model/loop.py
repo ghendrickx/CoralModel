@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 
 from coral_model import core
-from coral_model.core import Light, Flow, Temperature, Photosynthesis, PopulationStates
+from coral_model.core import Light, Flow, Temperature, Photosynthesis, PopulationStates, Calcification
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
 from coral_model.utils import Output, DirConfig, time_series_year
@@ -285,6 +285,11 @@ class Simulation:
                 # population states
                 ps = PopulationStates()
                 ps.pop_states_t(coral)
+                # calcification
+                cr = Calcification()
+                cr.calcification_rate(
+                    coral, time_series_year(self.environment.aragonite, years[i])
+                )
 
     def finalise(self):
         """Finalise simulation."""
