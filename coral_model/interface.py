@@ -3,4 +3,19 @@ coral_model v3 - interface
 
 @author: Gijs G. Hendrickx
 """
+from coral_model.core import Coral
+from coral_model.environment import Environment, Processes, Constants
+from coral_model.loop import Simulation
 
+run = Simulation(Environment(), Processes(), Constants(Processes()))
+run.set_coordinates((0, 0))
+run.set_water_depth(10)
+
+run.define_output('his', fme=False)
+
+coral = Coral(.1, .1, .05, .05, .2)
+run.initiate(coral)
+
+run.exec(coral, 10)
+
+run.finalise()
