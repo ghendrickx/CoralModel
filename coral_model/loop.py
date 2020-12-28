@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 
 from coral_model import core
-from coral_model.core import Light, Flow
+from coral_model.core import Light, Flow, Temperature
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
 from coral_model.utils import Output, DirConfig, time_series_year
@@ -270,6 +270,9 @@ class Simulation:
                 fme = Flow(current_vel, wave_vel, self.hydrodynamics.water_depth, wave_per)
                 fme.velocities(coral, in_canopy=core.PROCESSES.fme)
                 fme.thermal_boundary_layer(coral)
+                # thermal micro-environment
+                tme = Temperature(time_series_year(self.environment.temp_kelvin, years[i]))
+                tme.coral_temperature(coral)
 
     def finalise(self):
         """Finalise simulation."""
