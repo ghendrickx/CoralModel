@@ -138,9 +138,9 @@ class Hydrodynamics:
         self.input_check()
         self.__model.initiate()
 
-    def update(self, mt_per_vt=None):
+    def update(self, storm=False):
         """Update hydrodynamic model."""
-        self.__model.update(mt_per_vt=mt_per_vt)
+        self.__model.update(storm=storm)
 
     def finalise(self):
         """Finalise hydrodynamic model."""
@@ -150,14 +150,22 @@ class Hydrodynamics:
 class BaseHydro:
     """Basic, empty hydrodynamic model."""
 
+    update_interval = None
+    update_interval_storm = None
+
+    @classmethod
+    def __str__(cls):
+        """String-representation of BaseHydro."""
+        return cls.__name__
+
     def initiate(self):
         """Initiate hydrodynamic model."""
 
-    def update(self, mt_per_vt=None):
+    def update(self, storm=False):
         """Update hydrodynamic model.
 
-        :param mt_per_vt: model time-steps per vegetation time-step
-        :type mt_per_vt: int
+        :param storm: storm conditions, defaults to False
+        :type storm: bool, optional
         """
 
     def finalise(self):
@@ -173,7 +181,7 @@ class Reef0D(BaseHydro):
     def initiate(self):
         pass
 
-    def update(self, mt_per_vt=None):
+    def update(self, storm=False):
         pass
 
     def finalise(self):
@@ -214,6 +222,7 @@ class Reef1D(BaseHydro):
         self._density = None
 
     def __str__(self):
+        # TODO: Place this explanation of the model settings under another method
         msg = (
             f'One-dimensional simple hydrodynamic model to simulate the '
             f'hydrodynamics on a (coral) reef with the following settings:'
@@ -235,7 +244,7 @@ class Reef1D(BaseHydro):
     def initiate(self):
         pass
 
-    def update(self, mt_per_vt=None):
+    def update(self, storm=False):
         pass
 
     def finalise(self):
@@ -298,7 +307,7 @@ class Reef1D(BaseHydro):
         self._density = canopy_density
 
     @staticmethod
-    def dispersion(self, wave_length, wave_period, depth, grav_acc):
+    def dispersion(wave_length, wave_period, depth, grav_acc):
         """Dispersion relation to determine the wave length based on the
         wave period.
         """
@@ -317,7 +326,7 @@ class Reef1D(BaseHydro):
         return L
 
     @property
-    def wave_frequnecy(self):
+    def wave_frequency(self):
         return 2 * np.pi / self.per_wav
 
     @property
@@ -351,9 +360,10 @@ class Delft3D(BaseHydro):
         self.environment()
         self.initiate()
         
-        self.timestep = None
+        self.time_step = None
     
     def __str__(self):
+        # TODO: Place this explanation of the model settings under another method
         if self.config:
             incl = f'DFlow- and DWaves-modules'
             files = f'\n\tDFlow file         : {self.mdu}'\
@@ -448,11 +458,11 @@ class Delft3D(BaseHydro):
         """Initialize the working model."""
         self.model.initialize()
         
-    def update(self, mt_per_vt=None):
+    def update(self, storm=False):
         """Update the working model."""
-        self.timestep = mt_per_vt
+        self.time_step = self.update_interval_storm if storm else self.update_interval
         self.reset_counters()
-        self.model.update(self.timestep)
+        self.model.update(self.time_step)
     
     def finalise(self):
         """Finalize the working model."""
@@ -500,7 +510,7 @@ class Delft3D(BaseHydro):
     def vel_curr_mn(self):
         """Mean current velocity [ms-1] as part of `space`."""      
         vel_sum = self.model_fm.get_var('is_sumvalsnd')[range(self.space), 1]
-        return vel_sum / self.timestep
+        return vel_sum / self.time_step
     
     @property
     def vel_curr_mx(self):
@@ -516,7 +526,7 @@ class Delft3D(BaseHydro):
     def depth(self):
         """Water depth [m] as part of `space`"""
         dep_sum = self.model_fm.get_var('is_sumvalsnd')[range(self.space), 2]
-        return dep_sum / self.timestep
+        return dep_sum / self.time_step
         
     @property
     def can_dia(self):
