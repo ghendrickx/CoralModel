@@ -7,7 +7,7 @@ coral_model - environment
 import pandas as pd
 import numpy as np
 
-from utils.config_directory import DirConfig
+from coral_model.utils import DirConfig
 
 
 class Processes:
@@ -21,20 +21,22 @@ class Processes:
     #  (6) recruitment;
     #  (7) etc.
 
-    def __init__(self, fme=True, tme=True, pfd=True):
+    def __init__(self, fme=True, tme=True, pfd=True, warning=True):
         """
         :param fme: flow micro-environment, defaults to True
         :param tme: thermal micro-environment, defaults to True
         :param pfd: photosynthetic flow dependency, defaults to True
+        :param warning: print warning(s), defaults to True
 
         :type fme: bool, optional
         :type tme: bool, optional
         :type pfd: bool, optional
+        :type warning: bool, optional
         """
         self.pfd = pfd
 
         if not pfd:
-            if fme:
+            if fme and warning:
                 print(
                     f'WARNING: Flow micro-environment (FME) not possible '
                     f'when photosynthetic flow dependency (PFD) is disabled.'
@@ -45,7 +47,7 @@ class Processes:
         else:
             self.fme = fme
             if not fme:
-                if tme:
+                if tme and warning:
                     print(
                         f'WARNING: Thermal micro-environment (TME) not possible '
                         f'when flow micro-environment is disabled.'
@@ -55,10 +57,10 @@ class Processes:
             else:
                 self.tme = tme
 
-        if tme:
+        if tme and warning:
             print('WARNING: Thermal micro-environment not fully implemented yet.')
 
-        if not pfd:
+        if not pfd and warning:
             print('WARNING: Exclusion of photosynthetic flow dependency not fully implemented yet.')
 
 
@@ -76,6 +78,7 @@ class Constants:
                  prop_plate=None, prop_plate_flow=None, prop_space=None, prop_space_light=None, prop_space_flow=None,
                  u0=None, rho_c=None, sigma_tensile=None, drag_coef=None, rho_w=None, no_larvae=None,
                  prob_settle=None, d_larvae=None):
+        # TODO: Reformat docstring
         """
         Parameters
         ----------

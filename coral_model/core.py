@@ -15,7 +15,7 @@ from coral_model.utils import DataReshape, coral_only_function
 RESHAPE = DataReshape()
 
 # # processes and constants definition(s)
-PROCESSES = Processes()
+PROCESSES = Processes(warning=False)
 CONSTANTS = Constants(PROCESSES)
 
 

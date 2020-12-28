@@ -9,8 +9,7 @@ import numpy as np
 from coral_model import core
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
-from coral_model.utils import Output
-from utils.config_directory import DirConfig
+from coral_model.utils import Output, DirConfig
 
 
 class Simulation:
@@ -138,6 +137,9 @@ class Simulation:
         if output_type not in types:
             msg = f'{output_type} not in {types}.'
             raise ValueError(msg)
+
+        if not isinstance(self._output, Output):
+            self._output = Output(self.hydrodynamics.xy_coordinates, self.environment.dates[0])
         self._output.define_output(
             output_type=output_type, lme=lme, fme=fme, tme=tme, pd=pd, ps=ps, calc=calc, md=md
         )
