@@ -5,8 +5,10 @@ coral_model - loop
 """
 
 import numpy as np
+from tqdm import tqdm
 
 from coral_model import core
+from coral_model.core import Light
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
 from coral_model.utils import Output, DirConfig
@@ -244,7 +246,26 @@ class Simulation:
         # auto-set duration based on environmental time-series
         if duration is None:
             duration = int(self.environment.dates.iloc[-1].year - self.environment.dates.iloc[0].year)
-        print(duration)
+        years = range(int(self.environment.dates.iloc[0].year), int(self.environment.dates.iloc[0].year + duration))
+
+        with tqdm(range((int(duration)))) as progress:
+            for i in progress:
+                # set dimensions (i.e. update time-dimension)
+                core.RESHAPE.time = len(self.environment.dates.dt.year[self.environment.dates.dt.year == years[i]])
+
+                # if-statement that encompasses all for which the hydrodynamic should be used
+                progress.set_postfix(inner_loop=f'update {self.hydrodynamics.model}')
+                self.hydrodynamics.update(storm=False)
+                # TODO: Extract variables
+
+                # # environment
+                progress.set_postfix(inner_loop='coral environment')
+                lme = Light(
+                    self.environment.light[self.environment.light.index.year == years[i]].values,
+                    self.environment.light_attenuation[self.environment.light_attenuation.index.year == years[i]].values,
+                    self.hydrodynamics.water_depth
+                )
+                lme.rep_light(coral)
 
     def finalise(self):
         """Finalise simulation."""
