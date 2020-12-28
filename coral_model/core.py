@@ -778,7 +778,7 @@ class Photosynthesis:
 
         def thermal_env():
             """Thermal envelope."""
-            return np.exp(CONSTANTS.Ea / CONSTANTS.R) * (1 / 300 - 1 / temp_opt)
+            return np.exp((CONSTANTS.Ea / CONSTANTS.R) * (1 / 300 - 1 / temp_opt))
 
         # # parameter definitions
         thermal_acc()
