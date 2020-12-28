@@ -8,7 +8,8 @@ import numpy as np
 from tqdm import tqdm
 
 from coral_model import core
-from coral_model.core import Light, Flow, Temperature, Photosynthesis, PopulationStates, Calcification, Morphology
+from coral_model.core import Light, Flow, Temperature, Photosynthesis, PopulationStates, Calcification, Morphology, \
+    Dislodgement, Recruitment
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
 from coral_model.utils import Output, DirConfig, time_series_year
@@ -255,7 +256,7 @@ class Simulation:
 
                 # if-statement that encompasses all for which the hydrodynamic should be used
                 progress.set_postfix(inner_loop=f'update {self.hydrodynamics.model}')
-                current_vel, wave_vel, wave_per = self.hydrodynamics.update(storm=False)
+                current_vel, wave_vel, wave_per = self.hydrodynamics.update(coral, storm=False)
 
                 # # environment
                 progress.set_postfix(inner_loop='coral environment')
@@ -298,6 +299,24 @@ class Simulation:
                     time_series_year(self.environment.light, years[i])
                 )
                 mor.update(coral)
+
+                # # # storm damage
+                # if time_series_year(self.environment.storm_category, years[i]) > 0:
+                #     progress.set_postfix(inner_loop='storm damage')
+                #     # update hydrodynamic model
+                #     current_vel, wave_vel = self.hydrodynamics.update(coral, storm=True)
+                #     # storm flow environment
+                #     sfe = Flow(current_vel, wave_vel, None, None)
+                #     sfe.wave_current()
+                #     # storm dislodgement criterion
+                #     sdc = Dislodgement()
+                #     sdc.update(coral)
+
+                # # recruitment
+                progress.set_postfix(inner_loop='coral recruitment')
+                # recruitment
+                rec = Recruitment()
+                rec.update(coral)
 
     def finalise(self):
         """Finalise simulation."""

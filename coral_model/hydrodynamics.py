@@ -138,9 +138,9 @@ class Hydrodynamics:
         self.input_check()
         self.__model.initiate()
 
-    def update(self, storm=False):
+    def update(self, coral, storm=False):
         """Update hydrodynamic model."""
-        return self.__model.update(storm=storm)
+        return self.__model.update(coral, storm=storm)
 
     def finalise(self):
         """Finalise hydrodynamic model."""
@@ -161,10 +161,13 @@ class BaseHydro:
     def initiate(self):
         """Initiate hydrodynamic model."""
 
-    def update(self, storm=False):
+    def update(self, coral, storm=False):
         """Update hydrodynamic model.
 
+        :param coral: coral animal
         :param storm: storm conditions, defaults to False
+
+        :type coral: Coral
         :type storm: bool, optional
         """
         if storm:
@@ -186,7 +189,7 @@ class Reef0D(BaseHydro):
     def initiate(self):
         pass
 
-    def update(self, storm=False):
+    def update(self, coral, storm=False):
         pass
 
     def finalise(self):
@@ -249,7 +252,7 @@ class Reef1D(BaseHydro):
     def initiate(self):
         pass
 
-    def update(self, storm=False):
+    def update(self, coral, storm=False):
         pass
 
     def finalise(self):
@@ -463,7 +466,7 @@ class Delft3D(BaseHydro):
         """Initialize the working model."""
         self.model.initialize()
         
-    def update(self, storm=False):
+    def update(self, coral, storm=False):
         """Update the working model."""
         self.time_step = self.update_interval_storm if storm else self.update_interval
         self.reset_counters()
