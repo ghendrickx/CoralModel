@@ -15,7 +15,6 @@ environment.set_parameter_values('temperature', 28, 10)
 
 # processes and constants
 processes = Processes(fme=False, tme=False, pfd=False)
-print(processes.__dict__)
 constants = Constants(processes)
 
 run = Simulation(environment, processes, constants)
@@ -27,6 +26,6 @@ run.define_output('his', fme=False)
 coral = Coral(.1, .1, .05, .05, .2)
 run.initiate(coral)
 
-run.exec(coral, 10)
+run.exec(coral)
 
 run.finalise()

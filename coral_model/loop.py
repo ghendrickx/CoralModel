@@ -232,15 +232,19 @@ class Simulation:
 
         return coral
 
-    def exec(self, coral, duration):
+    def exec(self, coral, duration=None):
         """Execute simulation.
 
         :param coral: coral animal
-        :param duration: simulation duration [yrs]
+        :param duration: simulation duration [yrs], defaults to None
 
         :type coral: Coral
-        :type duration: int
+        :type duration: int, optional
         """
+        # auto-set duration based on environmental time-series
+        if duration is None:
+            duration = int(self.environment.dates.iloc[-1].year - self.environment.dates.iloc[0].year)
+        print(duration)
 
     def finalise(self):
         """Finalise simulation."""
