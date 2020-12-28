@@ -562,8 +562,9 @@ class Flow:
         :param coral: coral animal
         :type coral: Coral
         """
-        delta = self.velocity_boundary_layer(coral)
-        coral.delta_t = delta * ((CONSTANTS.alpha / CONSTANTS.nu) ** (1 / 3))
+        if PROCESSES.tme:
+            delta = self.velocity_boundary_layer(coral)
+            coral.delta_t = delta * ((CONSTANTS.alpha / CONSTANTS.nu) ** (1 / 3))
 
     @staticmethod
     def velocity_boundary_layer(coral):

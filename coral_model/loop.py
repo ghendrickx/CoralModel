@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 
 from coral_model import core
-from coral_model.core import Light
+from coral_model.core import Light, Flow
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
 from coral_model.utils import Output, DirConfig, time_series_year
@@ -255,17 +255,21 @@ class Simulation:
 
                 # if-statement that encompasses all for which the hydrodynamic should be used
                 progress.set_postfix(inner_loop=f'update {self.hydrodynamics.model}')
-                self.hydrodynamics.update(storm=False)
-                # TODO: Extract variables
+                current_vel, wave_vel, wave_per = self.hydrodynamics.update(storm=False)
 
                 # # environment
                 progress.set_postfix(inner_loop='coral environment')
+                # light micro-environment
                 lme = Light(
                     light_in=time_series_year(self.environment.light, years[i]),
                     lac=time_series_year(self.environment.light_attenuation, years[i]),
                     depth=self.hydrodynamics.water_depth
                 )
                 lme.rep_light(coral)
+                # flow micro-environment
+                fme = Flow(current_vel, wave_vel, self.hydrodynamics.water_depth, wave_per)
+                fme.velocities(coral, in_canopy=core.PROCESSES.fme)
+                fme.thermal_boundary_layer(coral)
 
     def finalise(self):
         """Finalise simulation."""

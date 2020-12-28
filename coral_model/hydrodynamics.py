@@ -140,7 +140,7 @@ class Hydrodynamics:
 
     def update(self, storm=False):
         """Update hydrodynamic model."""
-        self.__model.update(storm=storm)
+        return self.__model.update(storm=storm)
 
     def finalise(self):
         """Finalise hydrodynamic model."""
@@ -167,6 +167,11 @@ class BaseHydro:
         :param storm: storm conditions, defaults to False
         :type storm: bool, optional
         """
+        if storm:
+            # max(current_vel, wave_vel)
+            return None, None
+        # mean(current_vel, wave_vel, wave_per)
+        return None, None, None
 
     def finalise(self):
         """Finalise hydrodynamic model."""
