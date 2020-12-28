@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 
 from coral_model import core
-from coral_model.core import Light, Flow, Temperature
+from coral_model.core import Light, Flow, Temperature, Photosynthesis
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
 from coral_model.utils import Output, DirConfig, time_series_year
@@ -273,6 +273,15 @@ class Simulation:
                 # thermal micro-environment
                 tme = Temperature(time_series_year(self.environment.temp_kelvin, years[i]))
                 tme.coral_temperature(coral)
+
+                # # physiology
+                progress.set_postfix(inner_loop='coral physiology')
+                # photosynthetic dependencies
+                phd = Photosynthesis(
+                    time_series_year(self.environment.light, years[i]),
+                    first_year=True if i == 0 else False
+                )
+                phd.photo_rate(coral, self.environment, years[i])
 
     def finalise(self):
         """Finalise simulation."""
