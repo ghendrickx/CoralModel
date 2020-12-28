@@ -68,7 +68,10 @@ class Coral:
         self.Thi = None
         # > population states
         self.pop_states = None
-        self.p0 = self.cover
+        self.p0 = None
+        # np.array([
+        #     self.cover, np.zeros(self.cover.shape), np.zeros(self.cover.shape), np.zeros(self.cover.shape),
+        # ])
         # > calcification
         self.calc = None
 
@@ -249,6 +252,9 @@ class Coral:
                 raise ValueError(msg)
         else:
             cover = np.ones(RESHAPE.space)
+
+        self.p0 = np.zeros((len(cover), 4))
+        self.p0[:, 0] = cover
 
         self.dc = cover * self.dc
         self.hc = cover * self.hc
