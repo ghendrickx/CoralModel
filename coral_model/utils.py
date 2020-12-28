@@ -130,7 +130,7 @@ class DataReshape(SpaceTime):
         if dimension == 'space':
             return np.tile(variable, (self.time, 1)).transpose()
         elif dimension == 'time':
-            return np.tile(variable, (self.space, 1)).transpose()
+            return np.tile(variable, (self.space, 1))
 
     def dimension_value(self, variable, dimension):
         """Check consistency between variable's dimensions and the defined spacetime dimensions.
@@ -851,6 +851,18 @@ class Output:
                 self.__his_data['Vc'][ti, :] = np.tile(coral.volume, (len(y_dates), 1))[:, self.idx_stations]
 
             self.__his_data.close()
+
+
+def time_series_year(time_series, year):
+    """Extract a section of the time-series based on the year.
+
+    :param time_series: time-series to be extracted
+    :param year: year to be extracted
+
+    :type time_series: pandas.DataFrame
+    :type year: int
+    """
+    return time_series[time_series.index.year == year].values.transpose()[0]
 
 
 def coral_only_function(coral, function, args, no_cover_value=0):

@@ -11,7 +11,7 @@ from coral_model import core
 from coral_model.core import Light
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
-from coral_model.utils import Output, DirConfig
+from coral_model.utils import Output, DirConfig, time_series_year
 
 
 class Simulation:
@@ -261,9 +261,9 @@ class Simulation:
                 # # environment
                 progress.set_postfix(inner_loop='coral environment')
                 lme = Light(
-                    self.environment.light[self.environment.light.index.year == years[i]].values,
-                    self.environment.light_attenuation[self.environment.light_attenuation.index.year == years[i]].values,
-                    self.hydrodynamics.water_depth
+                    light_in=time_series_year(self.environment.light, years[i]),
+                    lac=time_series_year(self.environment.light_attenuation, years[i]),
+                    depth=self.hydrodynamics.water_depth
                 )
                 lme.rep_light(coral)
 
