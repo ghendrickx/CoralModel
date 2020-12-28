@@ -513,7 +513,7 @@ class Output:
         :param coral: coral animal
         :type coral: Coral
         """
-        if any(self.__map_output.values()):
+        if self.__map_output is not None and any(self.__map_output.values()):
             self.__map_data = Dataset(self.file_name_map, 'w', format='NETCDF4')
             self.__map_data.description = 'Mapped simulation data of the CoralModel.'
 
@@ -639,7 +639,12 @@ class Output:
         :type coral: Coral
         :type year: int
         """
-        if any(self.__map_output.values()):
+        if self.__map_output is not None and any(self.__map_output.values()):
+            # initiate file
+            if year == self.first_year:
+                self.initiate_map(coral)
+
+            # append data
             self.__map_data = Dataset(self.file_dir_map, mode='a')
 
             i = int(year - self.first_year)
@@ -686,22 +691,24 @@ class Output:
         :param xy_stations: (x,y)-coordinates stations
         :type xy_stations: tuple
         """
-        x, y = self.xy_coordinates
+        x = self.xy_coordinates[:, 0]
+        y = self.xy_coordinates[:, 1]
         x_station, y_station = xy_stations
-        idx = np.zeros(len(xy_stations[0]))
+        try:
+            idx = np.zeros(len(xy_stations[0]))
+        except TypeError:
+            idx = np.array([0])
+            x_station = [x_station]
+            y_station = [y_station]
 
         for s in range(len(idx)):
             idx[s] = np.argmin((x - x_station[s]) ** 2 + (y - y_station[s]) ** 2)
 
         self._idx_stations = idx.astype(int)
 
-    def initiate_his(self, xy_stations):
-        """Initiate history output file in which daily output at predefined locations within the model is stored.
-
-        :param xy_stations: (x,y)-coordinates of virtual stations
-        :type xy_stations: tuple
-        """
-        if any(self.__his_output.values()):
+    def initiate_his(self):
+        """Initiate history output file in which daily output at predefined locations within the model is stored."""
+        if self.__his_output is not None and any(self.__his_output.values()):
             self.__his_data = Dataset(self.file_dir_his, 'w', format='NETCDF4')
             self.__his_data.description = 'Historic simulation data of the CoralModel'
 
@@ -718,8 +725,7 @@ class Output:
             y = self.__his_data.createVariable('station_y_coordinate', 'f8', ('stations',))
 
             # setup data set
-            self.set_idx_stations(xy_stations)
-            x[:], y[:] = xy_stations
+            x[:], y[:] = self.idx_stations
 
             if self.__his_output['lme']:
                 light_set = self.__his_data.createVariable('Iz', 'f8', ('time', 'stations'))
@@ -804,7 +810,12 @@ class Output:
         :type coral: Coral
         :type dates: pandas
         """
-        if any(self.__his_output.values()):
+        if self.__his_output is not None and any(self.__his_output.values()):
+            # initiate file
+            if dates[0] == self.first_date:
+                self.initiate_his()
+
+            # append data
             self.__his_data = Dataset(self.file_dir_his, mode='a')
 
             y_dates = dates.reset_index(drop=True)
