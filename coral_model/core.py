@@ -433,6 +433,8 @@ class Flow:
                     )
             coral.ucm = self.wave_current(alpha_w, alpha_c)
             coral.um = self.wave_current()
+        else:
+            coral.ucm = 9999 * np.ones(RESHAPE.space)
 
     def wave_current(self, alpha_w=1, alpha_c=1):
         """Wave-current interaction.
@@ -1064,6 +1066,9 @@ class Morphology:
 
         # calculations
         self.delta_volume(coral)
+
+        # optimal ratio
+        setattr(self, f'{ratio}_optimal', coral)
 
         # update morphological ratio
         if hasattr(self, f'{ratio}_optimal') and hasattr(coral, ratio):

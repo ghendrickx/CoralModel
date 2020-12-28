@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 
 from coral_model import core
-from coral_model.core import Light, Flow, Temperature, Photosynthesis, PopulationStates, Calcification
+from coral_model.core import Light, Flow, Temperature, Photosynthesis, PopulationStates, Calcification, Morphology
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
 from coral_model.utils import Output, DirConfig, time_series_year
@@ -290,6 +290,14 @@ class Simulation:
                 cr.calcification_rate(
                     coral, time_series_year(self.environment.aragonite, years[i])
                 )
+                # # morphology
+                progress.set_postfix(inner_loop='coral morphology')
+                # morphological development
+                mor = Morphology(
+                    coral.calc.sum(axis=1),
+                    time_series_year(self.environment.light, years[i])
+                )
+                mor.update(coral)
 
     def finalise(self):
         """Finalise simulation."""
