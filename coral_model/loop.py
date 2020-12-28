@@ -300,17 +300,18 @@ class Simulation:
                 )
                 mor.update(coral)
 
-                # # # storm damage
-                # if time_series_year(self.environment.storm_category, years[i]) > 0:
-                #     progress.set_postfix(inner_loop='storm damage')
-                #     # update hydrodynamic model
-                #     current_vel, wave_vel = self.hydrodynamics.update(coral, storm=True)
-                #     # storm flow environment
-                #     sfe = Flow(current_vel, wave_vel, None, None)
-                #     sfe.wave_current()
-                #     # storm dislodgement criterion
-                #     sdc = Dislodgement()
-                #     sdc.update(coral)
+                # # storm damage
+                if self.environment.storm_category is not None:
+                    if time_series_year(self.environment.storm_category, years[i]) > 0:
+                        progress.set_postfix(inner_loop='storm damage')
+                        # update hydrodynamic model
+                        current_vel, wave_vel = self.hydrodynamics.update(coral, storm=True)
+                        # storm flow environment
+                        sfe = Flow(current_vel, wave_vel, None, None)
+                        sfe.wave_current()
+                        # storm dislodgement criterion
+                        sdc = Dislodgement()
+                        sdc.update(coral)
 
                 # # recruitment
                 progress.set_postfix(inner_loop='coral recruitment')
