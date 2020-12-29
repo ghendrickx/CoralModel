@@ -11,6 +11,9 @@ from scipy.optimize import fsolve
 # TODO: Check if the BMI-package can be removed from this project; i.e. check if once installed, it is no longer needed.
 import bmi.wrapper
 import faulthandler
+
+from coral_model.utils import DirConfig
+
 faulthandler.enable()
 
 
@@ -387,18 +390,16 @@ class Reef1D(BaseHydro):
 class Delft3D(BaseHydro):
     """Coupling of coral_model to Delft3D using the BMI wrapper."""
 
-    # def __init__(self, home_dir, mdu_file, config_file=None):
+    _home = None
+    _dflow_dir = None
+    _dimr_dir = None
+    _mdu = None
+    _config = None
+
     def __init__(self):
         super().__init__()
 
-        # self.home = home_dir
-        # self.mdu = mdu_file
-        # self.config = config_file
-        #
-        # self.environment()
-        # self.initiate()
-        #
-        # self.time_step = None
+        self.time_step = None
     
     def __repr__(self):
         msg = (
@@ -423,37 +424,63 @@ class Delft3D(BaseHydro):
             f'{files}'
         )
         return msg
+
+    @property
+    def home(self):
+        """Delft3D home directory.
+
+        :rtype: DirConfig
+        """
+        if self._home is None:
+            return DirConfig()
+        return self._home
+
+    @home.setter
+    def home(self, home_dir):
+        """
+        :param home_dir: Delft3D home directory
+        :type home_dir: DirConfig, str, list, tuple
+        """
+        self._home = home_dir if isinstance(home_dir, DirConfig) else DirConfig(home_dir)
         
     @property
     def dflow_dir(self):
         """Directory to DFlow-ddl."""
-        return os.path.join(self.home, 'dflowfm', 'bin', 'dflowfm.dll')
+        if self._dflow_dir is None:
+            return self.home.config_dir(['dflowfm', 'bin', 'dflowfm.dll'])
+        return self._dflow_dir
     
     @dflow_dir.setter
     def dflow_dir(self, directory):
         """Set directory to DFlow-ddl."""
-        if isinstance(directory, str):
-            directory = directory.replace('/', '\\').split('\\')
-        self.dflow_dir = os.path.join(self.home, *directory)
+        self._dflow_dir = self.home.config_dir(directory)
     
     @property
     def dimr_dir(self):
         """Directory to DIMR-dll."""
-        return os.path.join(self.home, 'dimr', 'bin', 'dimr_dll.dll')
+        if self._dimr_dir is None:
+            return self.home.config_dir(['dimr', 'bin', 'dimr_dll.dll'])
+        return self._dimr_dir
     
     @dimr_dir.setter
     def dimr_dir(self, directory):
         """Set directory to DIMR-dll."""
-        if isinstance(directory, str):
-            directory = directory.replace('/', '\\').split('\\')
-        self.dimr_dir = os.path.join(self.home, *directory)
+        self._dimr_dir = self.home.config_dir(directory)
+
+    @property
+    def mdu(self):
+        """Delft3D's MDU-file."""
+        return self._mdu
+
+    @property
+    def config(self):
+        """Delft3D's config-file."""
+        return self._config
         
     @property
     def model(self):
         """Main model-object."""
-        if self.config:
-            return self.model_dimr
-        return self.model_fm
+        return self.model_dimr if self.config else self.model_fm
     
     @property
     def model_fm(self):
@@ -466,7 +493,7 @@ class Delft3D(BaseHydro):
     @property
     def model_dimr(self):
         """Delft3D DIMR model-object."""
-        if not self.config:
+        if self.config:
             return bmi.wrapper.BMIWrapper(
                 engine=self.dimr_dir,
                 configfile=self.config
@@ -475,15 +502,15 @@ class Delft3D(BaseHydro):
     def environment(self):
         """Set Python environment to include Delft3D-code."""
         dirs = [
-            os.path.join(self.home, 'share', 'bin'),
-            os.path.join(self.home, 'dflowfm', 'bin'),
+            self.home.config_dir(['share', 'bin']),
+            self.home.config_dir(['dflowfm', 'bin']),
         ]
         if self.config:
             dirs.extend([
-                os.path.join(self.home, 'dimr', 'bin'),
-                os.path.join(self.home, 'dwaves', 'bin'),
-                os.path.join(self.home, 'esmf', 'scripts'),
-                os.path.join(self.home, 'swan', 'scripts'),
+                (['dimr', 'bin']),
+                self.home.config_dir(['dwaves', 'bin']),
+                self.home.config_dir(['esmf', 'scripts']),
+                self.home.config_dir(['swan', 'scripts']),
             ])
             
         env = ';'.join(dirs)
@@ -494,6 +521,7 @@ class Delft3D(BaseHydro):
         
     def initiate(self):
         """Initialize the working model."""
+        self.environment()
         self.model.initialize()
         
     def update(self, coral, storm=False):
