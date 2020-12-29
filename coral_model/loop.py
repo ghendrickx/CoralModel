@@ -212,13 +212,12 @@ class Simulation:
         self.input_check()
 
         self.hydrodynamics.initiate()
-        core.RESHAPE.space = len(self.hydrodynamics.xy_coordinates)
+        core.RESHAPE.space = self.hydrodynamics.space
 
         self.output.initiate_his()
         self.output.initiate_map(coral)
 
         xy = self.hydrodynamics.xy_coordinates
-        core.RESHAPE.space = self.hydrodynamics.space
 
         if value is None:
             value = 1
