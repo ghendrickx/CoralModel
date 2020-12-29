@@ -515,7 +515,7 @@ class Output:
         :type coral: Coral
         """
         if self._map_output is not None and any(self._map_output.values()):
-            self._map_data = Dataset(self.file_name_map, 'w', format='NETCDF4')
+            self._map_data = Dataset(self.file_dir_map, 'w', format='NETCDF4')
             self._map_data.description = 'Mapped simulation data of the CoralModel.'
 
             # dimensions
@@ -536,7 +536,8 @@ class Output:
             y.units = 'm'
 
             t[:] = self.first_year
-            x[:], y[:] = self.xy_coordinates
+            x[:] = self.xy_coordinates[:, 0]
+            y[:] = self.xy_coordinates[:, 1]
 
             # initial conditions
             if self._map_output['lme']:
@@ -595,7 +596,7 @@ class Output:
                 pb_set.units = '-'
                 pb_set[:, :] = np.zeros(self.space)
             if self._map_output['calc']:
-                calc_set = self._map_data.createVariable('G', 'f8', ('time', 'nmesh2d_face'))
+                calc_set = self._map_data.createVariable('calc', 'f8', ('time', 'nmesh2d_face'))
                 calc_set.long_name = 'annual sum calcification rate'
                 calc_set.units = 'kg m-2 yr-1'
                 calc_set[:, :] = np.zeros(self.space)
@@ -646,11 +647,15 @@ class Output:
             i = int(year - self.first_year)
             self._map_data['time'][i] = year
             if self._map_output['lme']:
-                self._map_data['Iz'][-1, :] = coral.light
+                self._map_data['Iz'][-1, :] = coral.light[:, -1]
             if self._map_output['fme']:
                 self._map_data['ucm'][-1, :] = coral.ucm
             if self._map_output['tme']:
-                self._map_data['Tc'][-1, :] = coral.temperature[:, -1]
+                self._map_data['Tc'][-1, :] = coral.temp[:, -1]
+                try:
+                    _ = iter(coral.Tlo) and iter(coral.Thi)
+                except TypeError:
+                    coral.Tlo, coral.Thi = [coral.Tlo], [coral.Thi]
                 self._map_data['Tlo'][-1, :] = coral.Tlo if len(coral.Tlo) > 1 else coral.Tlo * np.ones(self.space)
                 self._map_data['Thi'][-1, :] = coral.Thi if len(coral.Thi) > 1 else coral.Thi * np.ones(self.space)
             if self._map_output['pd']:

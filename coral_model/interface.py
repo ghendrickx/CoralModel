@@ -19,11 +19,12 @@ environment.set_parameter_values('temperature', 28, 10)
 processes = Processes(fme=False, tme=False, pfd=False)
 constants = Constants(processes)
 
-# simulation
+# initiation
 run = Simulation(environment, processes, constants)
 run.set_coordinates((0, 0))
 run.set_water_depth(10)
 
+run.define_output('map', fme=False)
 run.define_output('his', fme=False)
 run.output.xy_stations = (0, 0)
 
@@ -32,6 +33,7 @@ run.set_directories(DirConfig(home_dir=r'C:\Users\gghendrickx\Documents\workspac
 coral = Coral(.1, .1, .05, .05, .2)
 coral = run.initiate(coral)
 
+# simulation
 run.exec(coral)
 
 run.finalise()
