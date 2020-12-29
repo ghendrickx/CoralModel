@@ -1,8 +1,9 @@
+import os
 import unittest
 
 import numpy
 
-from coral_model.utils import SpaceTime, DataReshape
+from coral_model.utils import SpaceTime, DataReshape, DirConfig
 
 
 class TestSpaceTime(unittest.TestCase):
@@ -287,6 +288,96 @@ class TestDataReshape(unittest.TestCase):
         for i, val in enumerate(answer):
             self.assertEqual(result[i], val)
 
+
+class TestDirConfig(unittest.TestCase):
+
+    def test_default(self):
+        folder = DirConfig()
+        self.assertEqual(folder.__repr__(), 'DirConfig(home_dir=None)')
+        self.assertEqual(folder.__str__(), os.getcwd())
+
+    def test_home_dir1(self):
+        folder = DirConfig(home_dir=r'folder1\folder2')
+        answer = f'{os.getcwd()}\\folder1\\folder2'
+        self.assertEqual(folder.__str__(), answer)
+
+    def test_home_dir2(self):
+        folder = DirConfig(home_dir=r'C:\folder')
+        answer = r'C:\folder'
+        self.assertEqual(folder.__str__(), answer)
+
+    def test_home_dir3(self):
+        folder = DirConfig(home_dir=['folder1', 'folder2'])
+        answer = f'{os.getcwd()}\\folder1\\folder2'
+        self.assertEqual(folder.__str__(), answer)
+
+    def test_home_dir4(self):
+        folder = DirConfig(home_dir=('C:', 'folder'))
+        answer = r'C:\folder'
+        self.assertEqual(folder.__str__(), answer)
+
+    def test_home_dir5(self):
+        folder = DirConfig(home_dir=[r'C:\folder1', 'folder2'])
+        answer = r'C:\folder1\folder2'
+        self.assertEqual(folder.__str__(), answer)
+
+    def test_home_dir6(self):
+        folder = DirConfig(home_dir=DirConfig(r'C:\folder'))
+        answer = r'C:\folder'
+        self.assertEqual(folder.__str__(), answer)
+
+    def test_config_dir1(self):
+        folder = DirConfig().config_dir(r'folder1\folder2')
+        answer = f'{os.getcwd()}\\folder1\\folder2'
+        self.assertEqual(folder, answer)
+
+    def test_config_dir2(self):
+        folder = DirConfig().config_dir(r'C:\folder')
+        answer = r'C:\folder'
+        self.assertEqual(folder, answer)
+
+    def test_config_dir3(self):
+        folder = DirConfig().config_dir(['folder1', 'folder2'])
+        answer = f'{os.getcwd()}\\folder1\\folder2'
+        self.assertEqual(folder, answer)
+
+    def test_config_dir4(self):
+        folder = DirConfig().config_dir(('C:', 'folder'))
+        answer = r'C:\folder'
+        self.assertEqual(folder, answer)
+
+    def test_config_dir5(self):
+        folder = DirConfig().config_dir((r'C:\folder1', 'folder2'))
+        answer = r'C:\folder1\folder2'
+        self.assertEqual(folder, answer)
+
+    def test_home_config_dir1(self):
+        folder = DirConfig(home_dir='folder1').config_dir('folder2')
+        answer = f'{os.getcwd()}\\folder1\\folder2'
+        self.assertEqual(folder, answer)
+
+    def test_home_config_dir2(self):
+        folder = DirConfig(home_dir=r'folder1\folder2').config_dir(r'folder3\folder4')
+        answer = f'{os.getcwd()}\\folder1\\folder2\\folder3\\folder4'
+        self.assertEqual(folder, answer)
+
+    def test_home_config_dir3(self):
+        folder = DirConfig(home_dir='C:').config_dir('folder')
+        answer = r'C:\folder'
+        self.assertEqual(folder, answer)
+
+    def test_home_config_dir4(self):
+        folder = DirConfig(home_dir=['C:', 'folder1']).config_dir('folder2')
+        answer = r'C:\folder1\folder2'
+        self.assertEqual(folder, answer)
+
+    def test_home_config_dir5(self):
+        folder = DirConfig(home_dir=DirConfig(r'C:')).config_dir('folder')
+        answer = r'C:\folder'
+        self.assertEqual(folder, answer)
+
+
+# TODO: test for "time_series_year"-method
 
 # TODO: test for "coral_only_function"-method
 
