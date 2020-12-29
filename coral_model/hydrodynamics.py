@@ -518,30 +518,47 @@ class Delft3D(BaseHydro):
             
         print(f'\nEnvironment \"PATH\":')
         [print(f'\t{path}') for path in dirs]
-        
-    def initiate(self):
-        """Initialize the working model."""
-        self.environment()
-        self.model.initialize()
-        
-    def update(self, coral, storm=False):
-        """Update the Delft3D-model."""
-        self.time_step = self.update_interval_storm if storm else self.update_interval
-        self.reset_counters()
-        self.model.update(self.time_step)
 
-        return self.get_max_hydrodynamics() if storm else self.get_mean_hydrodynamics()
-    
-    def finalise(self):
-        """Finalize the working model."""
-        self.model.finalize()
-        
+    def get_var(self, variable):
+        """Get variable from DFlow-model.
+
+        :param variable: variable to get
+        :type variable: str
+        """
+        return self.model_fm.get_var(variable)
+
+    def set_var(self, variable, value):
+        """Set variable to DFlow-model.
+
+        :param variable: variable to set
+        :param value: value of variable
+
+        :type variable: str
+        :type value: float, list, tuple, numpy.ndarray
+        """
+        self.model_fm.set_var(variable, value)
+
+    @property
+    def space(self):
+        """Number of non-boundary boxes; i.e. within-domain boxes."""
+        return self.get_var('ndxi')
+
+    @property
+    def x(self):
+        """Center of gravity's x-coordinates as part of `space`."""
+        return self.get_var('xzw')[range(self.space)]
+
+    @property
+    def y(self):
+        """Center of gravity's y-coodinates as part of `space`."""
+        return self.get_var('yzw')[range(self.space)]
+
     def reset_counters(self):
         """Reset properties for next model update."""
         sums = self.model_fm.get_var('is_sumvalsnd')
         sums.fill(0.)
         self.model_fm.set_var('is_sumvalsnd', sums)
-        
+
         maxs = self.model_fm.get_var('is_maxvalsnd')
         maxs.fill(0.)
         self.model_fm.set_var('is_maxvalsnd', maxs)
@@ -568,94 +585,23 @@ class Delft3D(BaseHydro):
         current_vel = self.get_var('is_maxvalsnd')[range(self.space), 1]
         wave_vel = self.get_var('Uorb')[range(self.space)]
         return current_vel, wave_vel
-    
-    def get_var(self, variable):
-        """Get variable from DFlow-model.
-
-        :param variable: variable to get
-        :type variable: str
-        """
-        return self.model_fm.get_var(variable)
-    
-    def set_var(self, variable, value):
-        """Set variable to DFlow-model.
-
-        :param variable: variable to set
-        :param value: value of variable
-
-        :type variable: str
-        :type value: float, list, tuple, numpy.ndarray
-        """
-        self.model_fm.set_var(variable, value)
-    
-    @property
-    def space(self):
-        """Number of non-boundary boxes; i.e. within-domain boxes."""
-        return self.model_fm.get_var('ndxi')
-    
-    @property
-    def x(self):
-        """Center of gravity's x-coordinates as part of `space`."""
-        return self.model_fm.get_var('xzw')[range(self.space)]
-    
-    @property
-    def y(self):
-        """Center of gravity's y-coodinates as part of `space`."""
-        return self.model_fm.get_var('yzw')[range(self.space)]
-    
-    @property
-    def vel_wave(self):
-        """Wave orbital velocity [ms-1] as part of `space`."""
-        return self.model_fm.get_var('Uorb')[range(self.space)]
-    
-    @property
-    def vel_curr_mn(self):
-        """Mean current velocity [ms-1] as part of `space`."""      
-        vel_sum = self.model_fm.get_var('is_sumvalsnd')[range(self.space), 1]
-        return vel_sum / self.time_step
-    
-    @property
-    def vel_curr_mx(self):
-        """Maximum current velocity [ms-1] as part of `space`."""
-        return self.model_fm.get_var('is_maxvalsnd')[range(self.space), 1]
-    
-    @property
-    def per_wave(self):
-        """Peak wave period [s] as part of `space`."""
-        return self.model_fm.get_var('twav')[range(self.space)]
-    
-    @property
-    def depth(self):
-        """Water depth [m] as part of `space`"""
-        dep_sum = self.model_fm.get_var('is_sumvalsnd')[range(self.space), 2]
-        return dep_sum / self.time_step
         
-    @property
-    def can_dia(self):
-        """Representative diameter of the canopy [m] as part of `space`."""
-        return self.model_fm.get_var('diaveg')[range(self.space)]
+    def initiate(self):
+        """Initialize the working model."""
+        self.environment()
+        self.model.initialize()
+        
+    def update(self, coral, storm=False):
+        """Update the Delft3D-model."""
+        self.time_step = self.update_interval_storm if storm else self.update_interval
+        self.reset_counters()
+        self.model.update(self.time_step)
+
+        return self.get_max_hydrodynamics() if storm else self.get_mean_hydrodynamics()
     
-    @can_dia.setter
-    def can_dia(self, canopy_diameter):
-        self.model_fm.set_var('diaveg', canopy_diameter)
-    
-    @property
-    def can_height(self):
-        """Height of the canopy [m] as part of `space`."""
-        return self.model_fm.get_var('stemheight')[range(self.space)]
-    
-    @can_height.setter
-    def can_height(self, canopy_height):
-        self.model_fm.set_var('stemheight', canopy_height)
-    
-    @property
-    def can_den(self):
-        """Density of the canopy [pcs m-2] as part of `space`."""
-        return self.model_fm.get_var('rnveg')[range(self.space)]
-    
-    @can_den.setter
-    def can_den(self, canopy_density):
-        self.model_fm.set_var('rnveg', canopy_density)
+    def finalise(self):
+        """Finalize the working model."""
+        self.model.finalize()
     
     
 if __name__ == '__main__':
