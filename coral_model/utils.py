@@ -402,11 +402,9 @@ class Output:
         self.first_year = first_date.year
 
     @property
-    def output(self):
+    def defined(self):
         """Output is defined."""
-        if self._map_output is None and self._his_output is None:
-            return False
-        return True
+        return False if self._map_output is None and self._his_output is None else True
 
     def define_output(self, output_type, lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
         """Define output dictionary.

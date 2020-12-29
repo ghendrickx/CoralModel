@@ -214,7 +214,7 @@ class Simulation:
         self.hydrodynamics.initiate()
         core.RESHAPE.space = len(self.hydrodynamics.xy_coordinates)
 
-        if self.output.output:
+        if self.output.defined:
             self.output.initiate_his()
             self.output.initiate_map(coral)
         else:
