@@ -8,7 +8,6 @@ import sys
 import numpy as np
 import os
 from scipy.optimize import fsolve
-# TODO: Check if the BMI-package can be removed from this project; i.e. check if once installed, it is no longer needed.
 import bmi.wrapper
 import faulthandler
 
@@ -33,6 +32,14 @@ class Hydrodynamics:
         :type mode: None, str
         """
         self.mode = self.set_model(mode)
+
+    def __str__(self):
+        """String-representation of Hydrodynamics."""
+        return f'Coupled hydrodynamic model: {str(self.__model)}\n\tmode={self.mode}'
+
+    def __repr__(self):
+        """Representation of Hydrodynamics."""
+        return f'Hydrodynamics(mode={self.mode})'
 
     @property
     def model(self):
@@ -152,8 +159,10 @@ class Hydrodynamics:
                     xy[1] for xy in xy_coordinates
                 ])
 
-    # TODO: Prevent coordinates and water depth definition when these
-    #  are extracted from hydrodynamic model (i.e. Delft3D).
+        if self.mode == 'Delft3D':
+            msg = f'INFO: (x,y)-coordinates are extracted from the hydrodynamic model.'
+            print(msg)
+
     def set_water_depth(self, water_depth):
         """Set water depth if not provided by hydrodynamic model.
 
@@ -166,6 +175,10 @@ class Hydrodynamics:
             self._water_depth = np.array([water_depth])
         else:
             self._water_depth = np.array([*water_depth])
+
+        if self.mode == 'Delft3D':
+            msg = f'INFO: Water depth is extracted from the hydrodynamic model.'
+            print(msg)
 
     def set_update_intervals(self, default, storm):
         """Set update intervals; required for Delft3D-model.

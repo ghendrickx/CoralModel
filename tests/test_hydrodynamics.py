@@ -78,7 +78,7 @@ class TestHydrodynamics(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             model.input_check_interval('update_interval_storm')
 
-        self.assertTrue('update_interval_storm' in str(context.exception))
+        self.assertTrue('update_interval_storm undefined' in str(context.exception))
 
     def test_input_check33(self):
         model = Hydrodynamics(mode='Delft3D')

@@ -6,10 +6,9 @@ coral_model v3 - interface
 from coral_model.core import Coral
 from coral_model.environment import Environment, Processes, Constants
 from coral_model.loop import Simulation
-
-# environment definition
 from coral_model.utils import DirConfig
 
+# environment definition
 environment = Environment()
 environment.set_dates('01-01-2000', '01-01-2010')
 environment.set_parameter_values('light', 600)
