@@ -158,6 +158,12 @@ class BaseHydro:
         """String-representation of BaseHydro."""
         return cls.__name__
 
+    @property
+    def settings(self):
+        """Print settings of BaseHydro-model."""
+        msg = 'No hydrodynamic model coupled.'
+        return msg
+
     def initiate(self):
         """Initiate hydrodynamic model."""
 
@@ -185,6 +191,12 @@ class Reef0D(BaseHydro):
 
     def __init__(self):
         super().__init__()
+
+    @property
+    def settings(self):
+        """Print settings of Reef0D-model."""
+        msg = f'Not yet implemented.'
+        return msg
 
     def initiate(self):
         pass
@@ -229,8 +241,16 @@ class Reef1D(BaseHydro):
         self._height = None
         self._density = None
 
-    def __str__(self):
-        # TODO: Place this explanation of the model settings under another method
+    def __repr__(self):
+        msg = (
+            f'Reef1D(bathymetry={self.bath}, wave_height={self.Hs}, '
+            f'wave_period={self.Tp})'
+        )
+        return msg
+
+    @property
+    def settings(self):
+        """Print settings of Reef1D-model."""
         msg = (
             f'One-dimensional simple hydrodynamic model to simulate the '
             f'hydrodynamics on a (coral) reef with the following settings:'
@@ -239,13 +259,6 @@ class Reef1D(BaseHydro):
             f'\n\t\tlength [m] : {self.space * self.dx}'
             f'\n\tSignificant wave height [m]  : {self.Hs}'
             f'\n\tPeak wave period [s]         : {self.Tp}'
-        )
-        return msg
-
-    def __repr__(self):
-        msg = (
-            f'Reef1D(bathymetry={self.bath}, wave_height={self.Hs}, '
-            f'wave_period={self.Tp})'
         )
         return msg
 
@@ -370,8 +383,16 @@ class Delft3D(BaseHydro):
         
         self.time_step = None
     
-    def __str__(self):
-        # TODO: Place this explanation of the model settings under another method
+    def __repr__(self):
+        msg = (
+            f'Delft3D(home_dir={self.home}, mdu_file={self.mdu}, '
+            f'config_file={self.config})'
+        )
+        return msg
+
+    @property
+    def settings(self):
+        """Print settings of Delft3D-model."""
         if self.config:
             incl = f'DFlow- and DWaves-modules'
             files = f'\n\tDFlow file         : {self.mdu}'\
@@ -380,17 +401,9 @@ class Delft3D(BaseHydro):
             incl = f'DFlow-module'
             files = f'\n\tDFlow file         : {self.mdu}'
         msg = (
-            f'Coupling with Delft3D model (incl. {incl}) with the following '
-            f'settings:'
+            f'Coupling with Delft3D model (incl. {incl}) with the following settings:'
             f'\n\tDelft3D home dir.  : {self.home}'
             f'{files}'
-        )
-        return msg
-    
-    def __repr__(self):
-        msg = (
-            f'Delft3D(home_dir={self.home}, mdu_file={self.mdu}, '
-            f'config_file={self.config})'
         )
         return msg
         
