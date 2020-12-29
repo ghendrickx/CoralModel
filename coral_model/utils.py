@@ -401,6 +401,14 @@ class Output:
         self.first_date = first_date
         self.first_year = first_date.year
 
+    def __str__(self):
+        """String-representation of Output."""
+        return f'Output exported:\n\t{self._map_output}\n\t{self._his_output}' if self.defined else f'Output undefined.'
+
+    def __repr__(self):
+        """Representation of Output."""
+        return f'Output(xy_coordinates={self.xy_coordinates}, first_date={self.first_date})'
+
     @property
     def defined(self):
         """Output is defined."""
