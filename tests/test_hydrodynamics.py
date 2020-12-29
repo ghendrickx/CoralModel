@@ -9,17 +9,9 @@ class TestHydrodynamics(unittest.TestCase):
 
     def test_init(self):
         modes = (None, 'Reef0D', 'Reef1D', 'Delft3D')
-        nir_modes = ('Reef1D',)
 
-        # implemented modes
         for mode in modes:
-            if mode not in nir_modes:
-                _ = Hydrodynamics(mode=mode)
-
-        # not implemented modes
-        for mode in nir_modes:
-            with self.assertRaises(NotImplementedError):
-                _ = Hydrodynamics(mode=mode)
+            _ = Hydrodynamics(mode=mode)
 
     def test_input_check01(self):
         model = Hydrodynamics(mode=None)

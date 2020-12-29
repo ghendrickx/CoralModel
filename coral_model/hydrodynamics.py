@@ -55,11 +55,6 @@ class Hydrodynamics:
             msg = f'{mode} not in {modes}.'
             raise ValueError(msg)
 
-        # TODO: Facilitate Reef1D as well
-        if mode in ('Reef1D',):
-            msg = f'{mode} not yet implemented.'
-            raise NotImplementedError(msg)
-
         self.__model = getattr(sys.modules[__name__], model_cls)()
 
         return mode
@@ -145,12 +140,17 @@ class Hydrodynamics:
             ])
 
         if self._x_coordinates is None and self._y_coordinates is None:
-            self._x_coordinates = np.array([
-                xy[0] for xy in xy_coordinates
-            ])
-            self._y_coordinates = np.array([
-                xy[1] for xy in xy_coordinates
-            ])
+            try:
+                _ = len(xy_coordinates[0])
+            except TypeError:
+                self._x_coordinates, self._y_coordinates = xy_coordinates
+            else:
+                self._x_coordinates = np.array([
+                    xy[0] for xy in xy_coordinates
+                ])
+                self._y_coordinates = np.array([
+                    xy[1] for xy in xy_coordinates
+                ])
 
     # TODO: Prevent coordinates and water depth definition when these
     #  are extracted from hydrodynamic model (i.e. Delft3D).
@@ -275,64 +275,39 @@ class Reef1D(BaseHydro):
     """Simplified one-dimensional hydrodynamic model over a (coral) reef."""
     # TODO: Complete the one-dimensional hydrodynamic model
 
-    def __init__(self, bathymetry, wave_height, wave_period, dx=1):
+    def __init__(self):
         """Internal 1D hydrodynamic model for order-of-magnitude calculations on the hydrodynamic conditions on a coral
         reef, where both flow and waves are included.
-
-        Parameters
-        ----------
-        bathymetry : numeric
-            Bathymetric cross-shore data with means sea level as reference [m]
-            and x=0 at the offshore boundary.
-        wave_height : numeric
-            Significant wave height [m].
-        wave_period : numeric
-            Peak wave period [s].
-        dx : numeric
-            Spatial step between bathymetric data points [m].
         """
         super().__init__()
 
-        self.bath = bathymetry
-        self.Hs = wave_height
-        self.Tp = wave_period
-        self.dx = dx
+        self.bath = None
+        self.Hs = None
+        self.Tp = None
+        self.dx = None
 
-        self.z = np.zeros(self.space)
+        # self.z = np.zeros(self.space)
 
         self._diameter = None
         self._height = None
         self._density = None
 
     def __repr__(self):
-        msg = (
-            f'Reef1D(bathymetry={self.bath}, wave_height={self.Hs}, '
+        msg = f'Reef1D(bathymetry={self.bath}, wave_height={self.Hs}, ' \
             f'wave_period={self.Tp})'
-        )
         return msg
 
     @property
     def settings(self):
         """Print settings of Reef1D-model."""
-        msg = (
-            f'One-dimensional simple hydrodynamic model to simulate the '
-            f'hydrodynamics on a (coral) reef with the following settings:'
-            f'\n\tBathymetric cross-shore data : {type(self.bath).__name__}'
-            f'\n\t\trange [m]  : {min(self.bath)}-{max(self.bath)}'
-            f'\n\t\tlength [m] : {self.space * self.dx}'
-            f'\n\tSignificant wave height [m]  : {self.Hs}'
+        msg = f'One-dimensional simple hydrodynamic model to simulate the ' \
+            f'hydrodynamics on a (coral) reef with the following settings:' \
+            f'\n\tBathymetric cross-shore data : {type(self.bath).__name__}' \
+            f'\n\t\trange [m]  : {min(self.bath)}-{max(self.bath)}' \
+            f'\n\t\tlength [m] : {self.space * self.dx}' \
+            f'\n\tSignificant wave height [m]  : {self.Hs}' \
             f'\n\tPeak wave period [s]         : {self.Tp}'
-        )
         return msg
-
-    def initiate(self):
-        pass
-
-    def update(self, coral, storm=False):
-        pass
-
-    def finalise(self):
-        pass
 
     @property
     def space(self):
@@ -401,7 +376,7 @@ class Reef1D(BaseHydro):
 
     @property
     def wave_length(self):
-        """Solve the dispersion relation to retrive the wave length."""
+        """Solve the dispersion relation to retrieve the wave length."""
         L0 = 9.81 * self.per_wav ** 2
         L = np.zeros(len(self.depth))
         for i, h in enumerate(self.depth):
@@ -430,6 +405,15 @@ class Reef1D(BaseHydro):
                   (np.sinh(self.wave_number * self.depth)))
         return n * self.wave_celerity
 
+    def initiate(self):
+        pass
+
+    def update(self, coral, storm=False):
+        pass
+
+    def finalise(self):
+        pass
+
 
 class Delft3D(BaseHydro):
     """Coupling of coral_model to Delft3D using the BMI wrapper."""
@@ -446,10 +430,8 @@ class Delft3D(BaseHydro):
         self.time_step = None
     
     def __repr__(self):
-        msg = (
-            f'Delft3D(home_dir={self.home}, mdu_file={self.mdu}, '
+        msg = f'Delft3D(home_dir={self.home}, mdu_file={self.mdu}, ' \
             f'config_file={self.config})'
-        )
         return msg
 
     @property
@@ -457,16 +439,15 @@ class Delft3D(BaseHydro):
         """Print settings of Delft3D-model."""
         if self.config:
             incl = f'DFlow- and DWaves-modules'
-            files = f'\n\tDFlow file         : {self.mdu}'\
-                    f'\n\tConfiguration file : {self.config}'
+            files = f'\n\tDFlow file         : {self.mdu}' \
+                f'\n\tConfiguration file : {self.config}'
         else:
             incl = f'DFlow-module'
             files = f'\n\tDFlow file         : {self.mdu}'
-        msg = (
-            f'Coupling with Delft3D model (incl. {incl}) with the following settings:'
-            f'\n\tDelft3D home dir.  : {self.home}'
+
+        msg = f'Coupling with Delft3D model (incl. {incl}) with the following settings:' \
+            f'\n\tDelft3D home dir.  : {self.home}' \
             f'{files}'
-        )
         return msg
 
     @property
@@ -654,9 +635,10 @@ class Delft3D(BaseHydro):
     
     
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    model = Reef1D(np.linspace(20, 2), 1, 4)
-    plt.plot(model.x, model.z)
-    plt.plot(model.x, -model.depth)
-    plt.plot(model.x, model.wave_celerity)
-    plt.plot(model.x, model.group_celerity)
+    pass
+    # import matplotlib.pyplot as plt
+    # model = Reef1D(np.linspace(20, 2), 1, 4)
+    # plt.plot(model.x, model.z)
+    # plt.plot(model.x, -model.depth)
+    # plt.plot(model.x, model.wave_celerity)
+    # plt.plot(model.x, model.group_celerity)
