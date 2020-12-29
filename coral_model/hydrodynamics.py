@@ -545,12 +545,23 @@ class Delft3D(BaseHydro):
         self.model_fm.set_var('is_maxvalsnd', maxs)
     
     def get_var(self, variable):
-        """Get variable from DFlow-model."""
+        """Get variable from DFlow-model.
+
+        :param variable: variable to get
+        :type variable: str
+        """
         return self.model_fm.get_var(variable)
     
-    def set_var(self, variable):
-        """Set variable to DFlow-model."""
-        self.model_fm.set_var(variable)
+    def set_var(self, variable, value):
+        """Set variable to DFlow-model.
+
+        :param variable: variable to set
+        :param value: value of variable
+
+        :type variable: str
+        :type value: float, list, tuple, numpy.ndarray
+        """
+        self.model_fm.set_var(variable, value)
     
     @property
     def space(self):
