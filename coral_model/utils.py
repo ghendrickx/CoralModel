@@ -652,12 +652,8 @@ class Output:
                 self._map_data['ucm'][-1, :] = coral.ucm
             if self._map_output['tme']:
                 self._map_data['Tc'][-1, :] = coral.temp[:, -1]
-                try:
-                    _ = iter(coral.Tlo) and iter(coral.Thi)
-                except TypeError:
-                    coral.Tlo, coral.Thi = [coral.Tlo], [coral.Thi]
-                self._map_data['Tlo'][-1, :] = coral.Tlo if len(coral.Tlo) > 1 else coral.Tlo * np.ones(self.space)
-                self._map_data['Thi'][-1, :] = coral.Thi if len(coral.Thi) > 1 else coral.Thi * np.ones(self.space)
+                self._map_data['Tlo'][-1, :] = coral.Tlo if len(DataReshape.variable2array(coral.Tlo)) > 1 else coral.Tlo * np.ones(self.space)
+                self._map_data['Thi'][-1, :] = coral.Thi if len(DataReshape.variable2array(coral.Thi)) > 1 else coral.Thi * np.ones(self.space)
             if self._map_output['pd']:
                 self._map_data['PD'][-1, :] = coral.photo_rate.mean(axis=1)
             if self._map_output['ps']:
@@ -834,11 +830,7 @@ class Output:
                 self._his_data['ucm'][ti, :] = np.tile(coral.ucm, (len(y_dates), 1))[:, self.idx_stations]
             if self._his_output['tme']:
                 self._his_data['Tc'][ti, :] = coral.temp[self.idx_stations, :].transpose()
-                try:
-                    _ = iter(coral.Tlo) and iter(coral.Thi)
-                except TypeError:
-                    coral.Tlo, coral.Thi = [coral.Tlo], [coral.Thi]
-                if len(coral.Tlo) > 1 and len(coral.Thi) > 1:
+                if len(DataReshape.variable2array(coral.Tlo)) > 1 and len(DataReshape.variable2array(coral.Thi)) > 1:
                     self._his_data['Tlo'][ti, :] = np.tile(coral.Tlo, (len(y_dates), 1))[:, self.idx_stations]
                     self._his_data['Thi'][ti, :] = np.tile(coral.Thi, (len(y_dates), 1))[:, self.idx_stations]
                 else:
