@@ -22,6 +22,8 @@ class Hydrodynamics:
 
     __model = None
 
+    _x_coordinates = None
+    _y_coordinates = None
     _xy_coordinates = None
     _water_depth = None
 
@@ -53,7 +55,7 @@ class Hydrodynamics:
             msg = f'{mode} not in {modes}.'
             raise ValueError(msg)
 
-        # TODO: Facilitate Reef1D and Delft3D as well
+        # TODO: Facilitate Reef1D as well
         if mode in ('Reef1D',):
             msg = f'{mode} not yet implemented.'
             raise NotImplementedError(msg)
@@ -61,6 +63,22 @@ class Hydrodynamics:
         self.__model = getattr(sys.modules[__name__], model_cls)()
 
         return mode
+
+    @property
+    def x_coordinates(self):
+        """The x-coordinates of the model domain.
+
+        :rtype: numpy.ndarray
+        """
+        return self.model.x if isinstance(self.model, Delft3D) else self._x_coordinates
+
+    @property
+    def y_coordinates(self):
+        """The y-coordinates of the model domain.
+
+        :rtype: numpy.ndarray
+        """
+        return self.model.y if isinstance(self.model, Delft3D) else self._y_coordinates
 
     @property
     def xy_coordinates(self):
@@ -83,8 +101,9 @@ class Hydrodynamics:
                 return np.array([[0, 0]])
             return self._xy_coordinates
         elif self.mode == 'Delft3D':
-            # TODO: Have the (x,y)-coordinates be based on the model
-            raise NotImplementedError
+            return np.array([
+                [x, y] for x in self.x_coordinates for y in self.y_coordinates
+            ])
 
     @property
     def water_depth(self):
@@ -101,7 +120,7 @@ class Hydrodynamics:
                 raise ValueError(msg)
             return self._water_depth
         elif self.mode == 'Delft3D':
-            raise NotImplementedError
+            return self.__model.water_depth
 
     # TODO: Set coordinates based on x- and y-, or xy-coordinates;
     #  include both options and translate them both directions.
@@ -120,6 +139,16 @@ class Hydrodynamics:
                 [*xy] for xy in xy_coordinates
             ])
 
+        if self._x_coordinates is None and self._y_coordinates is None:
+            self._x_coordinates = np.array([
+                xy[0] for xy in xy_coordinates
+            ])
+            self._y_coordinates = np.array([
+                xy[1] for xy in xy_coordinates
+            ])
+
+    # TODO: Prevent coordinates and water depth definition when these
+    #  are extracted from hydrodynamic model (i.e. Delft3D).
     def set_water_depth(self, water_depth):
         """Set water depth if not provided by hydrodynamic model.
 
@@ -182,6 +211,16 @@ class BaseHydro:
         """Print settings of BaseHydro-model."""
         msg = 'No hydrodynamic model coupled.'
         return msg
+
+    @property
+    def x(self):
+        """x-coordinate(s)."""
+        return None
+
+    @property
+    def y(self):
+        """y-coordinate(s)."""
+        return None
 
     def initiate(self):
         """Initiate hydrodynamic model."""
@@ -552,6 +591,11 @@ class Delft3D(BaseHydro):
     def y(self):
         """Center of gravity's y-coodinates as part of `space`."""
         return self.get_var('yzw')[range(self.space)]
+
+    @property
+    def water_depth(self):
+        """Water depth."""
+        return self.get_var('is_sumvalsnd')[range(self.space), 2] / self.time_step
 
     def reset_counters(self):
         """Reset properties for next model update."""
