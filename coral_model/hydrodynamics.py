@@ -65,6 +65,11 @@ class Hydrodynamics:
         return mode
 
     @property
+    def space(self):
+        """Space-dimension."""
+        return len(self.xy_coordinates)
+
+    @property
     def x_coordinates(self):
         """The x-coordinates of the model domain.
 

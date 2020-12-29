@@ -252,6 +252,7 @@ class Simulation:
             duration = int(self.environment.dates.iloc[-1].year - self.environment.dates.iloc[0].year)
         years = range(int(self.environment.dates.iloc[0].year), int(self.environment.dates.iloc[0].year + duration))
 
+        core.RESHAPE.space = self.hydrodynamics.space
         with tqdm(range((int(duration)))) as progress:
             for i in progress:
                 # set dimensions (i.e. update time-dimension)
