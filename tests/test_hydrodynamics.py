@@ -9,7 +9,7 @@ class TestHydrodynamics(unittest.TestCase):
 
     def test_init(self):
         modes = (None, 'Reef0D', 'Reef1D', 'Delft3D')
-        nir_modes = ('Reef1D', 'Delft3D')
+        nir_modes = ('Reef1D',)
 
         # implemented modes
         for mode in modes:
@@ -74,6 +74,19 @@ class TestHydrodynamics(unittest.TestCase):
 
     # TODO: test input_check Reef1D
     # TODO: test input_check Delft3D
+    def test_input_check31(self):
+        model = Hydrodynamics(mode='Delft3D')
+        with self.assertRaises(ValueError) as context:
+            model.input_check_interval('update_interval')
+
+        self.assertTrue('update_interval undefined' in str(context.exception))
+
+    def test_input_check32(self):
+        model = Hydrodynamics(mode='Delft3D')
+        with self.assertRaises(ValueError) as context:
+            model.input_check_interval('update_interval_storm')
+
+        self.assertTrue('update_interval_storm' in str(context.exception))
 
     def test_coordinates01(self):
         model = Hydrodynamics(mode=None)

@@ -51,7 +51,7 @@ class Hydrodynamics:
             raise ValueError(msg)
 
         # TODO: Facilitate Reef1D and Delft3D as well
-        if mode in ('Reef1D', 'Delft3D'):
+        if mode in ('Reef1D',):
             msg = f'{mode} not yet implemented.'
             raise NotImplementedError(msg)
 
@@ -132,6 +132,20 @@ class Hydrodynamics:
         """Check if all requested content is provided, depending on the mode chosen."""
         _ = self.xy_coordinates
         _ = self.water_depth
+
+        interval_types = ('update_interval', 'update_interval_storm')
+        [self.input_check_interval(interval) for interval in interval_types]
+
+    def input_check_interval(self, interval):
+        """Check definition of update interval of hydrodynamic model.
+
+        :param interval: update interval
+        :type interval: str
+        """
+        interval_models = ('Delft3D',)
+        if str(self.__model) in interval_models:
+            msg = f'{interval} undefined (required for {self.mode}-mode).'
+            raise ValueError(msg) if getattr(self.__model, interval) is None else None
 
     def initiate(self):
         """Initiate hydrodynamic model."""
@@ -370,18 +384,19 @@ class Reef1D(BaseHydro):
 
 class Delft3D(BaseHydro):
     """Coupling of coral_model to Delft3D using the BMI wrapper."""
-    
-    def __init__(self, home_dir, mdu_file, config_file=None):
+
+    # def __init__(self, home_dir, mdu_file, config_file=None):
+    def __init__(self):
         super().__init__()
 
-        self.home = home_dir
-        self.mdu = mdu_file
-        self.config = config_file
-        
-        self.environment()
-        self.initiate()
-        
-        self.time_step = None
+        # self.home = home_dir
+        # self.mdu = mdu_file
+        # self.config = config_file
+        #
+        # self.environment()
+        # self.initiate()
+        #
+        # self.time_step = None
     
     def __repr__(self):
         msg = (
