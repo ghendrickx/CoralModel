@@ -105,6 +105,9 @@ class Simulation:
         else:
             self.__input_dir = str(input_dir) if isinstance(input_dir, DirConfig) else DirConfig().config_dir(input_dir)
 
+        self.output.folder = self.output_dir
+        self.make_directories()
+
     def make_directories(self):
         """Create directories if not existing."""
         self.__working_dir.create_dir(self.working_dir)
@@ -143,6 +146,7 @@ class Simulation:
 
         if not isinstance(self.output, Output):
             self.output = Output(self.hydrodynamics.xy_coordinates, self.environment.dates[0])
+
         self.output.define_output(
             output_type=output_type, lme=lme, fme=fme, tme=tme, pd=pd, ps=ps, calc=calc, md=md
         )
@@ -210,9 +214,8 @@ class Simulation:
         self.hydrodynamics.initiate()
         core.RESHAPE.space = len(self.hydrodynamics.xy_coordinates)
 
-        self.output = Output(self.hydrodynamics.xy_coordinates, self.environment.dates.iloc[0])
-        # TODO: line below has to be removed when testing phase is over!!!
-        [self.define_output(output_type) for output_type in ('map', 'his')]
+        self.output.initiate_his()
+        self.output.initiate_map(coral)
 
         xy = self.hydrodynamics.xy_coordinates
 
