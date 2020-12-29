@@ -100,6 +100,8 @@ class Hydrodynamics:
         elif self.mode == 'Delft3D':
             raise NotImplementedError
 
+    # TODO: Set coordinates based on x- and y-, or xy-coordinates;
+    #  include both options and translate them both directions.
     def set_coordinates(self, xy_coordinates):
         """Set (x,y)-coordinates if not provided by hydrodynamic model.
 
