@@ -214,8 +214,12 @@ class Simulation:
         self.hydrodynamics.initiate()
         core.RESHAPE.space = len(self.hydrodynamics.xy_coordinates)
 
-        self.output.initiate_his()
-        self.output.initiate_map(coral)
+        if self.output.output:
+            self.output.initiate_his()
+            self.output.initiate_map(coral)
+        else:
+            msg = f'WARNING: No output defined, so none exported.'
+            print(msg)
 
         xy = self.hydrodynamics.xy_coordinates
 
