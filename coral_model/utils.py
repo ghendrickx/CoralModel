@@ -371,6 +371,7 @@ class DirConfig:
 
 
 class Output:
+    """Output files based on predefined output content."""
 
     _file_name_map = None
     _file_name_his = None
