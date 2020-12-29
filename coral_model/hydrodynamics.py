@@ -525,10 +525,12 @@ class Delft3D(BaseHydro):
         self.model.initialize()
         
     def update(self, coral, storm=False):
-        """Update the working model."""
+        """Update the Delft3D-model."""
         self.time_step = self.update_interval_storm if storm else self.update_interval
         self.reset_counters()
         self.model.update(self.time_step)
+
+        return self.get_max_hydrodynamics() if storm else self.get_mean_hydrodynamics()
     
     def finalise(self):
         """Finalize the working model."""
@@ -543,6 +545,29 @@ class Delft3D(BaseHydro):
         maxs = self.model_fm.get_var('is_maxvalsnd')
         maxs.fill(0.)
         self.model_fm.set_var('is_maxvalsnd', maxs)
+
+    def set_morphology(self, coral):
+        """Set morphological dimensions to Delft3D-model.
+
+        :param coral: coral animal
+        :type coral: Coral
+        """
+        self.set_var('rnveg', coral.as_vegetation_density)
+        self.set_var('diaveg', coral.dc_rep)
+        self.set_var('stemheight', coral.hc)
+
+    def get_mean_hydrodynamics(self):
+        """Get hydrodynamic results; mean values."""
+        current_vel = self.get_var('is_sumvalsnd')[range(self.space), 1] / self.time_step
+        wave_vel = self.get_var('Uorb')[range(self.space)]
+        wave_per = self.get_var('twav')[range(self.space)]
+        return current_vel, wave_vel, wave_per
+
+    def get_max_hydrodynamics(self):
+        """Get hydrodynamic results; max. values."""
+        current_vel = self.get_var('is_maxvalsnd')[range(self.space), 1]
+        wave_vel = self.get_var('Uorb')[range(self.space)]
+        return current_vel, wave_vel
     
     def get_var(self, variable):
         """Get variable from DFlow-model.
