@@ -4,7 +4,7 @@ coral_model - utils
 @author: Gijs G. Hendrickx
 """
 import os
-
+# TODO: Restructure all utils-related files, methods, and methods.
 import numpy as np
 from netCDF4 import Dataset
 
