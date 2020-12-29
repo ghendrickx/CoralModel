@@ -167,6 +167,21 @@ class Hydrodynamics:
         else:
             self._water_depth = np.array([*water_depth])
 
+    def set_update_intervals(self, default, storm):
+        """Set update intervals; required for Delft3D-model.
+
+        :param default: default update interval
+        :param storm: storm update interval
+
+        :type default: int
+        :type storm: int
+        """
+        self.__model.update_interval = default
+        self.__model.update_interval_storm = storm
+
+        if not isinstance(self.__model, Delft3D):
+            print(f'INFO: Update intervals unused; {self.mode} does not use update intervals.')
+
     def input_check(self):
         """Check if all requested content is provided, depending on the mode chosen."""
         _ = self.xy_coordinates
@@ -184,7 +199,8 @@ class Hydrodynamics:
         interval_models = ('Delft3D',)
         if str(self.__model) in interval_models:
             msg = f'{interval} undefined (required for {self.mode}-mode).'
-            raise ValueError(msg) if getattr(self.__model, interval) is None else None
+            if getattr(self.__model, interval) is None:
+                raise ValueError(msg)
 
     def initiate(self):
         """Initiate hydrodynamic model."""

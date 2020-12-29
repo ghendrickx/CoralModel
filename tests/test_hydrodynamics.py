@@ -65,7 +65,7 @@ class TestHydrodynamics(unittest.TestCase):
         model.input_check()
 
     # TODO: test input_check Reef1D
-    # TODO: test input_check Delft3D
+
     def test_input_check31(self):
         model = Hydrodynamics(mode='Delft3D')
         with self.assertRaises(ValueError) as context:
@@ -79,6 +79,13 @@ class TestHydrodynamics(unittest.TestCase):
             model.input_check_interval('update_interval_storm')
 
         self.assertTrue('update_interval_storm' in str(context.exception))
+
+    def test_input_check33(self):
+        model = Hydrodynamics(mode='Delft3D')
+        model.set_update_intervals(10, 20)
+
+        intervals = ('update_interval', 'update_interval_storm')
+        [model.input_check_interval(interval) for interval in intervals]
 
     def test_coordinates01(self):
         model = Hydrodynamics(mode=None)
