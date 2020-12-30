@@ -7,7 +7,9 @@ coral_model - environment
 import pandas as pd
 import numpy as np
 
-from coral_model.utils import DirConfig
+from utils import DirConfig
+
+#from coral_model.utils import DirConfig
 
 
 class Processes:

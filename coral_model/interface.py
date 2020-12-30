@@ -3,10 +3,15 @@ coral_model v3 - interface
 
 @author: Gijs G. Hendrickx
 """
-from coral_model.core import Coral
-from coral_model.environment import Environment, Processes, Constants
-from coral_model.loop import Simulation
-from coral_model.utils import DirConfig
+#from coral_model.core import Coral
+#from coral_model.environment import Environment, Processes, Constants
+#from coral_model.loop import Simulation
+#from coral_model.utils import DirConfig
+
+from core import Coral
+from environment import Environment, Processes, Constants
+from loop import Simulation
+from utils import DirConfig
 
 # environment definition
 environment = Environment()
@@ -27,7 +32,7 @@ run.define_output('map', fme=False)
 run.define_output('his', fme=False)
 run.output.xy_stations = (0, 0)
 
-run.set_directories(DirConfig(home_dir=r'C:\Users\gghendrickx\Documents\workspace.git'))
+run.set_directories(DirConfig(home_dir=r'P:\11202744-008-vegetation-modelling\students\GijsHendrickx\models\MiniModel3'))
 
 coral = Coral(.1, .1, .05, .05, .2)
 coral = run.initiate(coral)

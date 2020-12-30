@@ -11,7 +11,9 @@ from scipy.optimize import fsolve
 import bmi.wrapper
 import faulthandler
 
-from coral_model.utils import DirConfig
+from utils import DirConfig
+
+#from coral_model.utils import DirConfig
 
 faulthandler.enable()
 

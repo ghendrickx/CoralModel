@@ -7,12 +7,19 @@ coral_model - loop
 import numpy as np
 from tqdm import tqdm
 
-from coral_model import core
-from coral_model.core import Light, Flow, Temperature, Photosynthesis, PopulationStates, Calcification, Morphology, \
+import core
+from core import Light, Flow, Temperature, Photosynthesis, PopulationStates, Calcification, Morphology, \
     Dislodgement, Recruitment
-from coral_model.environment import Processes, Constants, Environment
-from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
-from coral_model.utils import Output, DirConfig, time_series_year
+from environment import Processes, Constants, Environment
+from hydrodynamics import Hydrodynamics, BaseHydro
+from utils import Output, DirConfig, time_series_year
+
+#from coral_model import core
+#from coral_model.core import Light, Flow, Temperature, Photosynthesis, PopulationStates, Calcification, Morphology, \
+#    Dislodgement, Recruitment
+#from coral_model.environment import Processes, Constants, Environment
+#from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
+#from coral_model.utils import Output, DirConfig, time_series_year
 
 
 class Simulation:

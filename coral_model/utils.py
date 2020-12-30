@@ -230,7 +230,7 @@ class DataReshape(SpaceTime):
 
 class DirConfig:
 
-    __base_dirs = ('C:', )
+    __base_dirs = ('C:', 'P:')
 
     def __init__(self, home_dir=None):
         """
