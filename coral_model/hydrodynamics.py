@@ -481,6 +481,7 @@ class Delft3D(BaseHydro):
             f'{files}'
         return msg
 
+    # TODO: Rename 'home' to 'd3d_home' for clarification
     @property
     def home(self):
         """Delft3D home directory.
