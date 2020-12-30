@@ -27,7 +27,7 @@ constants = Constants(processes)
 # hydrodynamic model
 hydrodynamics = Hydrodynamics(mode='Delft3D')
 hydrodynamics.model.working_dir = r'P:\11202744-008-vegetation-modelling\students\GijsHendrickx\models\MiniModel'
-hydrodynamics.model.home = (
+hydrodynamics.model.d3d_home = (
         'P:\\11202744-008-vegetation-modelling', 'code_1709',
         'windows', 'oss_artifacts_x64_63721', 'x64'
 )

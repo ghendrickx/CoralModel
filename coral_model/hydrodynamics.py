@@ -486,13 +486,12 @@ class Delft3D(BaseHydro):
             files = f'\n\tDFlow file         : {self.mdu}'
 
         msg = f'Coupling with Delft3D model (incl. {incl}) with the following settings:' \
-            f'\n\tDelft3D home dir.  : {self.home}' \
+            f'\n\tDelft3D home dir.  : {self.d3d_home}' \
             f'{files}'
         return msg
 
-    # TODO: Rename 'home' to 'd3d_home' for clarification
     @property
-    def home(self):
+    def d3d_home(self):
         """Delft3D home directory.
 
         :rtype: DirConfig
@@ -501,14 +500,13 @@ class Delft3D(BaseHydro):
             return DirConfig()
         return self._home
 
-    # TODO: Rename 'home_dir' to 'folder' for consistancy
-    @home.setter
-    def home(self, home_dir):
+    @d3d_home.setter
+    def d3d_home(self, folder):
         """
-        :param home_dir: Delft3D home directory
-        :type home_dir: DirConfig, str, list, tuple
+        :param folder: Delft3D home directory
+        :type folder: DirConfig, str, list, tuple
         """
-        self._home = home_dir if isinstance(home_dir, DirConfig) else DirConfig(home_dir)
+        self._home = folder if isinstance(folder, DirConfig) else DirConfig(folder)
         
     @property
     def working_dir(self):
@@ -527,25 +525,25 @@ class Delft3D(BaseHydro):
     def dflow_dir(self):
         """Directory to DFlow-ddl."""
         if self._dflow_dir is None:
-            return self.home.config_dir(['dflowfm', 'bin', 'dflowfm.dll'])
+            return self.d3d_home.config_dir(['dflowfm', 'bin', 'dflowfm.dll'])
         return self._dflow_dir
     
     @dflow_dir.setter
     def dflow_dir(self, directory):
         """Set directory to DFlow-ddl."""
-        self._dflow_dir = self.home.config_dir(directory)
+        self._dflow_dir = self.d3d_home.config_dir(directory)
     
     @property
     def dimr_dir(self):
         """Directory to DIMR-dll."""
         if self._dimr_dir is None:
-            return self.home.config_dir(['dimr', 'bin', 'dimr_dll.dll'])
+            return self.d3d_home.config_dir(['dimr', 'bin', 'dimr_dll.dll'])
         return self._dimr_dir
     
     @dimr_dir.setter
     def dimr_dir(self, directory):
         """Set directory to DIMR-dll."""
-        self._dimr_dir = self.home.config_dir(directory)
+        self._dimr_dir = self.d3d_home.config_dir(directory)
 
     @property
     def mdu(self):
@@ -597,15 +595,15 @@ class Delft3D(BaseHydro):
     def environment(self):
         """Set Python environment to include Delft3D-code."""
         dirs = [
-            self.home.config_dir(['share', 'bin']),
-            self.home.config_dir(['dflowfm', 'bin']),
+            self.d3d_home.config_dir(['share', 'bin']),
+            self.d3d_home.config_dir(['dflowfm', 'bin']),
         ]
         if self.config:
             dirs.extend([
-                self.home.config_dir(['dimr', 'bin']),
-                self.home.config_dir(['dwaves', 'bin']),
-                self.home.config_dir(['esmf', 'scripts']),
-                self.home.config_dir(['swan', 'scripts']),
+                self.d3d_home.config_dir(['dimr', 'bin']),
+                self.d3d_home.config_dir(['dwaves', 'bin']),
+                self.d3d_home.config_dir(['esmf', 'scripts']),
+                self.d3d_home.config_dir(['swan', 'scripts']),
             ])
 
         env = ';'.join(dirs)
