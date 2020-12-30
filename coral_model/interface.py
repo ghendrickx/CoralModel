@@ -3,10 +3,11 @@ coral_model v3 - interface
 
 @author: Gijs G. Hendrickx
 """
-#from coral_model.core import Coral
-#from coral_model.environment import Environment, Processes, Constants
-#from coral_model.loop import Simulation
-#from coral_model.utils import DirConfig
+# from coral_model.core import Coral
+# from coral_model.environment import Environment, Processes, Constants
+# from coral_model.hydrodynamics import Hydrodynamics
+# from coral_model.loop import Simulation
+# from coral_model.utils import DirConfig
 
 from core import Coral
 from environment import Environment, Processes, Constants
@@ -39,8 +40,8 @@ print(hydrodynamics.model.settings)
 
 # initiation
 run = Simulation(environment, processes, constants, hydrodynamics)
-#run.set_coordinates((0, 0))
-#run.set_water_depth(10)
+# run.set_coordinates((0, 0))
+# run.set_water_depth(10)
 
 run.define_output('map', fme=False)
 run.define_output('his', fme=False)
