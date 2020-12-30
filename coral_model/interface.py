@@ -26,10 +26,15 @@ constants = Constants(processes)
 
 # hydrodynamic model
 hydrodynamics = Hydrodynamics(mode='Delft3D')
+hydrodynamics.model.working_dir = r'P:\11202744-008-vegetation-modelling\students\GijsHendrickx\models\MiniModel'
 hydrodynamics.model.home = (
         'P:\\11202744-008-vegetation-modelling', 'code_1709',
         'windows', 'oss_artifacts_x64_63721', 'x64'
 )
+hydrodynamics.model.mdu = r'flow\FlowFM.mdu'
+hydrodynamics.model.config = r'dimr_config.xml'
+hydrodynamics.set_update_intervals(300, 300)
+hydrodynamics.model.initiate()
 print(hydrodynamics.model.settings)
 
 # initiation
@@ -41,7 +46,7 @@ run.define_output('map', fme=False)
 run.define_output('his', fme=False)
 run.output.xy_stations = (0, 0)
 
-run.set_directories(DirConfig(home_dir=r'P:\11202744-008-vegetation-modelling\students\GijsHendrickx\models\MiniModel3'))
+run.set_directories(DirConfig(home_dir=r'P:\11202744-008-vegetation-modelling\students\GijsHendrickx\models\MiniModel'))
 
 coral = Coral(.1, .1, .05, .05, .2)
 coral = run.initiate(coral)
