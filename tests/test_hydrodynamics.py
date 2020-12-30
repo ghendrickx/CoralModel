@@ -69,14 +69,14 @@ class TestHydrodynamics(unittest.TestCase):
     def test_input_check31(self):
         model = Hydrodynamics(mode='Delft3D')
         with self.assertRaises(ValueError) as context:
-            model.input_check_interval('update_interval')
+            model.input_check_definition('update_interval')
 
         self.assertTrue('update_interval undefined' in str(context.exception))
 
     def test_input_check32(self):
         model = Hydrodynamics(mode='Delft3D')
         with self.assertRaises(ValueError) as context:
-            model.input_check_interval('update_interval_storm')
+            model.input_check_definition('update_interval_storm')
 
         self.assertTrue('update_interval_storm undefined' in str(context.exception))
 
@@ -85,7 +85,20 @@ class TestHydrodynamics(unittest.TestCase):
         model.set_update_intervals(10, 20)
 
         intervals = ('update_interval', 'update_interval_storm')
-        [model.input_check_interval(interval) for interval in intervals]
+        [model.input_check_definition(interval) for interval in intervals]
+
+    def test_input_check34(self):
+        model = Hydrodynamics(mode='Delft3D')
+        with self.assertRaises(ValueError) as context:
+            model.input_check_definition('mdu')
+
+        self.assertTrue('mdu undefined' in str(context.exception))
+
+    def test_input_check35(self):
+        model = Hydrodynamics(mode='Delft3D')
+        model.set_files(mdu='FlowFM.mdu')
+
+        model.input_check_definition('mdu')
 
     def test_coordinates01(self):
         model = Hydrodynamics(mode=None)

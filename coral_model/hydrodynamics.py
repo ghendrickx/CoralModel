@@ -182,6 +182,29 @@ class Hydrodynamics:
             msg = f'INFO: Water depth is extracted from the hydrodynamic model.'
             print(msg)
 
+    def set_files(self, mdu=None, config=None):
+        """Set critical files of hydrodynamic model.
+
+        :param mdu: MDU-file (req. Delft3D)
+        :param config: config-file (req. Delft3D)
+
+        :type mdu: str
+        :type config: str
+        """
+        [self.__set_file(key, val) for key, val in locals().items()]
+
+    def __set_file(self, obj, file):
+        """Set file of hydrodynamic model.
+
+        :param obj: file-object to be defined
+        :param file: file
+
+        :type obj: str
+        :type file: str
+        """
+        if file is not None and hasattr(self.model, obj):
+            setattr(self.model, obj, file)
+
     def set_update_intervals(self, default, storm=None):
         """Set update intervals; required for Delft3D-model.
 
@@ -202,19 +225,22 @@ class Hydrodynamics:
         _ = self.xy_coordinates
         _ = self.water_depth
 
-        interval_types = ('update_interval', 'update_interval_storm')
-        [self.input_check_interval(interval) for interval in interval_types]
-
-    def input_check_interval(self, interval):
-        """Check definition of update interval of hydrodynamic model.
-
-        :param interval: update interval
-        :type interval: str
-        """
         if isinstance(self.model, Delft3D):
-            msg = f'{interval} undefined (required for {self.mode}-mode).'
-            if getattr(self.model, interval) is None:
-                raise ValueError(msg)
+            self.input_check_extra_d3d()
+
+    def input_check_extra_d3d(self):
+        """Delft3D-specific input check."""
+        files = ('mdu',)
+        [self.input_check_definition(file) for file in files]
+
+        interval_types = ('update_interval', 'update_interval_storm')
+        [self.input_check_definition(interval) for interval in interval_types]
+
+    def input_check_definition(self, obj):
+        """Check definition of critical object."""
+        if getattr(self.model, obj) is None:
+            msg = f'{obj} undefined (required for {self.mode}-mode)'
+            raise ValueError(msg)
 
     def initiate(self):
         """Initiate hydrodynamic model."""
