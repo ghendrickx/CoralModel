@@ -37,7 +37,7 @@ class Hydrodynamics:
 
     def __str__(self):
         """String-representation of Hydrodynamics."""
-        return f'Coupled hydrodynamic model: {str(self.__model)}\n\tmode={self.mode}'
+        return f'Coupled hydrodynamic model: {str(self.model)}\n\tmode={self.mode}'
 
     def __repr__(self):
         """Representation of Hydrodynamics."""
@@ -129,7 +129,7 @@ class Hydrodynamics:
                 raise ValueError(msg)
             return self._water_depth
         elif self.mode == 'Delft3D':
-            return self.__model.water_depth
+            return self.model.water_depth
 
     # TODO: Set coordinates based on x- and y-, or xy-coordinates;
     #  include both options and translate them both directions.
@@ -182,19 +182,19 @@ class Hydrodynamics:
             msg = f'INFO: Water depth is extracted from the hydrodynamic model.'
             print(msg)
 
-    def set_update_intervals(self, default, storm):
+    def set_update_intervals(self, default, storm=None):
         """Set update intervals; required for Delft3D-model.
 
         :param default: default update interval
-        :param storm: storm update interval
+        :param storm: storm update interval, defaults to None
 
         :type default: int
-        :type storm: int
+        :type storm: int, optional
         """
         self.__model.update_interval = default
-        self.__model.update_interval_storm = storm
+        self.__model.update_interval_storm = default if storm is None else storm
 
-        if not isinstance(self.__model, Delft3D):
+        if not isinstance(self.model, Delft3D):
             print(f'INFO: Update intervals unused; {self.mode} does not use update intervals.')
 
     def input_check(self):
@@ -211,24 +211,23 @@ class Hydrodynamics:
         :param interval: update interval
         :type interval: str
         """
-        interval_models = ('Delft3D',)
-        if str(self.__model) in interval_models:
+        if isinstance(self.model, Delft3D):
             msg = f'{interval} undefined (required for {self.mode}-mode).'
-            if getattr(self.__model, interval) is None:
+            if getattr(self.model, interval) is None:
                 raise ValueError(msg)
 
     def initiate(self):
         """Initiate hydrodynamic model."""
         self.input_check()
-        self.__model.initiate()
+        self.model.initiate()
 
     def update(self, coral, storm=False):
         """Update hydrodynamic model."""
-        return self.__model.update(coral, storm=storm)
+        return self.model.update(coral, storm=storm)
 
     def finalise(self):
         """Finalise hydrodynamic model."""
-        self.__model.finalise()
+        self.model.finalise()
 
 
 class BaseHydro:
