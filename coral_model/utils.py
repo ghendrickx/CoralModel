@@ -885,7 +885,6 @@ class CoralOnly:
         """Time dimension."""
         return None if self.spacetime is None else self.spacetime[1]
 
-
     def in_space(self, coral, function, args, no_cover_value=0):
         """Only execute the function when there is coral cover.
     

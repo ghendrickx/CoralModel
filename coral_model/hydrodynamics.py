@@ -649,7 +649,10 @@ class Delft3D(BaseHydro):
     @property
     def water_depth(self):
         """Water depth."""
-        return self.get_var('is_sumvalsnd')[range(self.space), 2] / self.time_step if self._water_depth is None else self._water_depth
+        if self._water_depth is None:
+            return self.get_var('is_sumvalsnd')[range(self.space), 2] / self.time_step
+        else:
+            return self._water_depth
 
     def reset_counters(self):
         """Reset properties for next model update."""
