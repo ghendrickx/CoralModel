@@ -21,6 +21,8 @@ class SpaceTime:
         """
         if spacetime is not None:
             self.spacetime = spacetime
+        
+        self.set_coral_only(self.spacetime)
 
     def __repr__(self):
         """Development representation."""
@@ -59,6 +61,7 @@ class SpaceTime:
             raise TypeError(msg)
 
         self.__spacetime = tuple(space_time)
+        self.set_coral_only(tuple(space_time))
 
     @property
     def space(self):
@@ -91,6 +94,16 @@ class SpaceTime:
         :type t: int
         """
         self.spacetime = (self.space, t)
+        
+    # TODO: Refactor to a private method
+    def set_coral_only(self, spacetime):
+        """Automatically set the spacetime dimensions for the CoralOnly-class.
+        
+        :param spacetime: spacetime dimension
+        :type spacetime: tuple
+        """
+        CoralOnly.spacetime = spacetime
+        
 
 
 class DataReshape(SpaceTime):
@@ -855,6 +868,77 @@ class Output:
                 self._his_data['Vc'][ti, :] = np.tile(coral.volume, (len(y_dates), 1))[:, self.idx_stations]
 
             self._his_data.close()
+            
+            
+class CoralOnly:
+    """Execute functions only in the presence of corals."""
+    
+    spacetime = None
+    
+    @property
+    def space(self):
+        """Space dimension."""
+        return None if self.spacetime is None else self.spacetime[0]
+    
+    @property
+    def time(self):
+        """Time dimension."""
+        return None if self.spacetime is None else self.spacetime[1]
+
+
+    def in_space(self, coral, function, args, no_cover_value=0):
+        """Only execute the function when there is coral cover.
+    
+        :param coral: coral object
+        :param function: function to be executed
+        :param args: input arguments of the function
+        :param no_cover_value: default value in absence of coral cover
+    
+        :type coral: Coral
+        :type args: tuple
+        :type no_cover_value: float, optional
+        """    
+        args = list(args)
+        for i, arg in enumerate(args):
+            if isinstance(arg, (float, int)) or (isinstance(arg, np.ndarray) and not arg.shape):
+                args[i] = np.repeat(arg, self.space)
+            elif not len(arg) == self.space:
+                msg = f'Sizes do not match up, {len(arg)} =/= {self.space}.'
+                raise ValueError(msg)
+    
+        output = no_cover_value * np.ones(self.space)
+        output[coral.cover > 0] = function(*[
+            arg[coral.cover > 0] for arg in args
+        ])
+        return output
+    
+    def in_spacetime(self, coral, function, args, no_cover_value=0):
+        """Only execute the function when there is coral cover.
+    
+        :param coral: coral object
+        :param function: function to be executed
+        :param args: input arguments of the function
+        :param no_cover_value: default value in absence of coral cover
+    
+        :type coral: Coral
+        :type args: tuple
+        :type no_cover_value: float, optional
+        """
+        args = list(args)
+        for i, arg in enumerate(args):
+            if isinstance(arg, (float, int)) or (isinstance(arg, np.ndarray) and not arg.shape):
+                args[i] = arg * np.ones(self.spacetime)
+            elif arg.shape == coral.cover.shape:
+                args[i] = np.tile(arg, (self.time, 1)).transpose()
+            elif not arg.shape == self.spacetime:
+                msg = f'Sizes do not match up, {arg.shape} =/= {self.spacetime}.'
+                raise ValueError(msg)
+    
+        output = no_cover_value * np.ones(self.spacetime)
+        output[coral.cover > 0] = function(*[
+            arg[coral.cover > 0] for arg in args
+        ])
+        return output
 
 
 def time_series_year(time_series, year):
@@ -867,35 +951,3 @@ def time_series_year(time_series, year):
     :type year: int
     """
     return time_series[time_series.index.year == year].values.transpose()[0]
-
-
-def coral_only_function(coral, function, args, no_cover_value=0):
-    """Only execute the function when there is coral cover.
-
-    :param coral: coral object
-    :param function: function to be executed
-    :param args: input arguments of the function
-    :param no_cover_value: default value in absence of coral cover
-
-    :type coral: Coral
-    :type args: tuple
-    :type no_cover_value: float, optional
-    """
-    try:
-        size = len(coral.cover)
-    except TypeError:
-        size = 1
-
-    args = list(args)
-    for i, arg in enumerate(args):
-        if isinstance(arg, (float, int)) or (isinstance(arg, np.ndarray) and not arg.shape):
-            args[i] = np.repeat(arg, size)
-        elif not len(arg) == size:
-            msg = f'Sizes do not match up, {len(arg)} =/= {size}.'
-            raise ValueError(msg)
-
-    output = no_cover_value * np.ones(size)
-    output[coral.cover > 0] = function(*[
-        arg[coral.cover > 0] for arg in args
-    ])
-    return output
