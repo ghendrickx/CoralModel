@@ -8,11 +8,8 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import newton
 
-from environment import Processes, Constants
-from utils import DataReshape, CoralOnly
-
-#from coral_model.environment import Processes, Constants
-#from coral_model.utils import DataReshape, CoralOnly
+from coral_model.environment import Processes, Constants
+from coral_model.utils import DataReshape, CoralOnly
 
 # # data formatting -- to be reformatted in the model simulation
 RESHAPE = DataReshape()

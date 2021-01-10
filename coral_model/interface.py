@@ -3,17 +3,11 @@ coral_model v3 - interface
 
 @author: Gijs G. Hendrickx
 """
-# from coral_model.core import Coral
-# from coral_model.environment import Environment, Processes, Constants
-# from coral_model.hydrodynamics import Hydrodynamics
-# from coral_model.loop import Simulation
-# from coral_model.utils import DirConfig
-
-from core import Coral
-from environment import Environment, Processes, Constants
-from loop import Simulation
-from hydrodynamics import Hydrodynamics
-from utils import DirConfig
+from coral_model.core import Coral
+from coral_model.environment import Environment, Processes, Constants
+from coral_model.hydrodynamics import Hydrodynamics
+from coral_model.loop import Simulation
+from coral_model.utils import DirConfig
 
 # environment definition
 environment = Environment()
