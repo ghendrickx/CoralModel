@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from coral_model import core
 from coral_model.core import Light, Flow, Temperature, Photosynthesis, PopulationStates, Calcification, Morphology, \
-    Dislodgement, Recruitment
+   Dislodgement, Recruitment
 from coral_model.environment import Processes, Constants, Environment
 from coral_model.hydrodynamics import Hydrodynamics, BaseHydro
 from coral_model.utils import Output, DirConfig, time_series_year
@@ -57,6 +57,7 @@ class Simulation:
         """
         self.hydrodynamics.set_water_depth(water_depth)
 
+    # TODO: Couple this working directory with hydrodynamic model's working directory
     @property
     def working_dir(self):
         """Working directory.
@@ -211,11 +212,8 @@ class Simulation:
         """
         self.input_check()
 
-        self.hydrodynamics.initiate()
+#        self.hydrodynamics.initiate()
         core.RESHAPE.space = self.hydrodynamics.space
-
-        self.output.initiate_his()
-        self.output.initiate_map(coral)
 
         xy = self.hydrodynamics.xy_coordinates
 
@@ -235,6 +233,9 @@ class Simulation:
             cover[np.logical_or(xy[:][1] <= y_min, xy[:][1] >= y_max)] = 0
 
         coral.initiate_spatial_morphology(cover)
+        
+        self.output.initiate_his()
+        self.output.initiate_map(coral)
 
         return coral
 

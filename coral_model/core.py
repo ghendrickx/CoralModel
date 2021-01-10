@@ -9,7 +9,7 @@ import pandas as pd
 from scipy.optimize import newton
 
 from coral_model.environment import Processes, Constants
-from coral_model.utils import DataReshape, coral_only_function
+from coral_model.utils import DataReshape, CoralOnly
 
 # # data formatting -- to be reformatted in the model simulation
 RESHAPE = DataReshape()
@@ -195,7 +195,7 @@ class Coral:
         def function(dc_rep, ac):
             return (2 * dc_rep) / (ac ** 2)
 
-        return coral_only_function(
+        return CoralOnly().in_space(
             coral=self,
             function=function,
             args=(self.dc_rep, self.ac)
@@ -316,7 +316,7 @@ class Light:
             """Averaged light-intensity."""
             return total_light / biomass
 
-        coral.light = coral_only_function(
+        coral.light = CoralOnly().in_spacetime(
             coral=coral,
             function=averaged_light,
             args=(total, coral.Bc),
@@ -587,7 +587,7 @@ class Flow:
             """Thickness velocity boundary layer."""
             return (rd * nu) / (np.sqrt(cf) * ucm)
 
-        return coral_only_function(
+        return CoralOnly().in_space(
             coral=coral,
             function=boundary_layer,
             args=(CONSTANTS.rd, CONSTANTS.nu, CONSTANTS.Cf, coral.ucm)
@@ -612,8 +612,8 @@ class Temperature:
         :param coral: coral animal
         :type coral: Coral
         """
-        delta_t = RESHAPE.variable2matrix(coral.delta_t, 'space')
         if PROCESSES.tme:
+            delta_t = RESHAPE.variable2matrix(coral.delta_t, 'space')
             coral.dTc = (
                     (delta_t * CONSTANTS.ap) / (CONSTANTS.k * CONSTANTS.K0) *
                     coral.light
@@ -1182,7 +1182,7 @@ class Dislodgement:
         :param coral: coral animal
         :type coral: Coral
         """
-        self.csf = coral_only_function(
+        self.csf = CoralOnly().in_space(
             coral=coral,
             function=self.csf_formula,
             args=(coral.dc, coral.hc, coral.bc, coral.tc)
@@ -1253,7 +1253,7 @@ class Recruitment:
         # living cover
         living_cover = RESHAPE.matrix2array(coral.living_cover, 'space')
 
-        recruited = coral_only_function(
+        recruited = CoralOnly().in_space(
             coral=coral,
             function=self.recruited,
             args=(potential, averaged_healthy_pop, living_cover, coral.cover)

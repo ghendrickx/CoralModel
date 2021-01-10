@@ -355,14 +355,6 @@ class TestDislodgement(unittest.TestCase):
         dislodgement.colony_shape_factor(coral)
         self.assertAlmostEqual(float(dislodgement.csf), 40.1070456591576246)
 
-    def test_csf2(self):
-        dislodgement = Dislodgement()
-        coral = Coral([.2, 0], [.3, 0], [.1, 0], [.15, 0], [.3, 0])
-        dislodgement.colony_shape_factor(coral)
-        answers = [40.1070456591576246, 0]
-        for i, ans in enumerate(answers):
-            self.assertAlmostEqual(float(dislodgement.csf[i]), ans)
-
 
 @set_shape
 class TestRecruitment(unittest.TestCase):

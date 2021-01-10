@@ -35,7 +35,7 @@ class Hydrodynamics:
 
     def __str__(self):
         """String-representation of Hydrodynamics."""
-        return f'Coupled hydrodynamic model: {str(self.__model)}\n\tmode={self.mode}'
+        return f'Coupled hydrodynamic model: {str(self.model)}\n\tmode={self.mode}'
 
     def __repr__(self):
         """Representation of Hydrodynamics."""
@@ -109,7 +109,7 @@ class Hydrodynamics:
             return self._xy_coordinates
         elif self.mode == 'Delft3D':
             return np.array([
-                [x, y] for x in self.x_coordinates for y in self.y_coordinates
+                [self.x_coordinates[i], self.y_coordinates[i]] for i in range(len(self.x_coordinates))
             ])
 
     @property
@@ -127,7 +127,7 @@ class Hydrodynamics:
                 raise ValueError(msg)
             return self._water_depth
         elif self.mode == 'Delft3D':
-            return self.__model.water_depth
+            return self.model.water_depth
 
     # TODO: Set coordinates based on x- and y-, or xy-coordinates;
     #  include both options and translate them both directions.
@@ -180,19 +180,42 @@ class Hydrodynamics:
             msg = f'INFO: Water depth is extracted from the hydrodynamic model.'
             print(msg)
 
-    def set_update_intervals(self, default, storm):
+    def set_files(self, mdu=None, config=None):
+        """Set critical files of hydrodynamic model.
+
+        :param mdu: MDU-file (req. Delft3D)
+        :param config: config-file (req. Delft3D)
+
+        :type mdu: str
+        :type config: str
+        """
+        [self.__set_file(key, val) for key, val in locals().items()]
+
+    def __set_file(self, obj, file):
+        """Set file of hydrodynamic model.
+
+        :param obj: file-object to be defined
+        :param file: file
+
+        :type obj: str
+        :type file: str
+        """
+        if file is not None and hasattr(self.model, obj):
+            setattr(self.model, obj, file)
+
+    def set_update_intervals(self, default, storm=None):
         """Set update intervals; required for Delft3D-model.
 
         :param default: default update interval
-        :param storm: storm update interval
+        :param storm: storm update interval, defaults to None
 
         :type default: int
-        :type storm: int
+        :type storm: int, optional
         """
         self.__model.update_interval = default
-        self.__model.update_interval_storm = storm
+        self.__model.update_interval_storm = default if storm is None else storm
 
-        if not isinstance(self.__model, Delft3D):
+        if not isinstance(self.model, Delft3D):
             print(f'INFO: Update intervals unused; {self.mode} does not use update intervals.')
 
     def input_check(self):
@@ -200,33 +223,35 @@ class Hydrodynamics:
         _ = self.xy_coordinates
         _ = self.water_depth
 
+        if isinstance(self.model, Delft3D):
+            self.input_check_extra_d3d()
+
+    def input_check_extra_d3d(self):
+        """Delft3D-specific input check."""
+        files = ('mdu',)
+        [self.input_check_definition(file) for file in files]
+
         interval_types = ('update_interval', 'update_interval_storm')
-        [self.input_check_interval(interval) for interval in interval_types]
+        [self.input_check_definition(interval) for interval in interval_types]
 
-    def input_check_interval(self, interval):
-        """Check definition of update interval of hydrodynamic model.
-
-        :param interval: update interval
-        :type interval: str
-        """
-        interval_models = ('Delft3D',)
-        if str(self.__model) in interval_models:
-            msg = f'{interval} undefined (required for {self.mode}-mode).'
-            if getattr(self.__model, interval) is None:
-                raise ValueError(msg)
+    def input_check_definition(self, obj):
+        """Check definition of critical object."""
+        if getattr(self.model, obj) is None:
+            msg = f'{obj} undefined (required for {self.mode}-mode)'
+            raise ValueError(msg)
 
     def initiate(self):
         """Initiate hydrodynamic model."""
         self.input_check()
-        self.__model.initiate()
+        self.model.initiate()
 
     def update(self, coral, storm=False):
         """Update hydrodynamic model."""
-        return self.__model.update(coral, storm=storm)
+        return self.model.update(coral, storm=storm)
 
     def finalise(self):
         """Finalise hydrodynamic model."""
-        self.__model.finalise()
+        self.model.finalise()
 
 
 class BaseHydro:
@@ -450,17 +475,26 @@ class Delft3D(BaseHydro):
     _home = None
     _dflow_dir = None
     _dimr_dir = None
+    
+    _working_dir = None
     _mdu = None
     _config = None
+    
+    _model_fm = None
+    _model_dimr = None
+    
+    _space = None
+    _x = None
+    _y = None
+    _water_depth = None
 
     def __init__(self):
         super().__init__()
-
+        
         self.time_step = None
     
     def __repr__(self):
-        msg = f'Delft3D(home_dir={self.home}, mdu_file={self.mdu}, ' \
-            f'config_file={self.config})'
+        msg = f'Delft3D()'
         return msg
 
     @property
@@ -475,12 +509,12 @@ class Delft3D(BaseHydro):
             files = f'\n\tDFlow file         : {self.mdu}'
 
         msg = f'Coupling with Delft3D model (incl. {incl}) with the following settings:' \
-            f'\n\tDelft3D home dir.  : {self.home}' \
+            f'\n\tDelft3D home dir.  : {self.d3d_home}' \
             f'{files}'
         return msg
 
     @property
-    def home(self):
+    def d3d_home(self):
         """Delft3D home directory.
 
         :rtype: DirConfig
@@ -489,47 +523,82 @@ class Delft3D(BaseHydro):
             return DirConfig()
         return self._home
 
-    @home.setter
-    def home(self, home_dir):
+    @d3d_home.setter
+    def d3d_home(self, folder):
         """
-        :param home_dir: Delft3D home directory
-        :type home_dir: DirConfig, str, list, tuple
+        :param folder: Delft3D home directory
+        :type folder: DirConfig, str, list, tuple
         """
-        self._home = home_dir if isinstance(home_dir, DirConfig) else DirConfig(home_dir)
+        self._home = folder if isinstance(folder, DirConfig) else DirConfig(folder)
+        
+    @property
+    def working_dir(self):
+        """Model working directory."""
+        return DirConfig() if self._working_dir is None else self._working_dir
+    
+    @working_dir.setter
+    def working_dir(self, folder):
+        """
+        :param folder: working directory
+        :type folder: DirConfig, str, list, tuple
+        """
+        self._working_dir = folder if isinstance(folder, DirConfig) else DirConfig(folder)
         
     @property
     def dflow_dir(self):
         """Directory to DFlow-ddl."""
         if self._dflow_dir is None:
-            return self.home.config_dir(['dflowfm', 'bin', 'dflowfm.dll'])
+            return self.d3d_home.config_dir(['dflowfm', 'bin', 'dflowfm.dll'])
         return self._dflow_dir
     
     @dflow_dir.setter
     def dflow_dir(self, directory):
         """Set directory to DFlow-ddl."""
-        self._dflow_dir = self.home.config_dir(directory)
+        self._dflow_dir = self.d3d_home.config_dir(directory)
     
     @property
     def dimr_dir(self):
         """Directory to DIMR-dll."""
         if self._dimr_dir is None:
-            return self.home.config_dir(['dimr', 'bin', 'dimr_dll.dll'])
+            return self.d3d_home.config_dir(['dimr', 'bin', 'dimr_dll.dll'])
         return self._dimr_dir
     
     @dimr_dir.setter
     def dimr_dir(self, directory):
         """Set directory to DIMR-dll."""
-        self._dimr_dir = self.home.config_dir(directory)
+        self._dimr_dir = self.d3d_home.config_dir(directory)
 
     @property
     def mdu(self):
-        """Delft3D's MDU-file."""
+        """Delft3D's MDU-file.
+        
+        :rtype: str
+        """
         return self._mdu
+    
+    @mdu.setter
+    def mdu(self, file_dir):
+        """
+        :param file_dir: file directory of MDU-file
+        :type file_dir: str, list, tuple
+        """
+        self._mdu = self.working_dir.config_dir(file_dir)
 
     @property
     def config(self):
-        """Delft3D's config-file."""
+        """Delft3D's config-file.
+        
+        :rtype: str
+        """
         return self._config
+    
+    @config.setter
+    def config(self, file_dir):
+        """
+        :param file_dir: file directory of config-file
+        :type file_dir: str, list, tuple
+        """
+        self._config = self.working_dir.config_dir(file_dir)
         
     @property
     def model(self):
@@ -539,34 +608,27 @@ class Delft3D(BaseHydro):
     @property
     def model_fm(self):
         """Deflt3D-FM model-object."""
-        return bmi.wrapper.BMIWrapper(
-            engine=self.dflow_dir, 
-            configfile=self.mdu
-        )
+        return self._model_fm
         
     @property
     def model_dimr(self):
         """Delft3D DIMR model-object."""
-        if self.config:
-            return bmi.wrapper.BMIWrapper(
-                engine=self.dimr_dir,
-                configfile=self.config
-            )
+        return self._model_dimr
     
     def environment(self):
         """Set Python environment to include Delft3D-code."""
         dirs = [
-            self.home.config_dir(['share', 'bin']),
-            self.home.config_dir(['dflowfm', 'bin']),
+            self.d3d_home.config_dir(['share', 'bin']),
+            self.d3d_home.config_dir(['dflowfm', 'bin']),
         ]
         if self.config:
             dirs.extend([
-                (['dimr', 'bin']),
-                self.home.config_dir(['dwaves', 'bin']),
-                self.home.config_dir(['esmf', 'scripts']),
-                self.home.config_dir(['swan', 'scripts']),
+                self.d3d_home.config_dir(['dimr', 'bin']),
+                self.d3d_home.config_dir(['dwaves', 'bin']),
+                self.d3d_home.config_dir(['esmf', 'scripts']),
+                self.d3d_home.config_dir(['swan', 'scripts']),
             ])
-            
+
         env = ';'.join(dirs)
         os.environ['PATH'] = env
             
@@ -595,22 +657,25 @@ class Delft3D(BaseHydro):
     @property
     def space(self):
         """Number of non-boundary boxes; i.e. within-domain boxes."""
-        return self.get_var('ndxi')
-
+        return self.get_var('ndxi') if self._space is None else self._space
+    
     @property
     def x(self):
         """Center of gravity's x-coordinates as part of `space`."""
-        return self.get_var('xzw')[range(self.space)]
+        return self.get_var('xzw')[range(self.space)] if self._x is None else self._x
 
     @property
     def y(self):
         """Center of gravity's y-coodinates as part of `space`."""
-        return self.get_var('yzw')[range(self.space)]
+        return self.get_var('yzw')[range(self.space)] if self._y is None else self._y
 
     @property
     def water_depth(self):
         """Water depth."""
-        return self.get_var('is_sumvalsnd')[range(self.space), 2] / self.time_step
+        if self._water_depth is None:
+            return self.get_var('is_sumvalsnd')[range(self.space), 2] / self.time_step
+        else:
+            return self._water_depth
 
     def reset_counters(self):
         """Reset properties for next model update."""
@@ -648,7 +713,16 @@ class Delft3D(BaseHydro):
     def initiate(self):
         """Initialize the working model."""
         self.environment()
-        self.model.initialize()
+        self._model_fm = bmi.wrapper.BMIWrapper(
+            engine=self.dflow_dir, 
+            configfile=self.mdu
+        )
+        if self.config:
+            self._model_dimr = bmi.wrapper.BMIWrapper(
+                engine=self.dimr_dir,
+                configfile=self.config
+            )
+        self.model.initialize()  # if self.model_dimr is None else self.model_dimr.initialize()
         
     def update(self, coral, storm=False):
         """Update the Delft3D-model."""
