@@ -105,7 +105,6 @@ class SpaceTime:
         CoralOnly.spacetime = spacetime
         
 
-
 class DataReshape(SpaceTime):
     """Reshape data to create a spacetime matrix."""
 

@@ -392,8 +392,12 @@ class Reef1D(BaseHydro):
         return self.Tp
 
     @property
+    def water_level(self):
+        return 0
+
+    @property
     def depth(self):
-        return self.bath + self.z
+        return self.bath + self.water_level
 
     @property
     def can_dia(self):
