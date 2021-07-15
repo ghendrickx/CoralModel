@@ -17,9 +17,8 @@ class Constants:
 
     @classmethod
     def set_light_micro_environment(cls, lac_default=None, theta_max=None):
-        [setattr(cls, f'_{key}', value) for key, value in locals().items()]
-        # cls._lac_default = lac_default
-        # cls._theta_max = theta_max
+        cls._lac_default = lac_default
+        cls._theta_max = theta_max
 
     @property
     def lac_default(self):
@@ -134,6 +133,39 @@ class Constants:
 
     # photosynthetic light dependency
     _photo_acc_rate = None
+    _max_saturation = None
+    _max_photosynthesis = None
+    _exp_saturation = None
+    _exp_max_photosynthesis = None
+
+    @classmethod
+    def set_photosynthetic_light_dependency(cls, photo_acc_rate=None, max_satuation=None, max_photosynthesis=None,
+                                            exp_saturation=None, exp_max_photosynthesis=None):
+        cls._photo_acc_rate = photo_acc_rate
+        cls._max_saturation = max_satuation
+        cls._max_photosynthesis = max_photosynthesis
+        cls._exp_saturation = exp_saturation
+        cls._exp_max_photosynthesis = exp_max_photosynthesis
+
+    @property
+    def photo_acc_rate(self):
+        return .6 if self._photo_acc_rate is None else self._photo_acc_rate
+
+    @property
+    def max_saturation(self):
+        return 372.32 if self._max_saturation is None else self._max_saturation
+
+    @property
+    def max_photosynthesis(self):
+        return 1 if self._max_photosynthesis is None else self._max_photosynthesis
+
+    @property
+    def exp_saturation(self):
+        return .34 if self._exp_saturation is None else self._exp_saturation
+
+    @property
+    def exp_max_photosynthesis(self):
+        return .09 if self._exp_max_photosynthesis is None else self._exp_max_photosynthesis
 
 
 if __name__ == '__main__':
