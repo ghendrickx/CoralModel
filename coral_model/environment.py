@@ -13,13 +13,12 @@ from coral_model.utils import DirConfig
 class Processes:
     """Processes included in coral_model simulations."""
     # TODO: Include the on/off-switch for more processes:
-    #  (1) hydrodynamic coupling;
-    #  (2) acidity;
-    #  (3) light;
-    #  (4) temperature;
-    #  (5) dislodgement;
-    #  (6) recruitment;
-    #  (7) etc.
+    #  acidity;
+    #  light;
+    #  temperature;
+    #  dislodgement;
+    #  recruitment;
+    #  etc.
 
     def __init__(self, fme=True, tme=True, pfd=True, warning=True):
         """
@@ -82,150 +81,143 @@ class Constants:
         """
         Parameters
         ----------
-        processes : Processes
-            Definition of the processes that are included, specified by means
-            of the Processes-object.
+        :param processes: included processes
+        :type processes: Processes
 
         > light micro-environment
-        lac_default : numeric, optional
-            Constant light-attenuation coefficient; is used when no time-series
-            is available [m-1]. The default is 0.1.
-        light_spreading_max : numeric, optional
-            Maximum spreading of light as measured at the water-air interface
-            [rad]. The default is 0.5*pi.
+        :param lac_default: constant light-attenuation coefficient [m-1]; used when no time-series provided,
+            defaults to 0.1
+        :param light_spreading_max: maximum spreading of light [rad]; defined at water-air interface, defaults to 0.5*pi
+
+        :type lac_default: float, optional
+        :type light_spreading_max: float, optional
 
         > flow micro-environment
-        turbulence_coef : float, optional
-            Smagorinsky coefficient [-]. The default is 0.17.
-        inertia_coef : float, optional
-            Inertia coefficient [-]. The default is 1.7.
-        friction_coef : float, optional
-            Friction coefficient [-]. The default is 0.01.
-        kin_viscosity : float, optional
-            Kinematic viscosity of water [m2 s-1]. The default is 1e6.
-        therm_diff : float, optional
-            Thermal diffusivity of water [m2 s-1]. The default is 1e-7.
-        spacing_ratio : float, optional
-            Ratio of lateral over streamwise spacing of corals [-]. The default
-            is 2.
-        wc_angle : float, optional
-            Angle between current- and wave-induced flows [rad]. The default
-            is 0.
-        rd : float, optional
-            Velocity boundary layer wall-coordinate [-]. The default is 500.
-        theta :  float, optional
-            Update ratio for above-canopy flow [-]. The default is 0.5.
-        err :  float, optional
-            Maximum allowed relative error [-]. The default is 1e-6.
-        maxiter_k :  float, optional
-            Maximum number of iterations taken over the canopy layers. The
-            default is 1e5.
-        maxiter_aw :  float, optional
-            Maximum number of iterations to solve the complex-valued wave-
-            attenuation coefficient. The default is 1e5.
+        :param turbulence_coef: Smagorinsky coefficient [-], defaults to 0.17
+        :param inertia_coef: inertia coefficient [-], defaults to 1.7
+        :param friction_coef: friction coefficient [-], defaults to 0.01
+        :param kin_viscosity: kinematic viscosity of water [m2 s-1], defaults to 1e-6
+        :param therm_diff: thermal diffusivity of water [m2 s-1], defaults to 1e-7
+        :param spacing_ratio: ratio of lateral over longitudinal spacing of corals [-], defaults to 2
+        :param wc_angle: angle between current- and wave-induced flows [rad], defaults to 0
+        :param rd: velocity boundary layer wall-coordinate [-], defaults to 500
+        :param theta: update ratio for above-canopy flow [-], defaults to 0.5
+        :param err: maximum allowed relative error for drag coefficient estimation [-], defaults to 1e-6
+        :param maxiter_k: maximum number of iterations taken over canopy layers, defaults to 1e5
+        :param maxiter_aw: maximum number of iterations to solve complex-valued wave-attenuation coefficient,
+            defaults to 1e5
+
+        :type turbulence_coef: float, optional
+        :type inertia_coef: float, optional
+        :type friction_coef: float, optional
+        :type kin_viscosity: float, optional
+        :type spacing_ratio: float, optional
+        :type wc_angle: float, optional
+        :type rd: float, optional
+        :type theta: float, optional
+        :type err: float, optional
+        :type maxiter_k: int, optional
+        :type maxiter_aw: int, optional
 
         > thermal micro-environment
-        thermal_coef : float, optional
-            Morphological thermal coefficient [-]. The default is 80.
-        absorptivity : float, optional
-            Absorptivity of coral [-]. The default is 0.4.
-        therm_cond : float, optional
-            Thermal conductivity [J m-1 s-1 K-1]. The default is 0.6089.
+        :param thermal_coef: morphological thermal coefficient [-], defaults to 80
+        :param absorptivity: absorptivity of coral [-], defaults to 0.4
+        :param therm_cond: thermal conductivity [K m-1 s-1 K-1], defaults to 0.6089
+
+        :type thermal_coef: float, optional
+        :type absorptivity: float, optional
+        :type therm_cond: float, optional
 
         > photosynthetic light dependency
-        pa_rate : float, optional
-            Photo-acclimation rate [d-1]. The default is 0.6.
-        sat_intensity_max : float, optional
-            Maximum value of the quasi steady-state for the saturation light-
-            intensity [umol photons m-2 s-1]. The default is 372.32.
-        photo_max : float, optional
-            Maximum value of the quasi steady-state for the maximum
-            photosynthetic efficiency [-]. The default is 1.
-        beta_sat_intensity : float, optional
-            Exponent of the quasi steady-state for the saturation light-
-            intensity [-]. The default is 0.34.
-        beta_photo : float, optional
-            Exponent of the quasi steady-state for the maximum photosynthetic
-            efficiency [-]. The default is 0.09.
+        :param pa_rate: photo-acclimation rate [d-1], defaults to 0.6
+        :param sat_intensity_max: maximum quasi steady-state saturation light-intensity [umol photons m-2 s-1],
+            defaults to 372.32
+        :param photo_max: maximum quasi steady-state maximum photosynthetic efficiency [-], defaults to 1
+        :param beta_sat_intensity: exponent of the quasi steady-state saturation light-intensity [-], defaults to 0.34
+        :param beta_photo: exponent of the quasi steady-state maximum photosynthetic efficiency [-], defaults to 0.09
+
+        :type pa_rate: float, optional
+        :type sat_intensity_max: float, optional
+        :type photo_max: float, optional
+        :type beta_sat_intensity: float, optional
+        :type beta_photo: float, optional
 
         > photosynthetic thermal dependency
-        act_energy : float, optional
-            Activation energy [J mol-1]. The default is 6e4.
-        gas_constant : float, optional
-            Gas constant [J K-1 mol-1]. The default is 8.31446261815324.
-        thermal_variability : float, optional
-            Thermal-acclimation coefficient [-]. The default is 2.45.
-        nn : float, optional
-            Thermal-acclimation period [yrs]. The default is 60.
+        :param act_energy: activation energy [J mol-1], defaults to 6e4
+        :param gas_constant: gas constant [J K-1 mol-1], defaults to 8.31446261815324
+        :param thermal_variability: thermal-acclimation coefficient [-], defaults to 2.45
+        :param nn: thermal-acclimation period [y], defaults to 60
+
+        :type act_energy: float, optional
+        :type gas_constant: float, optional
+        :type thermal_variability: float, optional
+        :type nn: int, float, optional
 
         > photosynthetic flow dependency
-        pfd_min : float, optional
-            Minimum photosynthetic flow dependency [-]. The default is
-            0.68886964.
-        ucr : float, optional
-            Minimum flow velocity at which photosynthesis is not limited by
-            flow [m s-1]. The default is (1) 0.17162374 if flow micro-
-            environment is enabled; and (2) 0.5173... if flow micro-environment
-            is disabled.
+        :param pfd_min: minimum photosynthetic flow dependency [-], defaults to 0.68886964
+        :param ucr: minimum flow velocity at which photosynthesis is not limited by flow [m s-1], defaults to 0.14162374
+
+        :type pdf_min: float, optional
+        :type ucr: float, optional
 
         > population states
-        r_growth : float, optional
-            Growth rate [d-1]. The default is 0.002.
-        r_recovery : float, optional
-            Recovering rate [d-1]. The default is 0.2.
-        r_mortality : float, optional
-            Mortality rate [d-1]. The default is 0.04.
-        r_bleaching : float, optional
-            Bleaching rate [d-1]. The default is 8.
+        :param r_growth: growth rate [d-1], defaults to 0.002
+        :param r_recovery: recovery rate [d-1], defaults to 0.2
+        :param r_mortality: mortality rate [d-1], defaults to 0.04
+        :param r_bleaching: bleaching rate [d-1], defaults to 8
+
+        :type r_growth: float, optional
+        :type r_recovery: float, optional
+        :type r_mortality: float, optional
+        :type r_bleaching: float, optional
 
         > calcification
-        calcification_const : float, optional
-            Calcification constant [kg m-2 d-1].. The default is 0.5.
-        arg_sat_default : float, optional
-            Constant aragonite saturation state (is used when no time-series of
-            the parameter is available) [-]. The default is 5.
-        omega0 : float, optional
-            Aragonite dissolution state [-]. The default is 0.14587415.
-        kappa0 : float, optional
-            Modified Michaelis-Menten half-rate coefficient [-]. The default
-            is 0.66236107.
+        :param calcification_const: calcification constant [kg m-2 d-1], defaults to 0.5
+        :param arg_sat_default: default aragonite saturation state used in absence of time-series [-], defaults to 5
+        :param omega0: aragonite dissolution state [-], defaults to 0.14587415
+        :param kappa0: modified Michaelis-Menten half-rate coefficient [-], defaults to 0.66236107
+
+        :type calcification_const: float, optional
+        :type arg_sat_default: float, optional
+        :type omega0: float, optional
+        :type kappa0: float, optional
 
         > morphological development
-        prop_form : float, optional
-            Overall form proportionality constant [-]. The default is 0.1.
-        prop_plate : float, optional
-            Overall plate proportionality constant [-]. The default is 0.5.
-        prop_plate_flow : float, optional
-            Flow plate proportionality constant [-]. The default is 0.1.
-        prop_space : float, optional
-            Overall spacing proportionality constant [-]. The default is
-            0.5 / sqrt(2).
-        prop_space_light : float, optional
-            Light spacing proportionality constant [-]. The default is 0.1.
-        prop_space_flow : float, optional
-            Flow spacing proportionality constant [-]. The default is 0.1.
-        u0 : float, optional
-            Base-line flow velocity [m s-1]. The default is 0.2.
-        rho_c : float, optional
-            Density of coral [kg m-3]. The default is 1600.
+        :param prop_form: overall form proportionality constant [-], defaults to 0.1
+        :param prop_plate: overall plate proportionality constant [-], defaults to 0.5
+        :param prop_plate_flow: flow plate proportionality constant [-], defaults to 0.1
+        :param prop_space: overall space proportionality constant [-], defaults to 0.5/sqrt(2)
+        :param prop_space_light: light space proportionality constant [-], defaults to 0.1
+        :param prop_space_flow: flow space proportionality constant [-], defaults to 0.1
+        :param u0: base-line flow velocity [m s-1], defaults to 0.2
+        :param rho_c: density of coral [kg m-3], defaults to 1600
+
+        :type prop_form: float, optional
+        :type prop_plate: float, optional
+        :type prop_plate_flow: float, optional
+        :type prop_space: float, optional
+        :type prop_space_light: float, optional
+        :type prop_space_flow: float, optional
+        :type u0: float, optional
+        :type rho_c: float, optional
 
         > dislodgement criterion
-        sigma_tensile : float, optional
-            Tensile strength of substratum [N m-2]. The default is 2e5.
-        drag_coef : float, optional
-            Drag coefficient [-]. The default is 1.
-        rho_w : float, optional
-            Density of water [kg m-3]. The default is 1025.
+        :param sigma_tensile: tensile strength of substratum [N m-2], defaults to 2e5
+        :param drag_coef: drag coefficient [-], defaults to 1
+        :param rho_w: density of water [kg m-3], defaults to 1000
+
+        :type sigma_tensile: float, optional
+        :type drag_coef: float, optional
+        :type rho_w: float, optional
 
         > coral recruitment
-        no_larvae : float, optional
-            Number of larvae released during mass spawning event [-]. The
-            default is 1e6.
-        prob_settle : float, optional
-            Probability of settlement [-]. The default is 1e-4.
-        d_larvae : float, optional
-            Larval diameter [m]. The default is 1e-3.
+        :param no_larvae: number of larvae released during mass spawning event [-], defaults to 1e6
+        :param prob_settle: probability of settlement [-], defaults to 1e-4
+        :param d_larvae: larval diameter [m], defaults to 1e-3
 
+        :type no_larvae: float, optional
+        :type prob_settle: float, optional
+        :type d_larvae: float, optional
         """
         def default(x, default_value):
             """Set default value if no custom value is provided."""
