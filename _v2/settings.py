@@ -16,15 +16,15 @@ class Processes:
 
     @property
     def flow_micro_environment(self):
-        return self._flow_micro_environment
+        return True if self._flow_micro_environment is None else False
 
     @property
     def thermal_micro_environment(self):
-        return self._thermal_micro_environment
+        return True if self._thermal_micro_environment is None else False
 
     @property
     def photosynthetic_flow_dependency(self):
-        return self._photosynthetic_flow_dependency
+        return True if self._photosynthetic_flow_dependency is None else False
 
 
 class Constants:
@@ -399,12 +399,14 @@ class Constants:
 
 if __name__ == '__main__':
     c = Constants()
-    print(c.lac_default)
-    Constants.set_light_micro_environment(lac_default=.2)
-    print(c.lac_default)
-    c.set_light_micro_environment(lac_default=.3)
-    print(c.lac_default)
-    Constants.set_constant('lac_default', .4)
-    print(c.lac_default)
-    c.set_light_micro_environment(lac_default=.5)
-    print(c.lac_default)
+    print(c.invariant_flow_velocity)
+    Processes.set_processes(flow_micro_environment=False)
+    print(c.invariant_flow_velocity)
+    Constants.set_photosynthetic_flow_dependency(invariant_flow_velocity=.1)
+    print(c.invariant_flow_velocity)
+    Constants.set_constant('invariant_flow_velocity', 10)
+    print(c.invariant_flow_velocity)
+    Constants.set_constant('invariant_flow_velocity', None)
+    print(c.invariant_flow_velocity)
+    Processes.set_processes(flow_micro_environment=True)
+    print(c.invariant_flow_velocity)
