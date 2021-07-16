@@ -1,6 +1,32 @@
 import numpy as np
 
 
+class Processes:
+
+    _flow_micro_environment = None
+    _thermal_micro_environment = None
+    _photosynthetic_flow_dependency = None
+
+    @classmethod
+    def set_processes(cls, flow_micro_environment=None, thermal_micro_environment=None,
+                      photosynthetic_flow_dependency=None):
+        cls._flow_micro_environment = flow_micro_environment
+        cls._thermal_micro_environment = thermal_micro_environment
+        cls._photosynthetic_flow_dependency = photosynthetic_flow_dependency
+
+    @property
+    def flow_micro_environment(self):
+        return self._flow_micro_environment
+
+    @property
+    def thermal_micro_environment(self):
+        return self._thermal_micro_environment
+
+    @property
+    def photosynthetic_flow_dependency(self):
+        return self._photosynthetic_flow_dependency
+
+
 class Constants:
 
     @classmethod
