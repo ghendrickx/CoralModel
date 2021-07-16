@@ -193,6 +193,209 @@ class Constants:
     def exp_max_photosynthesis(self):
         return .09 if self._exp_max_photosynthesis is None else self._exp_max_photosynthesis
 
+    # photosynthetic thermal dependency
+    _activation_energy = None
+    _gas_constant = None
+    _thermal_variability = None
+    _thermal_acclimation_period = None
+
+    @classmethod
+    def set_photosynthetic_thermal_dependency(cls, activation_energy=None, gas_constant=None, thermal_variability=None,
+                                              thermal_acclimation_period=None):
+        cls._activation_energy = activation_energy
+        cls._gas_constant = gas_constant
+        cls._thermal_variability = thermal_variability
+        cls._thermal_acclimation_period = thermal_acclimation_period
+
+    @property
+    def activation_energy(self):
+        return 6e4 if self._activation_energy is None else self._activation_energy
+
+    @property
+    def gas_constant(self):
+        return 8.31446261815324 if self._gas_constant is None else self._gas_constant
+
+    @property
+    def thermal_variability(self):
+        return 2.45 if self._thermal_variability is None else self._thermal_variability
+
+    @property
+    def thermal_acclimation_period(self):
+        return 60 if self._thermal_acclimation_period is None else self._thermal_acclimation_period
+
+    # photosynthetic flow dependency
+    _min_photosynthetic_flow_dependency = None
+    _invariant_flow_velocity = None
+
+    @classmethod
+    def set_photosynthetic_flow_dependency(cls, min_photosynthetic_flow_dependency=None, invariant_flow_velocity=None):
+        cls._min_photosynthetic_flow_dependency = min_photosynthetic_flow_dependency
+        cls._invariant_flow_velocity = invariant_flow_velocity
+
+    @property
+    def min_photosynthetic_flow_dependency(self):
+        return .68886964 if self._min_photosynthetic_flow_dependency is None \
+            else self._min_photosynthetic_flow_dependency
+
+    @property
+    def invariant_flow_velocity(self):
+        default = .17162374 if Processes().flow_micro_environment else .5173
+        return default if self._invariant_flow_velocity is None else self._invariant_flow_velocity
+
+    # population dynamics
+    _growth_rate = None
+    _recovery_rate = None
+    _mortality_rate = None
+    _bleaching_rate = None
+
+    @classmethod
+    def set_population_dynamics(cls, growth_rate=None, recovery_rate=None, mortality_rate=None, bleaching_rate=None):
+        cls._growth_rate = growth_rate
+        cls._recovery_rate = recovery_rate
+        cls._mortality_rate = mortality_rate
+        cls._bleaching_rate = bleaching_rate
+
+    @property
+    def growth_rate(self):
+        return .002 if self._growth_rate is None else self._growth_rate
+
+    @property
+    def recovery_rate(self):
+        return .2 if self._recovery_rate is None else self._recovery_rate
+
+    @property
+    def mortality_rate(self):
+        return .04 if self._mortality_rate is None else self._mortality_rate
+
+    @property
+    def bleaching_rate(self):
+        return 8 if self._bleaching_rate is None else self._bleaching_rate
+
+    # calcification
+    _calcification_constant = None
+    _aragonite_saturation = None
+    _dissolution_saturation = None
+    _half_rate = None
+
+    @classmethod
+    def set_calcification(cls, calcification_constant=None, aragonite_saturation=None, dissolution_saturation=None,
+                          half_rate=None):
+        cls._calcification_constant = calcification_constant
+        cls._aragonite_saturation = aragonite_saturation
+        cls._dissolution_saturation = dissolution_saturation
+        cls._half_rate = half_rate
+
+    @property
+    def calcification_constant(self):
+        return .5 if self._calcification_constant is None else self._calcification_constant
+
+    @property
+    def aragonite_saturation(self):
+        return 5 if self._aragonite_saturation is None else self._aragonite_saturation
+
+    @property
+    def dissolution_saturation(self):
+        return .14587415 if self._dissolution_saturation is None else self._dissolution_saturation
+
+    @property
+    def half_rate(self):
+        return .66236107 if self._half_rate is None else self._half_rate
+
+    # morphological development
+    _proportionality_form = None
+    _proportionality_plate = None
+    _proportionality_plate_flow = None
+    _proportionality_space = None
+    _proportionality_space_light = None
+    _proportionality_space_flow = None
+    _fitting_flow_velocity = None
+    _coral_density = None
+
+    @classmethod
+    def set_morphological_development(cls, proportionality_form=None, proportionality_plate=None,
+                                      proportionality_plate_flow=None, proportionality_space=None,
+                                      proportionality_space_light=None, proportionality_space_flow=None,
+                                      fitting_flow_velocity=None, coral_density=None):
+        if proportionality_space is not None and proportionality_space > .5 / np.sqrt(2):
+            msg = f'Space proportionality constant (Xs) must be smaller than 0.5/sqrt(2) : ' \
+                f'{proportionality_space} > {.5 / np.sqrt(2)}'
+            raise ValueError(msg)
+
+        cls._proportionality_form = proportionality_form
+        cls._proportionality_plate = proportionality_plate
+        cls._proportionality_plate_flow = proportionality_plate_flow
+        cls._proportionality_space = proportionality_space
+        cls._proportionality_space_light = proportionality_space_light
+        cls._proportionality_space_flow = proportionality_space_flow
+        cls._fitting_flow_velocity = fitting_flow_velocity
+        cls._coral_density = coral_density
+
+    @property
+    def proportionality_form(self):
+        return .1 if self._proportionality_form is None else self._proportionality_form
+
+    @property
+    def proportionality_plate(self):
+        return .5 if self._proportionality_plate is None else self._proportionality_plate
+
+    @property
+    def proportionality_plate_flow(self):
+        return .1 if self._proportionality_plate_flow is None else self._proportionality_plate_flow
+
+    @property
+    def proportionality_space(self):
+        return .5 / np.sqrt(2) if self._proportionality_space is None else self._proportionality_space
+
+    @property
+    def proportionality_space_light(self):
+        return .1 if self._proportionality_space_light is None else self._proportionality_space_light
+
+    @property
+    def proportionality_space_flow(self):
+        return .1 if self._proportionality_space_flow is None else self._proportionality_space_flow
+
+    @property
+    def fitting_flow_velocity(self):
+        return .2 if self._fitting_flow_velocity is None else self._fitting_flow_velocity
+
+    @property
+    def coral_density(self):
+        return 1600 if self._coral_density is None else self._coral_density
+
+    # coral dislodgement
+    _tensile_stress = None
+    _drag_coefficient = None
+    _water_density = None
+
+    @classmethod
+    def set_coral_dislodgement(cls, tensile_stress=None, drag_coefficient=None, water_density=None):
+        cls._tensile_stress = tensile_stress
+        cls._drag_coefficient = drag_coefficient
+        cls._water_density = water_density
+
+    @property
+    def tensile_stress(self):
+        return 2e5 if self._tensile_stress is None else self._tensile_stress
+
+    @property
+    def drag_coefficient(self):
+        return 1 if self._drag_coefficient is None else self._drag_coefficient
+
+    @property
+    def water_density(self):
+        return 1025 if self._water_density is None else self._water_density
+
+    # coral recruitment
+    _larvae_spawned = None
+    _settle_probability = None
+    _larval_diameter = None
+
+    @classmethod
+    def set_coral_recruitment(cls, larvae_spawned=None, settle_probability=None, larval_diameter=None):
+        cls._larvae_spawned = larvae_spawned
+        cls._settle_probability = settle_probability
+        cls._larval_diameter = larval_diameter
+
 
 if __name__ == '__main__':
     c = Constants()
