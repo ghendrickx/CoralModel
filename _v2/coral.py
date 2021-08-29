@@ -1,5 +1,7 @@
 import logging
 
+import numpy as np
+
 LOG = logging.getLogger(__name__)
 
 
@@ -74,15 +76,15 @@ class _CoralStates:
         self._healthy = self._set_state(state)
 
     @property
-    def recovering(self):
+    def recovered(self):
         """
         :return: recovering coral cover
         :rtype: float
         """
         return self._recovered
 
-    @recovering.setter
-    def recovering(self, state):
+    @recovered.setter
+    def recovered(self, state):
         """
         :param state: recovering coral cover
         :type state: float
@@ -106,15 +108,15 @@ class _CoralStates:
         self._pale = self._set_state(state)
 
     @property
-    def bleaching(self):
+    def bleached(self):
         """
         :return: bleaching coral cover
         :rtype: float
         """
         return self._bleached
 
-    @bleaching.setter
-    def bleaching(self, state):
+    @bleached.setter
+    def bleached(self, state):
         """
         :param state: bleaching coral cover
         :type state: float
@@ -122,12 +124,12 @@ class _CoralStates:
         self._bleached = self._set_state(state)
 
     @property
-    def all(self):
+    def sum(self):
         """
         :return: total coral cover
         :rtype: float
         """
-        return sum([self.healthy, self.recovering, self.pale, self.bleaching])
+        return sum([self.healthy, self.recovered, self.pale, self.bleached])
 
 
 class _CoralMorphology:
@@ -151,6 +153,47 @@ class _CoralMorphology:
         self.base_diameter = diameter if base_diameter is None else base_diameter
         self.plate_thickness = height if plate_thickness is None else plate_thickness
         self.distance = distance
+
+    def update(self, volume, rf, rp, rs):
+        """Update coral morphology based on the coral's volume and its morphological ratios.
+
+        :param volume: updated coral volume
+        :param rf: updated form ratio
+        :param rp: updated plate ratio
+        :param rs: updated spacing ratio
+
+        :type volume: float
+        :type rf: float
+        :type rp: float
+        :type rs: float
+        """
+
+        def vc2dc():
+            """Coral volume to coral plate diameter."""
+            return ((4. * volume) / (np.pi * rf * rp * (1. + rp - rp ** 2))) ** (1. / 3.)
+
+        def vc2hc():
+            """Coral volume to coral height."""
+            return ((4. * volume * rf ** 2) / (np.pi * rp * (1. + rp - rp ** 2))) ** (1. / 3.)
+
+        def vc2bc():
+            """Coral volume > diameter of the base."""
+            return ((4. * volume * rp ** 2) / (np.pi * rf * (1. + rp - rp ** 2))) ** (1. / 3.)
+
+        def vc2tc():
+            """Coral volume > thickness of the plate."""
+            return ((4. * volume * rf ** 2 * rp ** 2) / (np.pi * (1. + rp - rp ** 2))) ** (1. / 3.)
+
+        def vc2ac():
+            """Coral volume > axial distance."""
+            return (1. / rs) * ((4. * volume) / (np.pi * rf * rp * (1. + rp - rp ** 2))) ** (1. / 3.)
+
+        # update morphology
+        self.diameter = vc2dc()
+        self.height = vc2hc()
+        self.base_diameter = vc2bc()
+        self.plate_thickness = vc2tc()
+        self.distance = vc2ac()
 
     @property
     def representative_diameter(self):
@@ -185,6 +228,17 @@ class _CoralMorphology:
         :rtype: float
         """
         return self.diameter / self.distance
+
+    @property
+    def volume(self):
+        """
+        :return: coral volume
+        :rtype: float
+        """
+        return .25 * np.pi * (
+                (self.height - self.plate_thickness) * self.base_diameter ** 2 +
+                self.plate_thickness * self.diameter ** 2
+        )
 
 
 class _CoralEnvironment:
@@ -303,7 +357,7 @@ class Coral:
         :type species: CoralSpecies
         """
         self._constants = species.constants
-        self._states = _CoralStates()
+        self._states = [_CoralStates()]
         self._morphology = species.initial_morphology
 
     @property
@@ -318,7 +372,7 @@ class Coral:
     def states(self):
         """
         :return: coral population states
-        :rtype: _CoralStates
+        :rtype: list[_CoralStates]
         """
         return self._states
 
@@ -326,9 +380,8 @@ class Coral:
     def states(self, coral_states):
         """
         :param coral_states: coral population states
-        :type coral_states: _CoralStates
+        :type coral_states: list[_CoralStates]
         """
-        assert isinstance(coral_states, _CoralStates)
         self._states = coral_states
 
     @property
