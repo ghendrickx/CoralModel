@@ -153,6 +153,16 @@ class _CoralMorphology:
         self.distance = distance
 
     @property
+    def representative_diameter(self):
+        """Diameter representing the combined effect of the base and plate diameters.
+
+        :return: representative diameter
+        :rtype: float
+        """
+        return (self.base_diameter * (self.height - self.plate_thickness) + self.diameter * self.plate_thickness) / \
+            self.height
+
+    @property
     def form_ratio(self):
         """
         :return: coral morphology form ratio
