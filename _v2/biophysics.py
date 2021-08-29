@@ -320,12 +320,7 @@ class Flow(_BasicBiophysics):
         :type depth: float
         :type attenuation: str
         """
-        assert attenuation not in ('wave', 'current')
-
-        above_motion = 1
-        shear_length = 1
-        drag_length = 1
-        lambda_planar = 1
+        assert attenuation in ('wave', 'current')
 
         def function(beta):
             """Complex-valued function to be solved.
@@ -463,7 +458,160 @@ class Temperature(_BasicBiophysics):
 
 
 class Photosynthesis(_BasicBiophysics):
-    pass
+
+    def __init__(self, coral_reef, year):
+        """
+        :param coral_reef: grid of corals, i.e. coral reef
+        :param year: year of simulation
+
+        :type coral_reef: Grid
+        :type year: int
+        """
+        self._year = year
+        super().__init__(coral_reef)
+
+    def _update(self, cell):
+        """Update corals: Photosynthetic dependencies.
+
+        :param cell: grid cell
+        :type cell: Cell
+        """
+        [self._photosynthetic_rate(coral, self._year) for coral in cell.corals]
+
+    def _photosynthetic_rate(self, coral, year):
+        """Photosynthetic efficiency.
+
+        """
+        # photosynthetic dependencies
+        pld = self._light_dependency(coral, 'qss')
+        pfd = self._thermal_dependency(coral, year)
+        ptd = self._flow_dependency(coral)
+
+        # combined
+        coral.set_characteristic('photosynthesis', pld * pfd * ptd)
+
+    def _light_dependency(self, coral, output):
+        """Photosynthetic light dependency.
+
+        :param coral: coral
+        :param output: output definition
+
+        :type coral: Coral
+        :type output: str
+        """
+
+        def photo_acclimation(coral_light, light, x_old, param):
+            """Photo-acclimation.
+
+            :param coral_light: representative light conditions
+            :param light: light conditions
+            :param x_old: value at previous time step
+            :param param: parameter
+
+            :type coral_light: float
+            :type light: float
+            :type x_old: float
+            :type param: str
+            """
+            assert param in ('Ik', 'Pmax')
+            assert output in ('qss', 'new')
+
+            # parameter definitions
+            x_max = self.constants.max_saturation if param == 'Ik' else self.constants.max_photosynthesis
+            x_pow = self.constants.exp_saturation if param == 'Ik' else self.constants.exp_max_photosynthesis
+
+            # calculations
+            xs = x_max * (coral_light / light) ** x_pow
+            if output == 'qss':
+                return xs
+            elif output == 'new':
+                return xs + (x_old - xs) * np.exp(-self.constants.photo_acc_rate)
+
+        if output == 'qss':
+            saturation = photo_acclimation(
+                coral.get_characteristic('light'), self.environment.light, 0, 'Ik'
+            )
+            max_photosynthesis = photo_acclimation(
+                coral.get_characteristic('light'), self.environment.light, 0, 'Pmax'
+            )
+        else:
+            raise NotImplementedError
+
+        # calculations
+        return max_photosynthesis * (
+            np.tanh(coral.get_characteristic('light') / saturation) - np.tanh(.01 * self.environment.light / saturation)
+        )
+
+    def _thermal_dependency(self, coral, year):
+        """Photosynthetic thermal dependency.
+
+        :param coral: coral
+        :param year: year of simulation
+
+        :type coral: Coral
+        :type year: int
+        """
+
+        delta_temp = 1
+
+        def thermal_acclimation():
+            """Thermal acclimation."""
+            if self.processes.thermal_micro_environment:
+                raise NotImplementedError
+            else:
+                mmm = self.environment.temperature_mmm[np.logical_and(
+                    self.environment.temperature_mmm.index < year,
+                    self.environment.temperature_mmm.index >= year - int(
+                        self.constants.thermal_acclimation_period / coral.constants.species_constant
+                    )
+                )]
+                m_min, m_max = mmm.mean(axis=0)
+                s_min, s_max = mmm.std(axis=0)
+
+            coral.set_characteristic('lower_limit', m_min - self.constants.thermal_variability * s_min)
+            coral.set_characteristic('upper_limit', m_max + self.constants.thermal_variability * s_max)
+
+        def adapted_temperature():
+            """Adapted temperature response."""
+
+            def specialisation():
+                """Specialisation term."""
+                return 4e-4 * np.exp(-.33 * delta_temp - 10)
+
+            relative_temperature = coral.get_characteristic('temperature') - coral.get_characteristic('lower_limit')
+            response = -relative_temperature * (relative_temperature ** 2 - delta_temp ** 2)
+            critical = coral.get_characteristic('lower_limit') - (1 / np.sqrt(3)) * delta_temp
+
+            if self.processes.thermal_micro_environment:
+                pass
+            else:
+                response[coral.get_characteristic('temperature') <= critical] = -2 / (3 * np.sqrt(3)) * delta_temp ** 3
+
+            return response * specialisation()
+
+        def thermal_envelope():
+            """Thermal envelope."""
+            return np.exp((self.constants.activation_energy / self.constants.gas_constant) * (1 / 300 - 1 / optimal))
+
+        # parameter definitions
+        thermal_acclimation()
+        delta_temp = coral.get_characteristic('upper_limit') - coral.get_characteristic('lower_limit')
+        optimal = coral.get_characteristic('lower_limit') + (1 / np.sqrt(3)) * delta_temp
+
+        # calculations
+        return adapted_temperature() * thermal_envelope()
+
+    def _flow_dependency(self, coral):
+        """Photosynthetic flow dependency.
+
+        :param coral: coral
+        :type coral: Coral
+        """
+        if self.processes.photosynthetic_flow_dependency:
+            return self.constants.min_photosynthetic_flow_dependency + (
+                    1 - self.constants.min_photosynthetic_flow_dependency
+            ) * np.tanh(2 * coral.get_characteristic('in_canopy_flow') / self.constants.invariant_flow_velocity)
+        return 1
 
 
 class PopulationStates(_BasicBiophysics):

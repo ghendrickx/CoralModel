@@ -13,7 +13,7 @@ class _CoralConstants:
 
     def __repr__(self):
         """Representation."""
-        return f'_CoralConstants'
+        return f'_CoralConstants()'
 
     def __str__(self):
         """String-representation."""
