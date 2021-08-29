@@ -154,19 +154,23 @@ class _CoralMorphology:
         self.plate_thickness = height if plate_thickness is None else plate_thickness
         self.distance = distance
 
-    def update(self, volume, rf, rp, rs):
+    def update(self, volume, rf=None, rp=None, rs=None):
         """Update coral morphology based on the coral's volume and its morphological ratios.
 
         :param volume: updated coral volume
-        :param rf: updated form ratio
-        :param rp: updated plate ratio
-        :param rs: updated spacing ratio
+        :param rf: updated form ratio, defaults to None
+        :param rp: updated plate ratio, defaults to None
+        :param rs: updated spacing ratio, defaults to None
 
         :type volume: float
-        :type rf: float
-        :type rp: float
-        :type rs: float
+        :type rf: float, optional
+        :type rp: float, optional
+        :type rs: float, optional
         """
+        # default ratios: current ratios
+        rf = self.form_ratio if rf is None else rf
+        rp = self.plate_ratio if rp is None else rp
+        rs = self.spacing_ratio if rs is None else rs
 
         def vc2dc():
             """Coral volume to coral plate diameter."""
