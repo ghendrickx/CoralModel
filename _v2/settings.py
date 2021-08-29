@@ -415,6 +415,18 @@ class Constants:
         cls._settle_probability = settle_probability
         cls._larval_diameter = larval_diameter
 
+    @property
+    def larvae_spawned(self):
+        return 1e6 if self._larvae_spawned is None else self._larvae_spawned
+
+    @property
+    def settle_probability(self):
+        return 1e-4 if self._settle_probability is None else self._settle_probability
+
+    @property
+    def larval_diameter(self):
+        return 1e-3 if self._larval_diameter is None else self._larval_diameter
+
 
 if __name__ == '__main__':
     c = Constants()

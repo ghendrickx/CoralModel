@@ -927,4 +927,52 @@ class Dislodgement(_BasicBiophysics):
 
 
 class Recruitment(_BasicBiophysics):
-    pass
+
+    def _update(self, cell):
+        """Update corals: Coral recruitment.
+
+        :param cell: grid cell
+        :type cell: Cell
+        """
+        [self._coral_recruitment(coral, cell.capacity) for coral in cell.corals]
+
+    def _coral_recruitment(self, coral, capacity):
+        """Update coral population states and morphology due to spawning event.
+
+        :param coral: coral
+        :param capacity: carrying capacity
+
+        :type coral: Coral
+        :type capacity: float
+        """
+        [self._spawning(coral, capacity, param) for param in ('P', 'V')]
+
+    def _spawning(self, coral, capacity, param):
+        """Contribution to coral growth due to mass spawning
+
+        :param coral: coral
+        :param capacity: carrying capacity
+        :param param: determination of spawning contribution
+
+        :type coral: Coral
+        :type capacity: float
+        :type param: str
+        """
+        assert param in ('P', 'V')
+
+        # potential
+        power = 2 if param == 'P' else 3
+        potential = self.c.settle_probability * self.c.larvae_spawned * self.c.larval_diameter ** power
+        # healthy population
+        averaged_healthy_population = np.mean([s.healthy for s in coral.states])
+        # living cover
+        living_cover = coral.states[-1].all
+        # recruitment
+        recruited = potential * averaged_healthy_population * (1 - living_cover / capacity)
+        # update coral
+        if param == 'P':
+            # update population states
+            coral.states[-1].healthy += recruited
+        elif param == 'V':
+            # update morphology
+            coral.morphology.update(coral.morphology.volume + recruited)
