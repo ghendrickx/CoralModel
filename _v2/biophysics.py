@@ -245,7 +245,7 @@ class Flow(_BasicBiophysics):
 
     def _execute_flow(self, coral, water_depth):
         """Execution of Flow-object.
-        
+
         :param coral: coral
         :param water_depth: water depth
 
@@ -436,7 +436,30 @@ class Flow(_BasicBiophysics):
 
 
 class Temperature(_BasicBiophysics):
-    pass
+
+    def _update(self, cell):
+        """Update corals: Thermal micro-environment
+
+        :param cell: grid cell
+        :type cell: Cell
+        """
+        [self._coral_temperature(coral) for coral in cell.corals]
+
+    def _coral_temperature(self, coral):
+        """Coral temperature.
+
+        :param coral: coral
+        :type coral: Coral
+        """
+        if self.processes.thermal_micro_environment:
+            add_temperature = coral.get_characteristic('thermal_boundary_layer') * self.constants.absorptivity / (
+                self.constants.thermal_conductivity * self.constants.thermal_morphology
+            ) * coral.get_characteristic('light')
+            coral_temperature = self.environment.temperature + add_temperature
+        else:
+            coral_temperature = self.environment.temperature
+
+        coral.set_characteristic('temperature', coral_temperature)
 
 
 class Photosynthesis(_BasicBiophysics):
