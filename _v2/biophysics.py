@@ -713,7 +713,7 @@ class Calcification(_BasicBiophysics):
         :type coral: Coral
         """
         aragonite_dependency = (self.e.aragonite - self.c.dissolution_saturation) / (
-                self.c.half_rate + self.e.aragonite - self.c.dissolutioetn_saturation
+                self.c.half_rate + self.e.aragonite - self.c.dissolution_saturation
         )
         calcification = self.c.calcification_constant * coral.constants.species_constant * \
             [cs.healthy for cs in coral.states] * aragonite_dependency * coral.get_characteristic('photosynthesis')
