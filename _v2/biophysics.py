@@ -241,7 +241,19 @@ class Flow(_BasicBiophysics):
         :param cell: grid cell
         :type cell: Cell
         """
-        [self._velocities(coral, cell.water_depth) for coral in cell.corals]
+        [self._execute_flow(coral, cell.water_depth) for coral in cell.corals]
+
+    def _execute_flow(self, coral, water_depth):
+        """Execution of Flow-object.
+        
+        :param coral: coral
+        :param water_depth: water depth
+
+        :type coral: Coral
+        :type water_depth: float
+        """
+        self._velocities(coral, water_depth)
+        self._thermal_boundary_layer(coral)
 
     def _velocities(self, coral, water_depth):
         """In-canopy flow velocities, and depth-averaged flow velocities.
