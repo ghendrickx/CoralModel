@@ -3,35 +3,46 @@ import numpy as np
 
 class Processes:
 
-    _flow_micro_environment = None
-    _thermal_micro_environment = None
-    _photosynthetic_flow_dependency = None
+    _flow_micro_environment = True
+    _thermal_micro_environment = True
+    _photosynthetic_flow_dependency = True
 
     @classmethod
-    def set_processes(cls, flow_micro_environment=None, thermal_micro_environment=None,
-                      photosynthetic_flow_dependency=None):
+    def set_processes(
+            cls, flow_micro_environment=True, thermal_micro_environment=True, photosynthetic_flow_dependency=True
+    ):
+        """Define processes to include in the modelling of corals.
+
+        :param flow_micro_environment: include flow micro environment, defaults to True
+        :param thermal_micro_environment: include thermal micro environment, defaults to True
+        :param photosynthetic_flow_dependency: include photosynthetic flow dependency, defaults to True
+
+        :type flow_micro_environment: bool, optional
+        :type thermal_micro_environment: bool, optional
+        :type photosynthetic_flow_dependency: bool, optional
+        """
         cls._flow_micro_environment = flow_micro_environment
         cls._thermal_micro_environment = thermal_micro_environment
         cls._photosynthetic_flow_dependency = photosynthetic_flow_dependency
 
     @property
     def flow_micro_environment(self):
-        return True if self._flow_micro_environment is None else False
+        return self._flow_micro_environment
 
     @property
     def thermal_micro_environment(self):
-        return True if self._thermal_micro_environment is None else False
+        return self._thermal_micro_environment
 
     @property
     def photosynthetic_flow_dependency(self):
-        return True if self._photosynthetic_flow_dependency is None else False
+        return self._photosynthetic_flow_dependency
 
 
 class Constants:
 
     @classmethod
     def set_constant(cls, constant, value):
-        if hasattr(cls, constant):
+        if hasattr(cls, f'_{constant}'):
             setattr(cls, f'_{constant}', value)
         else:
             msg = f'There is no constant named \"{constant}\".'
