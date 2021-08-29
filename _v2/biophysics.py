@@ -1,7 +1,12 @@
+import logging
+
 import numpy as np
+from scipy.optimize import newton
 
 from _v2.coral import Coral
 from _v2.settings import Constants, Processes
+
+LOG = logging.getLogger(__name__)
 
 
 class _BasicBiophysics:
@@ -75,6 +80,14 @@ class _BasicBiophysics:
         :rtype: _EnvironmentSnippet
         """
         return self._environment
+
+    @property
+    def hydrodynamics(self):
+        """
+        :return: hydrodynamic conditions
+        :rtype: Hydrodynamics
+        """
+        return self._hydrodynamics
 
     @property
     def constants(self):
@@ -228,10 +241,161 @@ class Flow(_BasicBiophysics):
         :param cell: grid cell
         :type cell: Cell
         """
-        pass
+        [self._velocities(coral, cell.water_depth) for coral in cell.corals]
 
-    def _velocities(self):
-        pass
+    def _velocities(self, coral, water_depth):
+        """In-canopy flow velocities, and depth-averaged flow velocities.
+
+        :param coral: coral
+        :param water_depth: water depth
+
+        :type coral: Coral
+        :type water_depth: float
+        """
+        if self.processes.photosynthetic_flow_dependency:
+            if self.processes.flow_micro_environment:
+                wave_attenuation = self._wave_attenuation(
+                    coral.morphology.representative_diameter, coral.morphology.height, coral.morphology.distance,
+                    self.hydrodynamics.wave_velocity, self.hydrodynamics.wave_period, water_depth, 'wave'
+                )
+                current_attenuation = self._wave_attenuation(
+                    coral.morphology.representative_diameter, coral.morphology.height, coral.morphology.distance,
+                    self.hydrodynamics.current_velocity, 1e3, water_depth, 'current'
+                )
+            else:
+                wave_attenuation, current_attenuation = 1, 1
+
+            coral.set_characteristic('in_canopy_flow', self._wave_current(wave_attenuation, current_attenuation))
+            coral.set_characteristic('overall_flow', self._wave_current())
+        else:
+            coral.set_characteristic('in_canopy_flow', 9999)
+
+    def _wave_current(self, wave_attenuation=1, current_attenuation=1):
+        """Wave-current interaction.
+
+        :param wave_attenuation: wave-attenuation coefficient, defaults to 1
+        :param current_attenuation: current-attenuation coefficient, defaults to 1
+
+        :type wave_attenuation: float, iterable, optional
+        :type current_attenuation: float, iterable, optional
+
+        :return: flow velocity due to wave-current interaction
+        :rtype: float, iterable
+        """
+        wave_in_canopy = wave_attenuation * self.hydrodynamics.wave_velocity
+        current_in_canopy = current_attenuation * self.hydrodynamics.current_velocity
+        return np.sqrt(
+            wave_in_canopy ** 2 + current_in_canopy ** 2 +
+            2 * wave_in_canopy * current_in_canopy * np.cos(self.constants.angle)
+        )
+    
+    def _wave_attenuation(self, diameter, height, distance, velocity, period, depth, attenuation):
+        """Wave-attenuation coefficient.
+
+        :param diameter: representative coral diameter [m]
+        :param height: coral height [m]
+        :param distance: axial distance [m]
+        :param velocity: flow velocity [m s-1]
+        :param period: wave period [s]
+        :param depth: water depth [m]
+        :param attenuation: type of wave-attenuation coefficient [-]
+
+        :type diameter: float
+        :type height: float
+        :type distance: float
+        :type velocity: float
+        :type depth: float
+        :type depth: float
+        :type attenuation: str
+        """
+        assert attenuation not in ('wave', 'current')
+
+        above_motion = 1
+        shear_length = 1
+        drag_length = 1
+        lambda_planar = 1
+
+        def function(beta):
+            """Complex-valued function to be solved.
+
+            :param beta: complex-valued wave-attenuation coefficient
+            :type beta: complex
+
+            :return: function
+            :rtype: complex
+            """
+            # components
+            shear = (8 * above_motion) / (3 * np.pi * shear_length) * (abs(1 - beta) * (1 - beta))
+            drag = (8 * above_motion) / (3 * np.pi * drag_length) * (abs(beta) * beta)
+            inertia = 1j * beta * self.constants.inertia * lambda_planar / (1 - lambda_planar)
+            # combined
+            return 1j * (beta - 1) - shear + drag + inertia
+
+        def derivative(beta):
+            """Complex-valued derivative of above complex-valued function.
+
+            :param beta: complex-valued wave-attenuation coefficient
+            :type beta: complex
+
+            :return: derivative
+            :rtype: complex
+            """
+            # components
+            shear = ((1 - beta) ** 2 / abs(1 - beta) - abs(1 - beta)) / shear_length
+            drag = (beta ** 2 / abs(beta) + beta) / drag_length
+            inertia = 1j * self.constants.inertia * lambda_planar / (1 - lambda_planar)
+            # combined
+            return 1j + (8 * above_motion) / (3 * np.pi) * (-shear + drag) + inertia
+
+        # parameter definitions: geometric parameters
+        planar_area = .25 * np.pi * diameter ** 2
+        frontal_area = diameter * height
+        total_area = .5 * distance ** 2
+        lambda_planar = planar_area / total_area
+        lambda_frontal = frontal_area / total_area
+        shear_length = height / (self.constants.smagorinsky ** 2)
+
+        # calculations
+        if depth > height:
+            # initial iteration values
+            above_flow = velocity
+            drag_coefficient = 1
+            # iteration
+            for k in range(int(self.constants.max_iter_canopy)):
+                drag_length = 2 * height * (1 - lambda_planar) / (drag_coefficient * lambda_frontal)
+                above_motion = above_flow * period / (2 * np.pi)
+
+                if attenuation == 'wave':
+                    # noinspection PyTypeChecker
+                    alpha = abs(newton(
+                        function, x0=complex(.1, .1), fprime=derivative, maxiter=self.constants.max_iter_attenuation)
+                    )
+                elif attenuation == 'current':
+                    x = drag_length / shear_length * (height / (depth - height) + 1)
+                    alpha = (x - np.sqrt(x)) / (x - 1)
+                else:
+                    raise ValueError
+
+                porous_flow = alpha * above_flow
+                constricted_flow = (1 - lambda_planar) / (1 - np.sqrt(
+                    4 * lambda_planar / (self.constants.spacing_ratio * np.pi)
+                )) * porous_flow
+                reynolds = constricted_flow * diameter / self.constants.viscosity
+                new_drag = 1 + 10 * reynolds ** (-2 / 3)
+
+                if abs((new_drag - drag_coefficient) / new_drag) <= self.constants.error:
+                    break
+                else:
+                    drag_coefficient = float(new_drag)
+                    above_flow = abs(
+                        (1 - self.constants.numeric_theta) * above_flow +
+                        self.constants.numeric_theta * (depth * velocity - height * porous_flow) / (depth - height)
+                    )
+
+                if k == self.constants.max_iter_canopy:
+                    LOG.warning(f'Maximum number of iterations reached\t:\t{self.constants.max_iter_canopy}')
+
+        return alpha
 
 
 class Temperature(_BasicBiophysics):
