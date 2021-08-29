@@ -966,7 +966,7 @@ class Recruitment(_BasicBiophysics):
         # healthy population
         averaged_healthy_population = np.mean([s.healthy for s in coral.states])
         # living cover
-        living_cover = coral.states[-1].all
+        living_cover = coral.states[-1].sum
         # recruitment
         recruited = potential * averaged_healthy_population * (1 - living_cover / capacity)
         # update coral
