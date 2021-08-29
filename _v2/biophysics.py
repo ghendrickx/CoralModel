@@ -288,7 +288,7 @@ class Flow(_BasicBiophysics):
             wave_in_canopy ** 2 + current_in_canopy ** 2 +
             2 * wave_in_canopy * current_in_canopy * np.cos(self.constants.angle)
         )
-    
+
     def _wave_attenuation(self, diameter, height, distance, velocity, period, depth, attenuation):
         """Wave-attenuation coefficient.
 
@@ -356,6 +356,7 @@ class Flow(_BasicBiophysics):
         shear_length = height / (self.constants.smagorinsky ** 2)
 
         # calculations
+        alpha = 1
         if depth > height:
             # initial iteration values
             above_flow = velocity
@@ -396,6 +397,30 @@ class Flow(_BasicBiophysics):
                     LOG.warning(f'Maximum number of iterations reached\t:\t{self.constants.max_iter_canopy}')
 
         return alpha
+
+    def _thermal_boundary_layer(self, coral):
+        """Thermal boundary layer.
+
+        :param coral: coral
+        :type coral: Coral
+        """
+        if self.processes.photosynthetic_flow_dependency and self.processes.thermal_micro_environment:
+            vbl = self._velocity_boundary_layer(coral)
+            tbl = vbl * ((self.constants.absorptivity / self.constants.viscosity) ** (1 / 3))
+            coral.set_characteristic('thermal_boundary_layer', tbl)
+
+    def _velocity_boundary_layer(self, coral):
+        """Velocity boundary layer.
+
+        :param coral: coral
+        :type coral: Coral
+
+        :return: velocity boundary layer
+        :rtype: float
+        """
+        return self.constants.wall_coordinate * self.constants.viscosity / (
+            np.sqrt(self.constants.friction) * coral.get_characteristic('in_canopy_flow')
+        )
 
 
 class Temperature(_BasicBiophysics):
