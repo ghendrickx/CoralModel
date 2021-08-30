@@ -41,6 +41,35 @@ class _CoralConstants:
         setattr(self, cst, value) if value is not None else None
 
 
+class _CoralVariables:
+
+    def __init__(
+            self, light=None, biomass=None, in_canopy_flow=None, tbl=None, temperature=None,
+            lower_limit=None, upper_limit=None, photosynthesis=None, calcification=None
+    ):
+        """Coral variables: Values that will change along the simulation, but which are coral-specific.
+
+        :param light: representative light-intensity
+        :param biomass: coral biomass
+        :param in_canopy_flow: in-canopy flow
+        :param tbl: thermal boundary layer
+        :param temperature: coral temperature
+        :param lower_limit: photosynthetic thermal dependency, lower limit
+        :param upper_limit: photosynthetic thermal dependency, upper limit
+        :param photosynthesis: photosynthetic rate
+        :param calcification: calcification rate
+        """
+        self.light = light
+        self.biomass = biomass
+        self.in_canopy_flow = in_canopy_flow
+        self.tbl = tbl
+        self.temperature = temperature
+        self.lower_limit = lower_limit
+        self.upper_limit = upper_limit
+        self.photosynthesis = photosynthesis
+        self.calcification = calcification
+
+
 class _CoralStates:
 
     def __init__(self):
@@ -278,6 +307,8 @@ class CoralSpecies:
         self.name = name
         self._constants = _CoralConstants()
         self._initial_morphology = _CoralMorphology(diameter, height, distance, base_diameter, plate_thickness)
+        # constant coral variables
+        self._variables = None
         # store CoralSpecies
         self.add_species(self)
 
@@ -352,6 +383,21 @@ class CoralSpecies:
         """
         return self._initial_morphology
 
+    @property
+    def variables(self):
+        """
+        :return: default coral variables for given coral species
+        :rtype: _CoralVariables
+        """
+        return self._variables
+
+    def set_variables(self, **kwargs):
+        """
+        :param kwargs: species-constant coral variables
+        :type kwargs: iterable, float
+        """
+        self._variables = _CoralVariables(**kwargs)
+
 
 class Coral:
 
@@ -361,6 +407,7 @@ class Coral:
         :type species: CoralSpecies
         """
         self._constants = species.constants
+        self._vars = _CoralVariables
         self._states = [_CoralStates()]
         self._morphology = species.initial_morphology
 
@@ -371,6 +418,22 @@ class Coral:
         :rtype: _CoralConstants
         """
         return self._constants
+
+    @property
+    def vars(self):
+        """
+        :return: coral variables
+        :rtype: _CoralVariables
+        """
+        return self._vars
+
+    @vars.setter
+    def vars(self, variables):
+        """
+        :param variables: coral variables
+        :type variables: _CoralVariables
+        """
+        self._vars = variables
 
     @property
     def states(self):
@@ -395,30 +458,6 @@ class Coral:
         :rtype: _CoralMorphology
         """
         return self._morphology
-
-    def set_characteristic(self, characteristic, value):
-        """Set non-essential coral characteristic.
-
-        :param characteristic: characteristic's name
-        :param value: characteristic's value
-
-        :type characteristic: str
-        :type value: float, iterable, bool
-        """
-        if not hasattr(self, characteristic):
-            setattr(self, characteristic, value)
-
-    def get_characteristic(self, characteristic):
-        """Get non-essential coral characteristic.
-
-        :param characteristic: characteristic's name
-        :type characteristic: str
-
-        :return: characteristic's value
-        :rtype: float, iterable, bool
-        """
-        if hasattr(self, characteristic):
-            return getattr(self, characteristic)
 
 
 class _CoralCollection:

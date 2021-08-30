@@ -74,7 +74,7 @@ class _BasicBiophysics:
         [self._update(cell) for cell in coral_reef.cells if cell.capacity > 0]
 
     @property
-    def e(self):
+    def environment(self):
         """
         :return: environmental conditions
         :rtype: _EnvironmentSnippet
@@ -82,7 +82,7 @@ class _BasicBiophysics:
         return self._environment
 
     @property
-    def h(self):
+    def hydrodynamics(self):
         """
         :return: hydrodynamic conditions
         :rtype: Hydrodynamics
@@ -90,7 +90,7 @@ class _BasicBiophysics:
         return self._hydrodynamics
 
     @property
-    def c(self):
+    def constants(self):
         """
         :return: simulation constants
         :rtype: Constants
@@ -98,7 +98,7 @@ class _BasicBiophysics:
         return self._constants
 
     @property
-    def p(self):
+    def processes(self):
         """
         :return: simulation processes
         :rtype: Processes
@@ -129,23 +129,23 @@ class Light(_BasicBiophysics):
 
         # light catchment per morphological section
         # > top of plate
-        top = .25 * np.pi * coral.morphology.diameter ** 2 * self.e.light * np.exp(
-            -self.e.light_attenuation * (water_depth - coral.morphology.height)
+        top = .25 * np.pi * coral.morphology.diameter ** 2 * self.environment.light * np.exp(
+            -self.environment.light_attenuation * (water_depth - coral.morphology.height)
         )
         # > side of plate
         side_top = self._side_correction(coral, water_depth) * (
-                np.pi * coral.morphology.diameter * self.e.light / self.e.light_attenuation * (
-                np.exp(-self.e.light_attenuation * (water_depth - coral.morphology.height)) -
-                np.exp(-self.e.light_attenuation * (
+            np.pi * coral.morphology.diameter * self.environment.light / self.environment.light_attenuation * (
+                np.exp(-self.environment.light_attenuation * (water_depth - coral.morphology.height)) -
+                np.exp(-self.environment.light_attenuation * (
                         water_depth - coral.morphology.height + coral.morphology.plate_thickness
                 ))
             )
         )
         # > side of base
         side_base = self._side_correction(coral, water_depth) * (
-                np.pi * coral.morphology.base_diameter * self.e.light / self.e.light_attenuation * (
-                np.exp(-self.e.light_attenuation * (water_depth - base)) -
-                np.exp(-self.e * water_depth)
+            np.pi * coral.morphology.base_diameter * self.environment.light / self.environment.light_attenuation * (
+                np.exp(-self.environment.light_attenuation * (water_depth - base)) -
+                np.exp(-self.environment * water_depth)
             )
         )
         # > total
@@ -156,7 +156,7 @@ class Light(_BasicBiophysics):
         light = total / biomass
 
         # set light micro-environment
-        coral.set_characteristic('light', light)
+        coral.vars.light = light
 
     def _biomass(self, coral, water_depth):
         """Coral biomass, defined as light-receiving surface.
@@ -175,7 +175,7 @@ class Light(_BasicBiophysics):
             .25 * coral.morphology.diameter ** 2 + coral.morphology.diameter * coral.morphology.plate_thickness +
             coral.morphology.base_diameter * base
         )
-        coral.set_characteristic('biomass', biomass)
+        coral.vars.biomass = biomass
         return biomass
 
     def _base_light(self, coral, water_depth):
@@ -228,8 +228,8 @@ class Light(_BasicBiophysics):
         :return: spreading of light
         :rtype: float, iterable
         """
-        return self.c.theta_max * np.exp(-self.e.light_attenuation * (
-                water_depth - coral.morphology.height + coral.morphology.plate_thickness
+        return self.constants.theta_max * np.exp(-self.environment.light_attenuation * (
+            water_depth - coral.morphology.height + coral.morphology.plate_thickness
         ))
 
 
@@ -242,6 +242,7 @@ class Flow(_BasicBiophysics):
         :type cell: Cell
         """
         [self._execute_flow(coral, cell.water_depth) for coral in cell.corals]
+        cell.flow_velocity = self._wave_current()
 
     def _execute_flow(self, coral, water_depth):
         """Execution of Flow-object.
@@ -264,24 +265,20 @@ class Flow(_BasicBiophysics):
         :type coral: Coral
         :type water_depth: float
         """
-        if self.p.photosynthetic_flow_dependency:
-            if self.p.flow_micro_environment:
+        if self.processes.photosynthetic_flow_dependency:
+            if self.processes.flow_micro_environment:
                 wave_attenuation = self._wave_attenuation(
                     coral.morphology.representative_diameter, coral.morphology.height, coral.morphology.distance,
-                    self.h.wave_velocity, self.h.wave_period, water_depth, 'wave'
+                    self.hydrodynamics.wave_velocity, self.hydrodynamics.wave_period, water_depth, 'wave'
                 )
                 current_attenuation = self._wave_attenuation(
                     coral.morphology.representative_diameter, coral.morphology.height, coral.morphology.distance,
-                    self.h.current_velocity, 1e3, water_depth, 'current'
+                    self.hydrodynamics.current_velocity, 1e3, water_depth, 'current'
                 )
             else:
                 wave_attenuation, current_attenuation = 1, 1
 
-            coral.set_characteristic('in_canopy_flow', self._wave_current(wave_attenuation, current_attenuation))
-        else:
-            coral.set_characteristic('in_canopy_flow', 9999)
-
-        coral.set_characteristic('overall_flow', self._wave_current())
+            coral.vars.in_canopy_flow = self._wave_current(wave_attenuation, current_attenuation)
 
     def _wave_current(self, wave_attenuation=1, current_attenuation=1):
         """Wave-current interaction.
@@ -295,11 +292,11 @@ class Flow(_BasicBiophysics):
         :return: flow velocity due to wave-current interaction
         :rtype: float, iterable
         """
-        wave_in_canopy = wave_attenuation * self.h.wave_velocity
-        current_in_canopy = current_attenuation * self.h.current_velocity
+        wave_in_canopy = wave_attenuation * self.hydrodynamics.wave_velocity
+        current_in_canopy = current_attenuation * self.hydrodynamics.current_velocity
         return np.sqrt(
             wave_in_canopy ** 2 + current_in_canopy ** 2 +
-            2 * wave_in_canopy * current_in_canopy * np.cos(self.c.angle)
+            2 * wave_in_canopy * current_in_canopy * np.cos(self.constants.angle)
         )
 
     def _wave_attenuation(self, diameter, height, distance, velocity, period, depth, attenuation):
@@ -335,7 +332,7 @@ class Flow(_BasicBiophysics):
             # components
             shear = (8 * above_motion) / (3 * np.pi * shear_length) * (abs(1 - beta) * (1 - beta))
             drag = (8 * above_motion) / (3 * np.pi * drag_length) * (abs(beta) * beta)
-            inertia = 1j * beta * self.c.inertia * lambda_planar / (1 - lambda_planar)
+            inertia = 1j * beta * self.constants.inertia * lambda_planar / (1 - lambda_planar)
             # combined
             return 1j * (beta - 1) - shear + drag + inertia
 
@@ -351,7 +348,7 @@ class Flow(_BasicBiophysics):
             # components
             shear = ((1 - beta) ** 2 / abs(1 - beta) - abs(1 - beta)) / shear_length
             drag = (beta ** 2 / abs(beta) + beta) / drag_length
-            inertia = 1j * self.c.inertia * lambda_planar / (1 - lambda_planar)
+            inertia = 1j * self.constants.inertia * lambda_planar / (1 - lambda_planar)
             # combined
             return 1j + (8 * above_motion) / (3 * np.pi) * (-shear + drag) + inertia
 
@@ -361,7 +358,7 @@ class Flow(_BasicBiophysics):
         total_area = .5 * distance ** 2
         lambda_planar = planar_area / total_area
         lambda_frontal = frontal_area / total_area
-        shear_length = height / (self.c.smagorinsky ** 2)
+        shear_length = height / (self.constants.smagorinsky ** 2)
 
         # calculations
         alpha = 1
@@ -370,14 +367,14 @@ class Flow(_BasicBiophysics):
             above_flow = velocity
             drag_coefficient = 1
             # iteration
-            for k in range(int(self.c.max_iter_canopy)):
+            for k in range(int(self.constants.max_iter_canopy)):
                 drag_length = 2 * height * (1 - lambda_planar) / (drag_coefficient * lambda_frontal)
                 above_motion = above_flow * period / (2 * np.pi)
 
                 if attenuation == 'wave':
                     # noinspection PyTypeChecker
                     alpha = abs(newton(
-                        function, x0=complex(.1, .1), fprime=derivative, maxiter=self.c.max_iter_attenuation)
+                        function, x0=complex(.1, .1), fprime=derivative, maxiter=self.constants.max_iter_attenuation)
                     )
                 elif attenuation == 'current':
                     x = drag_length / shear_length * (height / (depth - height) + 1)
@@ -387,22 +384,22 @@ class Flow(_BasicBiophysics):
 
                 porous_flow = alpha * above_flow
                 constricted_flow = (1 - lambda_planar) / (1 - np.sqrt(
-                    4 * lambda_planar / (self.c.spacing_ratio * np.pi)
+                    4 * lambda_planar / (self.constants.spacing_ratio * np.pi)
                 )) * porous_flow
-                reynolds = constricted_flow * diameter / self.c.viscosity
+                reynolds = constricted_flow * diameter / self.constants.viscosity
                 new_drag = 1 + 10 * reynolds ** (-2 / 3)
 
-                if abs((new_drag - drag_coefficient) / new_drag) <= self.c.error:
+                if abs((new_drag - drag_coefficient) / new_drag) <= self.constants.error:
                     break
                 else:
                     drag_coefficient = float(new_drag)
                     above_flow = abs(
-                        (1 - self.c.numeric_theta) * above_flow +
-                        self.c.numeric_theta * (depth * velocity - height * porous_flow) / (depth - height)
+                        (1 - self.constants.numeric_theta) * above_flow +
+                        self.constants.numeric_theta * (depth * velocity - height * porous_flow) / (depth - height)
                     )
 
-                if k == self.c.max_iter_canopy:
-                    LOG.warning(f'Maximum number of iterations reached\t:\t{self.c.max_iter_canopy}')
+                if k == self.constants.max_iter_canopy:
+                    LOG.warning(f'Maximum number of iterations reached\t:\t{self.constants.max_iter_canopy}')
 
         return alpha
 
@@ -412,10 +409,10 @@ class Flow(_BasicBiophysics):
         :param coral: coral
         :type coral: Coral
         """
-        if self.p.photosynthetic_flow_dependency and self.p.thermal_micro_environment:
+        if self.processes.photosynthetic_flow_dependency and self.processes.thermal_micro_environment:
             vbl = self._velocity_boundary_layer(coral)
-            tbl = vbl * ((self.c.absorptivity / self.c.viscosity) ** (1 / 3))
-            coral.set_characteristic('thermal_boundary_layer', tbl)
+            tbl = vbl * ((self.constants.absorptivity / self.constants.viscosity) ** (1 / 3))
+            coral.vars.tbl = tbl
 
     def _velocity_boundary_layer(self, coral):
         """Velocity boundary layer.
@@ -426,8 +423,8 @@ class Flow(_BasicBiophysics):
         :return: velocity boundary layer
         :rtype: float
         """
-        return self.c.wall_coordinate * self.c.viscosity / (
-                np.sqrt(self.c.friction) * coral.get_characteristic('in_canopy_flow')
+        return self.constants.wall_coordinate * self.constants.viscosity / (
+            np.sqrt(self.constants.friction) * coral.vars.in_canopy_flow
         )
 
 
@@ -447,15 +444,15 @@ class Temperature(_BasicBiophysics):
         :param coral: coral
         :type coral: Coral
         """
-        if self.p.thermal_micro_environment:
-            add_temperature = coral.get_characteristic('thermal_boundary_layer') * self.c.absorptivity / (
-                    self.c.thermal_conductivity * self.c.thermal_morphology
-            ) * coral.get_characteristic('light')
-            coral_temperature = self.e.temperature + add_temperature
+        if self.processes.thermal_micro_environment:
+            add_temperature = coral.vars.tbl * self.constants.absorptivity / (
+                self.constants.thermal_conductivity * self.constants.thermal_morphology
+            ) * coral.vars.light
+            coral_temperature = self.environment.temperature + add_temperature
         else:
-            coral_temperature = self.e.temperature
+            coral_temperature = self.environment.temperature
 
-        coral.set_characteristic('temperature', coral_temperature)
+        coral.vars.temperature = coral_temperature
 
 
 class Photosynthesis(_BasicBiophysics):
@@ -518,29 +515,29 @@ class Photosynthesis(_BasicBiophysics):
             assert output in ('qss', 'new')
 
             # parameter definitions
-            x_max = self.c.max_saturation if param == 'Ik' else self.c.max_photosynthesis
-            x_pow = self.c.exp_saturation if param == 'Ik' else self.c.exp_max_photosynthesis
+            x_max = self.constants.max_saturation if param == 'Ik' else self.constants.max_photosynthesis
+            x_pow = self.constants.exp_saturation if param == 'Ik' else self.constants.exp_max_photosynthesis
 
             # calculations
             xs = x_max * (coral_light / light) ** x_pow
             if output == 'qss':
                 return xs
             elif output == 'new':
-                return xs + (x_old - xs) * np.exp(-self.c.photo_acc_rate)
+                return xs + (x_old - xs) * np.exp(-self.constants.photo_acc_rate)
 
         if output == 'qss':
             saturation = photo_acclimation(
-                coral.get_characteristic('light'), self.e.light, 0, 'Ik'
+                coral.vars.light, self.environment.light, 0, 'Ik'
             )
             max_photosynthesis = photo_acclimation(
-                coral.get_characteristic('light'), self.e.light, 0, 'Pmax'
+                coral.vars.light, self.environment.light, 0, 'Pmax'
             )
         else:
             raise NotImplementedError
 
         # calculations
         return max_photosynthesis * (
-            np.tanh(coral.get_characteristic('light') / saturation) - np.tanh(.01 * self.e.light / saturation)
+            np.tanh(coral.vars.light / saturation) - np.tanh(.01 * self.environment.light / saturation)
         )
 
     def _thermal_dependency(self, coral, year):
@@ -557,20 +554,20 @@ class Photosynthesis(_BasicBiophysics):
 
         def thermal_acclimation():
             """Thermal acclimation."""
-            if self.p.thermal_micro_environment:
+            if self.processes.thermal_micro_environment:
                 raise NotImplementedError
             else:
-                mmm = self.e.temperature_mmm[np.logical_and(
-                    self.e.temperature_mmm.index < year,
-                    self.e.temperature_mmm.index >= year - int(
-                        self.c.thermal_acclimation_period / coral.constants.species_constant
+                mmm = self.environment.temperature_mmm[np.logical_and(
+                    self.environment.temperature_mmm.index < year,
+                    self.environment.temperature_mmm.index >= year - int(
+                        self.constants.thermal_acclimation_period / coral.constants.species_constant
                     )
                 )]
                 m_min, m_max = mmm.mean(axis=0)
                 s_min, s_max = mmm.std(axis=0)
 
-            coral.set_characteristic('lower_limit', m_min - self.c.thermal_variability * s_min)
-            coral.set_characteristic('upper_limit', m_max + self.c.thermal_variability * s_max)
+            coral.vars.lower_limit = m_min - self.constants.thermal_variability * s_min
+            coral.vars.upper_limit = m_max + self.constants.thermal_variability * s_max
 
         def adapted_temperature():
             """Adapted temperature response."""
@@ -579,25 +576,25 @@ class Photosynthesis(_BasicBiophysics):
                 """Specialisation term."""
                 return 4e-4 * np.exp(-.33 * delta_temp - 10)
 
-            relative_temperature = coral.get_characteristic('temperature') - coral.get_characteristic('lower_limit')
+            relative_temperature = coral.vars.temperature - coral.vars.lower_limit
             response = -relative_temperature * (relative_temperature ** 2 - delta_temp ** 2)
-            critical = coral.get_characteristic('lower_limit') - (1 / np.sqrt(3)) * delta_temp
+            critical = coral.vars.lower_limit - (1 / np.sqrt(3)) * delta_temp
 
-            if self.p.thermal_micro_environment:
+            if self.processes.thermal_micro_environment:
                 pass
             else:
-                response[coral.get_characteristic('temperature') <= critical] = -2 / (3 * np.sqrt(3)) * delta_temp ** 3
+                response[coral.vars.temperature <= critical] = -2 / (3 * np.sqrt(3)) * delta_temp ** 3
 
             return response * specialisation()
 
         def thermal_envelope():
             """Thermal envelope."""
-            return np.exp((self.c.activation_energy / self.c.gas_constant) * (1 / 300 - 1 / optimal))
+            return np.exp((self.constants.activation_energy / self.constants.gas_constant) * (1 / 300 - 1 / optimal))
 
         # parameter definitions
         thermal_acclimation()
-        delta_temp = coral.get_characteristic('upper_limit') - coral.get_characteristic('lower_limit')
-        optimal = coral.get_characteristic('lower_limit') + (1 / np.sqrt(3)) * delta_temp
+        delta_temp = coral.vars.upper_limit - coral.vars.lower_limit
+        optimal = coral.vars.lower_limit + (1 / np.sqrt(3)) * delta_temp
 
         # calculations
         return adapted_temperature() * thermal_envelope()
@@ -608,10 +605,10 @@ class Photosynthesis(_BasicBiophysics):
         :param coral: coral
         :type coral: Coral
         """
-        if self.p.photosynthetic_flow_dependency:
-            return self.c.min_photosynthetic_flow_dependency + (
-                    1 - self.c.min_photosynthetic_flow_dependency
-            ) * np.tanh(2 * coral.get_characteristic('in_canopy_flow') / self.c.invariant_flow_velocity)
+        if self.processes.photosynthetic_flow_dependency:
+            return self.constants.min_photosynthetic_flow_dependency + (
+                    1 - self.constants.min_photosynthetic_flow_dependency
+            ) * np.tanh(2 * coral.vars.in_canopy_flow / self.constants.invariant_flow_velocity)
         return 1
 
 
@@ -638,7 +635,7 @@ class PopulationStates(_BasicBiophysics):
         # append new coral states
         [coral.states.append(
             self._population_dynamics(ps, coral.states[i], coral.constants.species_constant, capacity)
-        ) for i, ps in coral.get_characteristic('photosynthesis')]
+        ) for i, ps in coral.vars.photosynthesis]
         # remove initial coral states
         del coral.states[0]
 
@@ -659,39 +656,39 @@ class PopulationStates(_BasicBiophysics):
         if photosynthesis:
             # bleached population
             p.bleached = p0.bleached / (1 + dt * (
-                    8 * self.c.recovery_rate * photosynthesis / species_constant +
-                    self.c.mortality_rate * species_constant
+                8 * self.constants.recovery_rate * photosynthesis / species_constant +
+                self.constants.mortality_rate * species_constant
             ))
             # pale population
             p.pale = (p0.pale + p.bleached * (
-                    8 * dt * self.c.recovery_rate * photosynthesis / species_constant
-            )) / (1 + dt * self.c.recovery_rate * photosynthesis * species_constant)
+                8 * dt * self.constants.recovery_rate * photosynthesis / species_constant
+            )) / (1 + dt * self.constants.recovery_rate * photosynthesis * species_constant)
             # recovered population
             p.recovered = (
-                                  p0.recovered + dt * self.c.recovery_rate * photosynthesis * species_constant * p.pale
-            ) / (1 + .5 * dt * self.c.recovery_rate * photosynthesis * species_constant)
+                p0.recovered + dt * self.constants.recovery_rate * photosynthesis * species_constant * p.pale
+            ) / (1 + .5 * dt * self.constants.recovery_rate * photosynthesis * species_constant)
             # healthy population
-            a = dt * self.c.growth_rate * photosynthesis * species_constant / capacity
-            b = 1 - dt * self.c.growth_rate * photosynthesis * species_constant * (
+            a = dt * self.constants.growth_rate * photosynthesis * species_constant / capacity
+            b = 1 - dt * self.constants.growth_rate * photosynthesis * species_constant * (
                 1 - sum([p.recovered, p.pale, p.bleached]) / capacity
             )
-            c = -(p0.healthy + .5 * dt * self.c.recovery_rate * photosynthesis * species_constant * p.recovered)
+            c = -(p0.healthy + .5 * dt * self.constants.recovery_rate * photosynthesis * species_constant * p.recovered)
             p.healthy = (-b + np.sqrt(b ** 2 - 4 * a * c)) / (2 * a)
 
         # bleaching conditions
         else:
             # healthy population
-            p.healthy = p0.healthy / (1 - dt * self.c.bleaching_rate * photosynthesis * species_constant)
+            p.healthy = p0.healthy / (1 - dt * self.constants.bleaching_rate * photosynthesis * species_constant)
             # recovered population
-            p.recovered = p0.recovered / (1 - dt * self.c.bleaching_rate * photosynthesis * species_constant)
+            p.recovered = p0.recovered / (1 - dt * self.constants.bleaching_rate * photosynthesis * species_constant)
             # pale population
-            p.pale = (p0.pale - dt * self.c.bleaching_rate * photosynthesis * species_constant * (
+            p.pale = (p0.pale - dt * self.constants.bleaching_rate * photosynthesis * species_constant * (
                 p.healthy + p.recovered
-            )) / (1 - .5 * dt * self.c.bleaching_rate * photosynthesis * species_constant)
+            )) / (1 - .5 * dt * self.constants.bleaching_rate * photosynthesis * species_constant)
             # bleached population
             p.bleached = (
-                    p0.bleached - .5 * dt * self.c.bleaching_rate * photosynthesis * species_constant * p.pale
-            ) / (1 - .25 * dt * self.c.bleaching_rate * photosynthesis * species_constant)
+                p0.bleached - .5 * dt * self.constants.bleaching_rate * photosynthesis * species_constant * p.pale
+            ) / (1 - .25 * dt * self.constants.bleaching_rate * photosynthesis * species_constant)
 
         return p
 
@@ -712,13 +709,13 @@ class Calcification(_BasicBiophysics):
         :param coral: coral
         :type coral: Coral
         """
-        aragonite_dependency = (self.e.aragonite - self.c.dissolution_saturation) / (
-                self.c.half_rate + self.e.aragonite - self.c.dissolution_saturation
+        aragonite_dependency = (self.environment.aragonite - self.constants.dissolution_saturation) / (
+            self.constants.half_rate + self.environment.aragonite - self.constants.dissolution_saturation
         )
-        calcification = self.c.calcification_constant * coral.constants.species_constant * \
-            [cs.healthy for cs in coral.states] * aragonite_dependency * coral.get_characteristic('photosynthesis')
+        calcification = self.constants.calcification_constant * coral.constants.species_constant * \
+            [cs.healthy for cs in coral.states] * aragonite_dependency * coral.vars.photosynthesis
 
-        coral.set_characteristic('calcification', calcification)
+        coral.vars.calcification = calcification
 
 
 class Morphology(_BasicBiophysics):
@@ -790,8 +787,8 @@ class Morphology(_BasicBiophysics):
         :return: increased coral volume
         :rtype: float
         """
-        return .5 * coral.morphology.distance ** 2 * sum(coral.get_characteristic('calcification')) * dt / \
-            self.c.coral_density * np.mean(coral.get_characteristic('biomass'))
+        return .5 * coral.morphology.distance ** 2 * sum(coral.vars.calcification) * dt / \
+            self.constants.coral_density * np.mean(coral.vars.biomass)
 
     def _optimal_form_ratio(self, coral):
         """Optimal form ratio; height : (plate) diameter.
@@ -802,9 +799,9 @@ class Morphology(_BasicBiophysics):
         :return: optimal form ratio
         :rtype: float
         """
-        in_canopy_flow = coral.get_characteristic('in_canopy_flow')
-        return self.c.proportionality_form * np.mean(coral.get_characteristic('light')) / np.mean(self.e.light) * \
-            (self.c.fitting_flow_velocity / (in_canopy_flow if in_canopy_flow > 0 else 1e-6))
+        in_canopy_flow = coral.vars.in_canopy_flow
+        return self.constants.proportionality_form * np.mean(coral.vars.light) / np.mean(self.environment.light) * \
+            (self.constants.fitting_flow_velocity / (in_canopy_flow if in_canopy_flow > 0 else 1e-6))
 
     def _optimal_plate_ratio(self, coral):
         """Optimal plate ratio; base diameter : (plate) diameter.
@@ -815,10 +812,10 @@ class Morphology(_BasicBiophysics):
         :return: optimal plate ratio
         :rtype: float
         """
-        return self.c.proportionality_plate * (1 + np.tanh(
-            self.c.proportionality_plate_flow * (
-                    coral.get_characteristic('in_canopy_flow') - self.c.fitting_flow_velocity
-            ) / self.c.fitting_flow_velocity
+        return self.constants.proportionality_plate * (1 + np.tanh(
+            self.constants.proportionality_plate_flow * (
+                coral.vars.in_canopy_flow - self.constants.fitting_flow_velocity
+            ) / self.constants.fitting_flow_velocity
         ))
 
     def _optimal_spacing_ratio(self, coral):
@@ -830,14 +827,14 @@ class Morphology(_BasicBiophysics):
         :return: optimal spacing ratio
         :rtype: float
         """
-        return self.c.proportionality_space * (
+        return self.constants.proportionality_space * (
             1 - np.tanh(
-                self.c.proportionality_space_light * np.mean(coral.get_characteristic('light') / np.mean(self.e.light))
+                self.constants.proportionality_space_light * np.mean(coral.vars.light / np.mean(self.environment.light))
             )
         ) * (1 + np.tanh(
-            self.c.proportionality_space_flow * (
-                    coral.get_characteristic('in_canopy_flow') - self.c.fitting_flow_velocity
-            ) / self.c.fitting_flow_velocity
+            self.constants.proportionality_space_flow * (
+                coral.vars.in_canopy_flow - self.constants.fitting_flow_velocity
+            ) / self.constants.fitting_flow_velocity
         ))
 
 
@@ -900,8 +897,8 @@ class Dislodgement(_BasicBiophysics):
         :return: dislodgement mechanical threshold
         :rtype: float
         """
-        return self.c.tensile_stress / (
-                self.c.water_density * self.c.drag_coefficient * coral.get_characteristic('overall_flow')
+        return self.constants.tensile_stress / (
+                self.constants.water_density * self.constants.drag_coefficient * coral.vars.overall_flow
         )
 
     @staticmethod
@@ -934,27 +931,31 @@ class Recruitment(_BasicBiophysics):
         :param cell: grid cell
         :type cell: Cell
         """
-        [self._coral_recruitment(coral, cell.capacity) for coral in cell.corals]
+        [self._coral_recruitment(coral, cell.living_cover, cell.capacity) for coral in cell.corals]
 
-    def _coral_recruitment(self, coral, capacity):
+    def _coral_recruitment(self, coral, living_cover, capacity):
         """Update coral population states and morphology due to spawning event.
 
         :param coral: coral
+        :param living_cover: living coral cover, all coral species in grid cell included
         :param capacity: carrying capacity
 
         :type coral: Coral
+        :type living_cover: float
         :type capacity: float
         """
-        [self._spawning(coral, capacity, param) for param in ('P', 'V')]
+        [self._spawning(coral, living_cover, capacity, param) for param in ('P', 'V')]
 
-    def _spawning(self, coral, capacity, param):
+    def _spawning(self, coral, living_cover, capacity, param):
         """Contribution to coral growth due to mass spawning
 
         :param coral: coral
+        :param living_cover: living coral cover, all coral species in grid cell included
         :param capacity: carrying capacity
         :param param: determination of spawning contribution
 
         :type coral: Coral
+        :type living_cover: float
         :type capacity: float
         :type param: str
         """
@@ -962,11 +963,10 @@ class Recruitment(_BasicBiophysics):
 
         # potential
         power = 2 if param == 'P' else 3
-        potential = self.c.settle_probability * self.c.larvae_spawned * self.c.larval_diameter ** power
+        potential = self.constants.settle_probability * self.constants.larvae_spawned * \
+            self.constants.larval_diameter ** power
         # healthy population
         averaged_healthy_population = np.mean([s.healthy for s in coral.states])
-        # living cover
-        living_cover = coral.states[-1].sum
         # recruitment
         recruited = potential * averaged_healthy_population * (1 - living_cover / capacity)
         # update coral
