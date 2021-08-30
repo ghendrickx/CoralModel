@@ -7,19 +7,22 @@ from _v2.coral import _CoralCollection, CoralSpecies
 LOG = logging.getLogger(__name__)
 
 
-class _CellCharacteristics:
+class _CellVariables:
 
-    def __init__(self, capacity=None, water_depth=None, **kwargs):
+    def __init__(self, capacity=None, water_depth=None, velocity=None, **kwargs):
         """
         :param capacity: carrying capacity of cell, defaults to None
         :param water_depth: water depth at cell, defaults to None
-        :param  kwargs: non-essential cell characteristics
+        :param velocity: depth-averaged flow velocity at cell, defaults to None
+        :param kwargs: non-essential cell characteristics
 
         :type capacity: float, optional
         :type water_depth: float, optional
+        :type velocity: float, optional
         """
         self.capacity = 1 if capacity is None else capacity
         self.water_depth = water_depth
+        self.flow_velocity = velocity
         [setattr(self, key, value) for key, value in kwargs]
 
 
@@ -59,7 +62,7 @@ class Cell:
             self._x = x
             self._y = y
             self._coral_collection = _CoralCollection()
-            self._characteristics = _CellCharacteristics(**kwargs)
+            self._variables = _CellVariables(**kwargs)
             self._already_initiated = True
 
     def __str__(self):
@@ -133,7 +136,7 @@ class Cell:
         :return: carrying capacity of cell
         :rtype: float
         """
-        return self._characteristics.capacity
+        return self._variables.capacity
 
     @capacity.setter
     def capacity(self, carrying_capacity):
@@ -147,7 +150,15 @@ class Cell:
             msg = f'Carrying capacity is a value in the range [0, 1]; {carrying_capacity} is given.'
             raise ValueError(msg)
 
-        self._characteristics.capacity = carrying_capacity
+        self._variables.capacity = carrying_capacity
+
+    @property
+    def living_cover(self):
+        """
+        :return: living coral cover, all coral species in grid cell included
+        :rtype: float
+        """
+        return sum(coral.sum for coral in self.corals)
 
     @property
     def water_depth(self):
@@ -155,7 +166,7 @@ class Cell:
         :return: water depth at cell location
         :rtype: float
         """
-        return self._characteristics.water_depth
+        return self._variables.water_depth
 
     @water_depth.setter
     def water_depth(self, depth):
@@ -163,17 +174,33 @@ class Cell:
         :param depth: water depth at cell location
         :type depth: float
         """
-        self._characteristics.water_depth = depth
+        self._variables.water_depth = depth
 
-    def get_characteristic(self, characteristic):
+    @property
+    def flow_velocity(self):
+        """
+        :return: depth-averaged flow velocity
+        :rtype: float
+        """
+        return self._variables.flow_velocity
+
+    @flow_velocity.setter
+    def flow_velocity(self, velocity):
+        """
+        :param velocity: depth-averaged flow velocity
+        :type velocity: float
+        """
+        self._variables.flow_velocity = velocity
+
+    def get_var(self, variable):
         """Get cell characteristic.
 
-        :param characteristic: cell characteristic
-        :type characteristic: str
+        :param variable: cell characteristic
+        :type variable: str
         """
-        if hasattr(self._characteristics, characteristic):
-            return getattr(self._characteristics, characteristic)
-        LOG.warning(f'{self} does not have the characteristic \"{characteristic}\".')
+        if hasattr(self._variables, variable):
+            return getattr(self._variables, variable)
+        LOG.warning(f'{self} does not have the characteristic \"{variable}\".')
 
 
 class Grid:
