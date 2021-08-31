@@ -312,6 +312,18 @@ class Grid:
         # create cells at (x,y)-coordinates
         [self._cells.add(Cell(x, y)) for x in x_array for y in y_array]
 
+    def add_cell(self, x, y, **kwargs):
+        """Add individual cell to grid.
+
+        :param x: x-coordinate
+        :param y: y-coordinate
+        :param kwargs: non-essential cell characteristics
+
+        :type x: float
+        :type y: float
+        """
+        self._cells.add(Cell(x, y, **kwargs))
+
     def reset_corals(self):
         """Reset CoralCollections of all Cells."""
         if CoralSpecies.re_initiate():
