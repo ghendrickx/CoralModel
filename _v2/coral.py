@@ -11,7 +11,7 @@ class _CoralConstants:
 
     def __init__(self):
         """Initiate with default values."""
-        self.species_constant = 1.
+        self.species_constant = 1
 
     def __repr__(self):
         """Representation."""
@@ -69,88 +69,43 @@ class _CoralVariables:
         self.photosynthesis = photosynthesis
         self.calcification = calcification
 
+    def __repr__(self):
+        """Object-representation."""
+        return f'_CoralVariables(**kwargs)'
 
-class _CoralStates:
+    def __str__(self):
+        """String-representation."""
+        return f'_CoralVariables'
 
-    def __init__(self):
-        self._healthy = 1
-        self._recovered = 0
-        self._pale = 0
-        self._bleached = 0
 
-    @staticmethod
-    def _set_state(state):
-        """Set coral state value, which must be in range [0, 1].
+class _CoralState:
 
-        :param state: coral state value
-        :type state: float
+    def __init__(self, healthy, recovered, pale, bleached):
         """
-        assert 0 < state < 1
-        return state
+        :param healthy: healthy coral cover
+        :param recovered: recovered coral cover
+        :param pale: pale coral cover
+        :param bleached: bleached coral cover
 
-    @property
-    def healthy(self):
+        :type healthy: float
+        :type recovered: float
+        :type pale: float
+        :type bleached: float
         """
-        :return: healthy coral cover
-        :rtype: float
-        """
-        return self._healthy
+        self.healthy = healthy
+        self.recovered = recovered
+        self.pale = pale
+        self.bleached = bleached
 
-    @healthy.setter
-    def healthy(self, state):
-        """
-        :param state: healthy coral cover
-        :type state: float
-        """
-        self._healthy = self._set_state(state)
+    def __repr__(self):
+        """Object-representation."""
+        return f'_CoralState(healthy={self.healthy}, recovered={self.recovered}, pale={self.pale}, ' \
+            f'bleached={self.bleached})'
 
-    @property
-    def recovered(self):
-        """
-        :return: recovering coral cover
-        :rtype: float
-        """
-        return self._recovered
-
-    @recovered.setter
-    def recovered(self, state):
-        """
-        :param state: recovering coral cover
-        :type state: float
-        """
-        self._recovered = self._set_state(state)
-
-    @property
-    def pale(self):
-        """
-        :return: pale coral cover
-        :rtype: float
-        """
-        return self._pale
-
-    @pale.setter
-    def pale(self, state):
-        """
-        :param state: pale coral cover
-        :type state: float
-        """
-        self._pale = self._set_state(state)
-
-    @property
-    def bleached(self):
-        """
-        :return: bleaching coral cover
-        :rtype: float
-        """
-        return self._bleached
-
-    @bleached.setter
-    def bleached(self, state):
-        """
-        :param state: bleaching coral cover
-        :type state: float
-        """
-        self._bleached = self._set_state(state)
+    def __str__(self):
+        """String-representation."""
+        return f'Coral state: healthy = {self.healthy:.4f}; recovered = {self.recovered:.4f}; pale = {self.pale:.4f};' \
+            f' bleached = {self.bleached:.4f}'
 
     @property
     def sum(self):
@@ -159,6 +114,153 @@ class _CoralStates:
         :rtype: float
         """
         return sum([self.healthy, self.recovered, self.pale, self.bleached])
+
+
+class _CoralStates:
+
+    def __init__(self, healthy=1, recovered=0, pale=0, bleached=0):
+        """Initiate _CoralStates by setting an initial _CoralState.
+
+        :param healthy: healthy coral cover, defaults to 1
+        :param recovered: recovered coral cover, defaults to 0
+        :param pale: pale coral cover, defaults to 0
+        :param bleached: bleached coral cover, defaults to 0
+
+        :type healthy: float, optional
+        :type recovered: float, optional
+        :type pale: float, optional
+        :type bleached: float, optional
+        """
+        assert all(0 <= s <= 1 for s in (healthy, recovered, pale, bleached))
+        self._states = [_CoralState(healthy, recovered, pale, bleached)]
+
+    def __repr__(self):
+        """Object-representation."""
+        return f'_CoralStates(**kwargs)'
+
+    def __str__(self):
+        """String-representation."""
+        return f'Coral-states: healthy = {self.healthy}; recovered = {self.recovered}; pale = {self.pale}; ' \
+            f'bleached = {self.bleached}'
+
+    def __len__(self):
+        """Object-length."""
+        return len(self._states)
+
+    def append(self, state):
+        """Append coral-state to list of coral-states.
+
+        :param state: coral-state
+        :type state: _CoralState
+        """
+        self._states.append(state)
+
+    def extend(self, states):
+        """Append multiple coral-states to list at once.
+
+        :param states: coral-states
+        :type states: list[_CoralState]
+        """
+        self._states.extend(states)
+
+    def add_state(self, healthy, recovered, pale, bleached):
+        """Add coral-state by defining its coral cover fractions.
+
+        :param healthy: healthy coral cover
+        :param recovered: recovered coral cover
+        :param pale: pale coral cover
+        :param bleached: bleached coral cover
+
+        :type healthy: float
+        :type recovered: float
+        :type pale: float
+        :type bleached: float
+        """
+        self.append(_CoralState(healthy, recovered, pale, bleached))
+
+    def mod_state(self, idx, healthy, recovered, pale, bleached):
+        """Modify coral-state by index of the list of coral-states.
+
+        :param idx: list-index
+        :param healthy: healthy coral cover
+        :param recovered: recovered coral cover
+        :param pale: pale coral cover
+        :param bleached: bleached coral cover
+
+        :type idx: int
+        :type healthy: float
+        :type recovered: float
+        :type pale: float
+        :type bleached: float
+        """
+        self._states[idx] = _CoralState(healthy, recovered, pale, bleached)
+
+    def full_reset(self, healthy=1, recovered=0, pale=0, bleached=0):
+        """Fully reset the coral-states by re-initiating the object.
+
+        :param healthy: healthy coral cover, defaults to 1
+        :param recovered: recovered coral cover, defaults to 0
+        :param pale: pale coral cover, defaults to 0
+        :param bleached: bleached coral cover, defaults to 0
+
+        :type healthy: float, optional
+        :type recovered: float, optional
+        :type pale: float, optional
+        :type bleached: float, optional
+        """
+        self.__init__(healthy, recovered, pale, bleached)
+
+    def last_reset(self):
+        """Reset the coral-states by keeping the last coral-state of the list."""
+        self._states = self._states[-1]
+
+    @property
+    def states(self):
+        """
+        :return: coral-states
+        :rtype: list
+        """
+        return self._states
+
+    @property
+    def healthy(self):
+        """
+        :return: healthy coral cover, all states
+        :rtype: list
+        """
+        return [s.healthy for s in self._states]
+
+    @property
+    def recovered(self):
+        """
+        :return: recovered coral cover, all states
+        :rtype: list
+        """
+        return [s.recovered for s in self._states]
+
+    @property
+    def pale(self):
+        """
+        :return: pale coral cover, all states
+        :rtype: list
+        """
+        return [s.pale for s in self._states]
+
+    @property
+    def bleached(self):
+        """
+        :return: bleached coral cover, all states
+        :rtype: list
+        """
+        return [s.bleached for s in self._states]
+
+    @property
+    def sum(self):
+        """
+        :return: total coral cover, all states
+        :rtype: list
+        """
+        return [s.sum for s in self._states]
 
 
 class _CoralMorphology:
@@ -182,6 +284,15 @@ class _CoralMorphology:
         self.base_diameter = diameter if base_diameter is None else base_diameter
         self.plate_thickness = height if plate_thickness is None else plate_thickness
         self.distance = distance
+
+    def __repr__(self):
+        """Object-representation."""
+        return f'_CoralMorphology(diameter={self.diameter}, height={self.height}, distance={self.distance}, ' \
+            f'base_diameter={self.base_diameter}, plate_thickness={self.plate_thickness})'
+
+    def __str__(self):
+        """String-representation."""
+        return f'Coral morphology'
 
     def update(self, volume, rf=None, rp=None, rs=None):
         """Update coral morphology based on the coral's volume and its morphological ratios.
@@ -277,9 +388,18 @@ class _CoralMorphology:
 class _CoralEnvironment:
 
     def __init__(self):
+        """Coral environment."""
         self.light = None
         self.temperature = None
         self.flow = None
+
+    def __repr__(self):
+        """Object-representation."""
+        return f'_CoralEnvironment()'
+
+    def __str__(self):
+        """String-representation."""
+        return f'Coral environment'
 
 
 class CoralSpecies:
@@ -313,12 +433,14 @@ class CoralSpecies:
         self.add_species(self)
 
     def __repr__(self):
-        """Representation."""
-        return f'Coral(name={self.name})'
+        """Object-representation."""
+        return f'CoralSpecies(diameter={self._initial_morphology.diameter}, height={self._initial_morphology.height},' \
+            f' distance={self._initial_morphology.distance}, base_diameter={self._initial_morphology.base_diameter}, ' \
+            f'plate_thickness={self._initial_morphology.plate_thickness}, name={self.name})'
 
     def __str__(self):
         """String-representation."""
-        return f'Coral: {self.name}'
+        return f'Coral species: {self.name}'
 
     @classmethod
     def add_species(cls, coral_species):
@@ -406,10 +528,19 @@ class Coral:
         :param species: coral species
         :type species: CoralSpecies
         """
+        self._species = species
         self._constants = species.constants
-        self._vars = _CoralVariables
-        self._states = [_CoralStates()]
+        self._vars = _CoralVariables()
+        self._states = _CoralStates()
         self._morphology = species.initial_morphology
+
+    def __repr__(self):
+        """Object-representation."""
+        return f'Coral({self._species})'
+
+    def __str__(self):
+        """String-representation."""
+        return f'Coral: {self._species}'
 
     @property
     def constants(self):
@@ -439,7 +570,7 @@ class Coral:
     def states(self):
         """
         :return: coral population states
-        :rtype: list[_CoralStates]
+        :rtype: _CoralStates
         """
         return self._states
 
@@ -447,7 +578,7 @@ class Coral:
     def states(self, coral_states):
         """
         :param coral_states: coral population states
-        :type coral_states: list[_CoralStates]
+        :type coral_states: _CoralStates
         """
         self._states = coral_states
 
@@ -467,6 +598,18 @@ class _CoralCollection:
     def __init__(self):
         self.is_initiated()
         self._corals = {species: Coral(species) for species in CoralSpecies.get_species()}
+
+    def __repr__(self):
+        """Object-representation."""
+        return f'_CoralCollection()'
+
+    def __str__(self):
+        """String-representation."""
+        return f'Coral collection of {len(self)} corals'
+
+    def __len__(self):
+        """Object-length."""
+        return len(self._corals)
 
     @classmethod
     def is_initiated(cls):
@@ -490,3 +633,9 @@ class _CoralCollection:
         :rtype: list
         """
         return list(self._corals.values())
+
+
+if __name__ == '__main__':
+    cs = CoralSpecies(.1, .1, .1, .1, .1, name='special coral')
+    c = Coral(cs)
+    print(c.__dict__)
