@@ -204,7 +204,6 @@ class Cell:
 
 
 class Grid:
-
     _cells = set()
 
     def __init__(self, x=None, y=None):
@@ -218,7 +217,8 @@ class Grid:
         if not (x is None and y is None):
             self.grid_from_xy(0 if x is None else x, 0 if y is None else y)
 
-    def grid_from_xy(self, x, y):
+    @classmethod
+    def grid_from_xy(cls, x, y):
         """Create grid from x- and/or y-coordinates.
 
         :param x: x-coordinate(s)
@@ -248,7 +248,7 @@ class Grid:
         y_array = y if y_len > 1 else [y] * x_len
 
         # add cells
-        [self.add_cell(xx, yy) for xx, yy in zip(x_array, y_array)]
+        [cls.add_cell(xx, yy) for xx, yy in zip(x_array, y_array)]
 
     @property
     def cells(self):
@@ -256,7 +256,12 @@ class Grid:
         :return: cells included in the grid
         :rtype: set
         """
-        return self._cells
+        return self.get_cells()
+
+    @classmethod
+    def get_cells(cls):
+        """Get grid cells."""
+        return cls._cells
 
     @property
     def number_of_cells(self):
@@ -264,7 +269,20 @@ class Grid:
         :return: number of cells included in the grid
         :rtype: int
         """
-        return len(self._cells)
+        return self.get_size()
+
+    @property
+    def size(self):
+        """
+        :return: size of grid (i.e. number of cells)
+        :rtype: int
+        """
+        return self.get_size()
+
+    @classmethod
+    def get_size(cls):
+        """Get size of grid, i.e. number of cells."""
+        return len(cls._cells)
 
     @staticmethod
     def _create_array(range_, spacing, edge='round'):
@@ -307,7 +325,8 @@ class Grid:
 
         return np.linspace(min(range_), max_, int(n + 1))
 
-    def add_transect(self, x_range, spacing, edge='round'):
+    @classmethod
+    def add_transect(cls, x_range, spacing, edge='round'):
         """Add transect of cells, where all y-coordinates are set equal to 0.
 
         :param x_range: range of x-coordinates
@@ -319,11 +338,12 @@ class Grid:
         :type edge: str, optional
         """
         # create array of x-coordinates
-        array = self._create_array(x_range, spacing, edge)
+        array = cls._create_array(x_range, spacing, edge)
         # create cells at x-coordinates
-        [self._cells.add(Cell(x, 0)) for x in array]
+        [cls._cells.add(Cell(x, 0)) for x in array]
 
-    def add_square(self, xy_range, spacing, edge='round'):
+    @classmethod
+    def add_square(cls, xy_range, spacing, edge='round'):
         """Add square grid of cells.
 
         :param xy_range: range of x- and y-coordinates
@@ -334,9 +354,10 @@ class Grid:
         :type spacing: float
         :type edge: str, optional
         """
-        self.add_rectangle(xy_range, xy_range, spacing, edge)
+        cls.add_rectangle(xy_range, xy_range, spacing, edge)
 
-    def add_rectangle(self, x_range, y_range, spacing, edge='round'):
+    @classmethod
+    def add_rectangle(cls, x_range, y_range, spacing, edge='round'):
         """Add rectangular grid of cells.
 
         :param x_range: range of x-coordinates
@@ -350,12 +371,13 @@ class Grid:
         :type edge: str, optional
         """
         # create arrays of x- and y-coordinates
-        x_array = self._create_array(x_range, spacing, edge)
-        y_array = self._create_array(y_range, spacing, edge)
+        x_array = cls._create_array(x_range, spacing, edge)
+        y_array = cls._create_array(y_range, spacing, edge)
         # create cells at (x,y)-coordinates
-        [self._cells.add(Cell(x, y)) for x in x_array for y in y_array]
+        [cls._cells.add(Cell(x, y)) for x in x_array for y in y_array]
 
-    def add_cell(self, x, y, **kwargs):
+    @classmethod
+    def add_cell(cls, x, y, **kwargs):
         """Add individual cell to grid.
 
         :param x: x-coordinate
@@ -365,14 +387,15 @@ class Grid:
         :type x: float
         :type y: float
         """
-        self._cells.add(Cell(x, y, **kwargs))
+        cls._cells.add(Cell(x, y, **kwargs))
 
     @classmethod
     def reset(cls):
         """Reset grid."""
         cls._cells = set()
 
-    def reset_corals(self):
+    @classmethod
+    def reset_corals(cls):
         """Reset CoralCollections of all Cells."""
         if CoralSpecies.re_initiate():
-            [cell.reset_corals() for cell in self._cells]
+            [cell.reset_corals() for cell in cls._cells]
