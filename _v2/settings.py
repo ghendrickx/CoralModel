@@ -8,14 +8,15 @@ import numpy as np
 
 class Processes:
 
-    _flow_micro_environment = True
-    _thermal_micro_environment = True
-    _photosynthetic_flow_dependency = True
+    @classmethod
+    def set_process(cls, **kwargs):
+        """Define single process to be included in the modelling of corals/coral reefs."""
+        [setattr(cls, f'_{k}', v) for k, v in kwargs.items() if hasattr(cls, k)]
 
     @classmethod
     def set_processes(
             cls, flow_micro_environment=True, thermal_micro_environment=True, photosynthetic_flow_dependency=True,
-            photo_acclimation=True
+            photo_acclimation=True, thermal_acclimation=True
     ):
         """Define processes to include in the modelling of corals.
 
@@ -23,32 +24,59 @@ class Processes:
         :param thermal_micro_environment: include thermal micro environment, defaults to True
         :param photosynthetic_flow_dependency: include photosynthetic flow dependency, defaults to True
         :param photo_acclimation: include photo-acclimation as differential equation, defaults to True
+        :param thermal_acclimation: include thermal-acclimation dynamically, defaults to True
 
         :type flow_micro_environment: bool, optional
         :type thermal_micro_environment: bool, optional
         :type photosynthetic_flow_dependency: bool, optional
         :type photo_acclimation: bool, optional
+        :type thermal_acclimation: bool, optional
         """
         cls._flow_micro_environment = flow_micro_environment
         cls._thermal_micro_environment = thermal_micro_environment
         cls._photosynthetic_flow_dependency = photosynthetic_flow_dependency
         cls._photo_acclimation = photo_acclimation
+        cls._thermal_acclimation = thermal_acclimation
 
     @property
     def flow_micro_environment(self):
+        """
+        :return: include flow micro-environment
+        :rtype: bool
+        """
         return self._flow_micro_environment
 
     @property
     def thermal_micro_environment(self):
+        """
+        :return: include thermal micro-environment
+        :rtype: bool
+        """
         return self._thermal_micro_environment
 
     @property
     def photosynthetic_flow_dependency(self):
+        """
+        :return: include photosynthetic flow dependency
+        :rtype: bool
+        """
         return self._photosynthetic_flow_dependency
 
     @property
     def photo_acclimation(self):
+        """
+        :return: include photo-acclimation
+        :rtype: bool
+        """
         return self._photo_acclimation
+
+    @property
+    def thermal_acclimation(self):
+        """
+        :return: include thermal acclimation
+        :rtype: bool
+        """
+        return self._thermal_acclimation
 
 
 class Constants:
