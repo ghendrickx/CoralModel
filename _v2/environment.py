@@ -11,6 +11,8 @@ from _v2.biophysics import _BasicBiophysics
 from _v2.settings import Constants
 from utils.config_directory import DirConfig
 
+CONSTANTS = Constants()
+
 
 class EnvironmentalConditions:
     _light = None
@@ -20,12 +22,38 @@ class EnvironmentalConditions:
     _aragonite = None
 
     def __init__(self, light=None, light_attenuation=None, flow=None, temperature=None, aragonite=None):
+        """
+        :param light: light conditions, defaults to None
+        :param light_attenuation: light attenuation conditions, defaults to None
+        :param flow: flow conditions, defaults to None
+        :param temperature: thermal conditions, defaults to None
+        :param aragonite: aragonite conditions, defaults to None
+
+        :type light: float, int, iterable, optional
+        :type light_attenuation: float, int, iterable, optional
+        :type flow: float, int, iterable, optional
+        :type temperature: float, int, iterable, optional
+        :type aragonite: float, int, iterable, optional
+        """
         self.set_conditions(
             light=light, light_attenuation=light_attenuation, flow=flow, temperature=temperature, aragonite=aragonite
         )
 
     @classmethod
     def set_conditions(cls, light, light_attenuation, flow, temperature, aragonite):
+        """
+        :param light: light conditions, defaults to None
+        :param light_attenuation: light attenuation conditions, defaults to None
+        :param flow: flow conditions, defaults to None
+        :param temperature: thermal conditions, defaults to None
+        :param aragonite: aragonite conditions, defaults to None
+
+        :type light: float, int, iterable, optional
+        :type light_attenuation: float, int, iterable, optional
+        :type flow: float, int, iterable, optional
+        :type temperature: float, int, iterable, optional
+        :type aragonite: float, int, iterable, optional
+        """
         cls._light = cls.fmt_conditions(light)
         cls._light_attenuation = cls.fmt_conditions(light_attenuation)
         cls._flow = cls.fmt_conditions(flow)
@@ -54,22 +82,44 @@ class EnvironmentalConditions:
 
     @property
     def light(self):
+        """
+        :return: light conditions
+        :rtype: numpy.array, None
+        """
         return self._light
 
     @property
     def light_attenuation(self):
-        return Constants().lac_default if self._light_attenuation is None else self._light_attenuation
+        """
+        :return: light attenuation conditions
+        :rtype: numpy.array, None
+        """
+        if self._light_attenuation is None:
+            self._light_attenuation = CONSTANTS.lac_default
+        return self._light_attenuation
 
     @property
     def flow(self):
+        """
+        :return: flow conditions
+        :rtype: numpy.array, None
+        """
         return self._flow
 
     @property
     def temperature(self):
+        """
+        :return: thermal conditions
+        :rtype: numpy.array, None
+        """
         return self._temperature
 
     @property
     def aragonite(self):
+        """
+        :return: aragonite conditions
+        :rtype: numpy.array, None
+        """
         return self._aragonite
 
 
