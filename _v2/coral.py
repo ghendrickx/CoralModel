@@ -461,9 +461,7 @@ class CoralSpecies:
         cls._coral_species.add(coral_species)
         # inclusion check
         if _CoralCollection.is_initiated():
-            LOG.critical(
-                f'CoralCollection already initiated: {coral_species.name} is not included in that initiated instance.'
-            )
+            LOG.info(f'CoralCollection re-initiated to include {coral_species.name}.')
             cls._re_initiate = True
 
     @classmethod
@@ -601,7 +599,7 @@ class _CoralCollection:
     _initiated = False
 
     def __init__(self):
-        self.is_initiated()
+        self._initiate()
         self._corals = {species: Coral(species) for species in CoralSpecies.get_species()}
 
     def __repr__(self):
@@ -617,11 +615,16 @@ class _CoralCollection:
         return len(self._corals)
 
     @classmethod
+    def _initiate(cls):
+        """Set class-attribute to being initiated."""
+        cls._initiated = True
+
+    @classmethod
     def is_initiated(cls):
         """Communicate if CoralCollection is already initiated, to raise critical warning when new CoralSpecies are
         defined after a CoralCollection has been initiated.
         """
-        cls._initiated = True
+        return cls._initiated
 
     @property
     def corals(self):
