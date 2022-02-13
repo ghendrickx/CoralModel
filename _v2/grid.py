@@ -367,6 +367,11 @@ class Grid:
         """
         self._cells.add(Cell(x, y, **kwargs))
 
+    @classmethod
+    def reset(cls):
+        """Reset grid."""
+        cls._cells = set()
+
     def reset_corals(self):
         """Reset CoralCollections of all Cells."""
         if CoralSpecies.re_initiate():
