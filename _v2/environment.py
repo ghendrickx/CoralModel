@@ -81,11 +81,19 @@ class Environment:
 
         :param date_range: snippet range of dates
         """
-        environment = _EnvironmentSnippet(cls.__call__(), date_range)
-        _BasicBiophysics.set_environment(environment)
+        snippet = _EnvironmentSnippet(cls.__call__(), date_range)
+        _BasicBiophysics.set_environment(snippet)
 
     @classmethod
     def _set_conditions(cls, conditions):
+        """Set environmental conditions.
+
+        :param conditions: environmental conditions
+        :type conditions: float, int, list, tuple, numpy.array, pandas.DataFrame, pandas.Series
+
+        :return: environmental conditions
+        :rtype: pandas.DataFrame
+        """
         if cls._dates is None:
             msg = f'No dates or temporal indications provided.'
             raise DataError(msg)
@@ -117,8 +125,41 @@ class Environment:
 
     @staticmethod
     def _from_file(file_name, directory=None, **kwargs):
+        """Extract data from file.
+
+        :param file_name: file name
+        :param directory: directory, defaults to None
+
+        :type file_name: str
+        :type directory: str, list, tuple, DirConfig
+
+        :return: data from file
+        :rtype: pandas.DataFrame
+        """
         file = DirConfig(directory).config_dir(file_name)
         return pd.read_csv(file, **kwargs)
+
+    @classmethod
+    def set_all_from_file(
+            cls, file_name, directory=None, date_col=None, light_col=None, light_attenuation_col=None,
+            temperature_col=None, aragonite_col=None, **kwargs
+    ):
+        data = cls._from_file(file_name=file_name, directory=directory, **kwargs)
+
+        # set dates
+        cls.set_dates(data[0 if date_col is None else date_col])
+        # set light
+        if light_col is not None:
+            cls.set_light_conditions(data[light_col])
+        # set light attenuation
+        if light_attenuation_col is not None:
+            cls.set_light_attenuation(data[light_attenuation_col])
+        # set temperature
+        if temperature_col is not None:
+            cls.set_thermal_conditions(data[temperature_col])
+        # set aragonite
+        if aragonite_col is not None:
+            cls.set_aragonite_conditions(data[aragonite_col])
 
     # dates
     _dates = None
@@ -136,7 +177,7 @@ class Environment:
         cls._dates = cls._from_file(file_name, directory, **kwargs)
 
     def _extract_dates_from_environmental_conditions(self, data):
-        pass
+        raise NotImplementedError
 
     # light conditions
     _light = None
@@ -200,13 +241,13 @@ class Environment:
 
     @property
     def temperature_kelvin(self):
-        if self._temperature is not None and all(self._temperature < 100):
+        if self._temperature is not None and all(self._temperature.values < 100):
             return self.temperature + self.__temp_conversion
         return self._temperature
 
     @property
     def temperature_celsius(self):
-        if self._temperature is not None and all(self._temperature > 100):
+        if self._temperature is not None and all(self._temperature.values > 100):
             return self._temperature - self.__temp_conversion
         return self._temperature
 
