@@ -15,7 +15,6 @@ LOG = logging.getLogger(__name__)
 
 
 class _BasicBiophysics:
-
     _environment = None
     _hydrodynamics = None
     _constants = Constants()
@@ -33,7 +32,7 @@ class _BasicBiophysics:
     def set_environment(cls, environment):
         """
         :param environment: environmental conditions
-        :type environment: _EnvironmentSnippet
+        :type environment: EnvironmentalConditions
         """
         cls._environment = environment
 
@@ -150,7 +149,7 @@ class Light(_BasicBiophysics):
         side_base = self._side_correction(coral, water_depth) * (
             np.pi * coral.morphology.base_diameter * self.environment.light / self.environment.light_attenuation * (
                 np.exp(-self.environment.light_attenuation * (water_depth - base)) -
-                np.exp(-self.environment * water_depth)
+                np.exp(-self.environment.light_attenuation * water_depth)
             )
         )
         # > total
