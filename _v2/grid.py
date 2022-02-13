@@ -207,6 +207,49 @@ class Grid:
 
     _cells = set()
 
+    def __init__(self, x=None, y=None):
+        """
+        :param x: x-coordinate(s), defaults to None
+        :param y: y-coordinate(s), defaults to None
+
+        :type x: float, int, iterable, optional
+        :type y: float, int, iterable, optional
+        """
+        if not (x is None and y is None):
+            self.grid_from_xy(0 if x is None else x, 0 if y is None else y)
+
+    def grid_from_xy(self, x, y):
+        """Create grid from x- and/or y-coordinates.
+
+        :param x: x-coordinate(s)
+        :param y: y-coordinate(s)
+
+        :type x: float, int, iterable
+        :type y: float, int, iterable
+        """
+        def size(_v):
+            """
+            :param _v: variable
+            :return: variable length
+            """
+            try:
+                return len(_v)
+            except TypeError:
+                return 1
+
+        # x,y-sizes
+        x_len = size(x)
+        y_len = size(y)
+        if (x_len > 1 and y_len > 1) and not x_len == y_len:
+            raise ValueError
+
+        # x,y as arrays
+        x_array = x if x_len > 1 else [x] * y_len
+        y_array = y if y_len > 1 else [y] * x_len
+
+        # add cells
+        [self.add_cell(xx, yy) for xx, yy in zip(x_array, y_array)]
+
     @property
     def cells(self):
         """
