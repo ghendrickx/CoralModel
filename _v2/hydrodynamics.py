@@ -1,3 +1,8 @@
+"""
+Hydrodynamic model.
+
+Author: Gijs G. Hendrickx
+"""
 import logging
 import sys
 

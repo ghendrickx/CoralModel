@@ -1,3 +1,8 @@
+"""
+Simulation framework.
+
+Author: Gijs G. Hendrickx
+"""
 from _v2.hydrodynamics import Hydrodynamics
 
 

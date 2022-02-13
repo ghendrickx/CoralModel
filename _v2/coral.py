@@ -1,3 +1,8 @@
+"""
+Coral definition.
+
+Author: Gijs G. Hendrickx
+"""
 import logging
 
 import numpy as np

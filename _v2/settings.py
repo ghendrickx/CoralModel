@@ -1,3 +1,8 @@
+"""
+Constants and included processes.
+
+Author: Gijs G. Hendrickx
+"""
 import numpy as np
 
 

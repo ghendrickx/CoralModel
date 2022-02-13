@@ -1,3 +1,8 @@
+"""
+Grid settings.
+
+Author: Gijs G. Hendrickx
+"""
 import logging
 
 import numpy as np
@@ -27,7 +32,6 @@ class _CellVariables:
 
 
 class Cell:
-
     _cells = dict()
 
     def __new__(cls, x, y, **kwargs):

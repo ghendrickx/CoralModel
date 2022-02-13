@@ -1,3 +1,8 @@
+"""
+Biophysical relations.
+
+Author: Gijs G. Hendrickx
+"""
 import logging
 
 import numpy as np
