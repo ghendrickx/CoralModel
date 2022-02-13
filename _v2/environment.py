@@ -1,9 +1,76 @@
+"""
+Environmental conditions.
+
+Author Gijs G. Hendrickx
+"""
 import numpy as np
 import pandas as pd
 
 from _v2._errors import DataError
 from _v2.biophysics import _BasicBiophysics
+from _v2.settings import Constants
 from utils.config_directory import DirConfig
+
+
+class EnvironmentalConditions:
+    _light = None
+    _light_attenuation = None
+    _flow = None
+    _temperature = None
+    _aragonite = None
+
+    def __init__(self, light=None, light_attenuation=None, flow=None, temperature=None, aragonite=None):
+        self.set_conditions(
+            light=light, light_attenuation=light_attenuation, flow=flow, temperature=temperature, aragonite=aragonite
+        )
+
+    @classmethod
+    def set_conditions(cls, light, light_attenuation, flow, temperature, aragonite):
+        cls._light = cls.fmt_conditions(light)
+        cls._light_attenuation = cls.fmt_conditions(light_attenuation)
+        cls._flow = cls.fmt_conditions(flow)
+        cls._temperature = cls.fmt_conditions(temperature)
+        cls._aragonite = cls.fmt_conditions(aragonite)
+
+    @staticmethod
+    def fmt_conditions(conditions):
+        """Format environmental conditions as list/float (or None).
+
+        :param conditions: environmental conditions
+
+        :return: environmental conditions
+        :rtype: numpy.array, float, None
+        """
+        if conditions is None:
+            return
+
+        if isinstance(conditions, (float, int, np.ndarray)):
+            return conditions
+
+        if isinstance(conditions, pd.DataFrame):
+            return conditions.values.flatten()
+
+        return np.array(conditions)
+
+    @property
+    def light(self):
+        return self._light
+
+    @property
+    def light_attenuation(self):
+        return Constants().lac_default if self._light_attenuation is None else self._light_attenuation
+
+    @property
+    def flow(self):
+        return self._flow
+
+    @property
+    def temperature(self):
+        return self._temperature
+
+    @property
+    def aragonite(self):
+        return self._aragonite
 
 
 class Environment:
