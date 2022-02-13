@@ -465,7 +465,7 @@ class CoralSpecies:
             cls._re_initiate = True
 
     @classmethod
-    def re_initiate(cls):
+    def get_re_initiate(cls):
         """Re-initiate CoralCollections due to addition of more CoralSpecies after CoralCollections have been initiated,
         which results in the exclusion of the newly added CoralSpecies from the model.
 
@@ -618,6 +618,7 @@ class _CoralCollection:
     def _initiate(cls):
         """Set class-attribute to being initiated."""
         cls._initiated = True
+        CoralSpecies._re_initiate = False
 
     @classmethod
     def is_initiated(cls):

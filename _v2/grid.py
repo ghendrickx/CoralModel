@@ -402,5 +402,5 @@ class Grid:
     @classmethod
     def reset_corals(cls):
         """Reset CoralCollections of all Cells."""
-        if CoralSpecies.re_initiate():
+        if CoralSpecies.get_re_initiate():
             [cell.reset_corals() for cell in cls._cells]
