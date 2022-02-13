@@ -152,6 +152,17 @@ class _CoralStates:
         """Object-length."""
         return len(self._states)
 
+    def __getitem__(self, item):
+        """Get specific coral-state.
+
+        :param item: item index
+        :type item: int
+
+        :return: indexed item from coral states
+        :rtype: _CoralState
+        """
+        return self._states[item]
+
     def append(self, state):
         """Append coral-state to list of coral-states.
 
@@ -217,7 +228,18 @@ class _CoralStates:
 
     def last_reset(self):
         """Reset the coral-states by keeping the last coral-state of the list."""
-        self._states = self._states[-1]
+        self._states = [self._states[-1]]
+
+    def pop_state(self, index):
+        """Remove a coral-state by its index in the collection.
+
+        :param index: coral-state index
+        :type index: int
+
+        :return: popped coral-state
+        :rtype: _CoralState
+        """
+        return self._states.pop(index)
 
     @property
     def states(self):
