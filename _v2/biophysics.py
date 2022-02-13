@@ -483,14 +483,19 @@ class Photosynthesis(_BasicBiophysics):
     def _photosynthetic_rate(self, coral, year):
         """Photosynthetic efficiency.
 
+        :param coral: coral
+        :param year: year of simulation
+
+        :type coral: Coral
+        :type year: int, None
         """
         # photosynthetic dependencies
-        pld = self._light_dependency(coral, 'qss')
-        pfd = self._thermal_dependency(coral, year)
-        ptd = self._flow_dependency(coral)
+        pld = 1 if coral.vars.light is None else self._light_dependency(coral, 'qss')
+        pfd = 1 if coral.vars.in_canopy_flow is None else self._flow_dependency(coral)
+        ptd = 1 if coral.vars.temperature is None else self._thermal_dependency(coral, year)
 
         # combined
-        coral.set_characteristic('photosynthesis', pld * pfd * ptd)
+        coral.vars.photosynthesis = pld * pfd * ptd
 
     def _light_dependency(self, coral, output):
         """Photosynthetic light dependency.
@@ -554,8 +559,6 @@ class Photosynthesis(_BasicBiophysics):
         :type year: int
         """
 
-        delta_temp = 1
-
         def thermal_acclimation():
             """Thermal acclimation."""
             if self.processes.thermal_micro_environment:
@@ -573,12 +576,12 @@ class Photosynthesis(_BasicBiophysics):
             coral.vars.lower_limit = m_min - self.constants.thermal_variability * s_min
             coral.vars.upper_limit = m_max + self.constants.thermal_variability * s_max
 
-        def adapted_temperature():
+        def adapted_temperature(delta_temp):
             """Adapted temperature response."""
 
             def specialisation():
                 """Specialisation term."""
-                return 4e-4 * np.exp(-.33 * delta_temp - 10)
+                return 4e-4 * np.exp(-.33 * (delta_temp - 10))
 
             relative_temperature = coral.vars.temperature - coral.vars.lower_limit
             response = -relative_temperature * (relative_temperature ** 2 - delta_temp ** 2)
@@ -591,17 +594,18 @@ class Photosynthesis(_BasicBiophysics):
 
             return response * specialisation()
 
-        def thermal_envelope():
+        def thermal_envelope(optimal):
             """Thermal envelope."""
             return np.exp((self.constants.activation_energy / self.constants.gas_constant) * (1 / 300 - 1 / optimal))
 
         # parameter definitions
-        thermal_acclimation()
-        delta_temp = coral.vars.upper_limit - coral.vars.lower_limit
-        optimal = coral.vars.lower_limit + (1 / np.sqrt(3)) * delta_temp
+        if self.processes.thermal_acclimation:
+            thermal_acclimation()
+        diff_temp = coral.vars.upper_limit - coral.vars.lower_limit
+        opt_temp = coral.vars.lower_limit + (1 / np.sqrt(3)) * diff_temp
 
         # calculations
-        return adapted_temperature() * thermal_envelope()
+        return adapted_temperature(diff_temp) * thermal_envelope(opt_temp)
 
     def _flow_dependency(self, coral):
         """Photosynthetic flow dependency.
