@@ -7,16 +7,20 @@ import logging
 
 import numpy as np
 
+from _v2.settings import Processes
+
 LOG = logging.getLogger(__name__)
 
 
 class _CoralConstants:
 
-    _constants = ('species_constant',)
+    __attr = ('species_constant',)
 
-    def __init__(self):
+    __def_species_constant = 1
+
+    def __init__(self, species_constant=None):
         """Initiate with default values."""
-        self.species_constant = 1
+        self.species_constant = self.__def_species_constant if species_constant is None else species_constant
 
     def __repr__(self):
         """Representation."""
@@ -24,7 +28,7 @@ class _CoralConstants:
 
     def __str__(self):
         """String-representation."""
-        return str({key: getattr(self, key) for key in self._constants})
+        return str({key: getattr(self, key) for key in self.__attr})
 
     def set_constants(self, **kwargs):
         """Set coral constants, different from default values.
@@ -32,7 +36,7 @@ class _CoralConstants:
         :param kwargs: coral constants
         :type kwargs: float, None
         """
-        [self._def(key, value) for key, value in kwargs.items() if key in self._constants]
+        [self._def(key, value) for key, value in kwargs.items() if hasattr(self, key)]
 
     def _def(self, cst, value):
         """Overwrite default with defined value, unless None-type is provided as value.
@@ -43,10 +47,24 @@ class _CoralConstants:
         :type cst: str
         :type value: float, None
         """
-        setattr(self, cst, value) if value is not None else None
+        if value is not None:
+            setattr(self, cst, value)
+
+    @classmethod
+    def get_attr_list(cls):
+        """
+        :return: constant definitions
+        :rtype: tuple
+        """
+        return cls.__attr
 
 
 class _CoralVariables:
+
+    __attr = (
+        'light', 'biomass', 'in_canopy_flow', 'tbl', 'temperature', 'lower_limit', 'upper_limit', 'photosynthesis',
+        'calcification',
+    )
 
     def __init__(
             self, light=None, biomass=None, in_canopy_flow=None, tbl=None, temperature=None,
@@ -69,8 +87,7 @@ class _CoralVariables:
         self.in_canopy_flow = in_canopy_flow
         self.tbl = tbl
         self.temperature = temperature
-        self.lower_limit = lower_limit
-        self.upper_limit = upper_limit
+        self.lower_limit, self.upper_limit = self._set_thermal_limits(lower_limit, upper_limit)
         self.photosynthesis = photosynthesis
         self.calcification = calcification
 
@@ -81,6 +98,37 @@ class _CoralVariables:
     def __str__(self):
         """String-representation."""
         return f'_CoralVariables'
+
+    @staticmethod
+    def _set_thermal_limits(lower_limit, upper_limit):
+        """If thermal limits are defined upfront, the thermal acclimation process is discarded.
+
+        :param lower_limit: lower thermal limit
+        :param upper_limit: upper thermal limit
+
+        :type lower_limit: float, None
+        :type upper_limit: float, None
+
+        :return: thermal limits
+        :rtype: tuple
+        """
+        if not type(lower_limit) == type(upper_limit):
+            msg = f'Thermal limits must be both defined (float) OR both not defined (None): ' \
+                f'lower_limit = {lower_limit}, upper_limit = {upper_limit}'
+            raise TypeError(msg)
+
+        if lower_limit is not None and upper_limit is not None:
+            Processes.set_process(thermal_acclimation=False)
+
+        return lower_limit, upper_limit
+
+    @classmethod
+    def get_attr_list(cls):
+        """
+        :return: variable definitions
+        :rtype: tuple
+        """
+        return cls.__attr
 
 
 class _CoralState:
@@ -434,7 +482,7 @@ class CoralSpecies:
     _coral_species = set()
     _re_initiate = False
 
-    def __init__(self, diameter, height, distance, base_diameter=None, plate_thickness=None, name=None):
+    def __init__(self, diameter, height, distance, base_diameter=None, plate_thickness=None, name=None, **kwargs):
         """
         :param diameter: coral diameter
         :param height: coral height
@@ -442,6 +490,7 @@ class CoralSpecies:
         :param base_diameter: coral base diameter, defaults to None
         :param plate_thickness: coral plate thickness, defaults to None
         :param name: name of coral-type, defaults to None
+        :param kwargs: coral constants (or constant variables)
 
         :type diameter: float
         :type height: float
@@ -452,10 +501,10 @@ class CoralSpecies:
         """
         # initiate CoralSpecies
         self.name = name
-        self._constants = _CoralConstants()
+        self._constants = _CoralConstants(**{k: v for k, v in kwargs.items() if k in _CoralConstants.get_attr_list()})
         self._initial_morphology = _CoralMorphology(diameter, height, distance, base_diameter, plate_thickness)
         # constant coral variables
-        self._variables = None
+        self._variables = _CoralVariables(**{k: v for k, v in kwargs.items() if k in _CoralVariables.get_attr_list()})
         # store CoralSpecies
         self.add_species(self)
 
@@ -555,7 +604,7 @@ class Coral:
         """
         self._species = species
         self._constants = species.constants
-        self._vars = _CoralVariables()
+        self._vars = _CoralVariables(**species.variables.__dict__)
         self._states = _CoralStates()
         self._morphology = species.initial_morphology
 
