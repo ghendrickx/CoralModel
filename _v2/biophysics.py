@@ -8,7 +8,7 @@ import logging
 import numpy as np
 from scipy.optimize import newton
 
-from _v2.coral import Coral, _CoralStates
+from _v2.coral import Coral, _CoralState
 from _v2.settings import Constants, Processes
 
 LOG = logging.getLogger(__name__)
@@ -245,6 +245,8 @@ class Flow(_BasicBiophysics):
         :param cell: grid cell
         :type cell: Cell
         """
+        # TODO: Flow micro-environment is influenced by coral canopy, and should be considered on cell-level instead of
+        #  coral-level: Define cell-level representative coral morphology.
         [self._execute_flow(coral, cell.water_depth) for coral in cell.corals]
         cell.flow_velocity = self._wave_current()
 
@@ -462,12 +464,13 @@ class Temperature(_BasicBiophysics):
 class Photosynthesis(_BasicBiophysics):
 
     def __init__(self, coral_reef, year):
-        """
+        """If :param year: is set to None, thermal limits must be provided manually.
+
         :param coral_reef: grid of corals, i.e. coral reef
         :param year: year of simulation
 
         :type coral_reef: Grid
-        :type year: int
+        :type year: int, None
         """
         self._year = year
         super().__init__(coral_reef)
@@ -628,6 +631,7 @@ class PopulationStates(_BasicBiophysics):
         :param cell: grid cell
         :type cell: Cell
         """
+        [self._population_states(coral, cell.capacity) for coral in cell.corals]
 
     def _population_states(self, coral, capacity):
         """Population dynamics: temporal iteration.
@@ -638,14 +642,14 @@ class PopulationStates(_BasicBiophysics):
         :type coral: Coral
         :type capacity: float
         """
-        # set initial coral states
-        coral.states = [coral.states[-1]]
+        # set initial coral state
+        coral.states.last_reset()
         # append new coral states
         [coral.states.append(
             self._population_dynamics(ps, coral.states[i], coral.constants.species_constant, capacity)
-        ) for i, ps in coral.vars.photosynthesis]
-        # remove initial coral states
-        del coral.states[0]
+        ) for i, ps in enumerate(coral.vars.photosynthesis)]
+        # remove initial coral state
+        coral.states.pop_state(index=0)
 
     def _population_dynamics(self, photosynthesis, p0, species_constant, capacity, dt=1):
         """Population dynamics: spatial iteration.
@@ -655,50 +659,48 @@ class PopulationStates(_BasicBiophysics):
         :param capacity: carrying capacity
 
         :type photosynthesis: float
-        :type p0: _CoralStates
+        :type p0: _CoralState
         :type capacity: float
         """
-        p = _CoralStates()
-
         # growing conditions
-        if photosynthesis:
+        if photosynthesis > 0:
             # bleached population
-            p.bleached = p0.bleached / (1 + dt * (
+            bleached = p0.bleached / (1 + dt * (
                 8 * self.constants.recovery_rate * photosynthesis / species_constant +
                 self.constants.mortality_rate * species_constant
             ))
             # pale population
-            p.pale = (p0.pale + p.bleached * (
+            pale = (p0.pale + bleached * (
                 8 * dt * self.constants.recovery_rate * photosynthesis / species_constant
             )) / (1 + dt * self.constants.recovery_rate * photosynthesis * species_constant)
             # recovered population
-            p.recovered = (
-                p0.recovered + dt * self.constants.recovery_rate * photosynthesis * species_constant * p.pale
+            recovered = (
+                p0.recovered + dt * self.constants.recovery_rate * photosynthesis * species_constant * pale
             ) / (1 + .5 * dt * self.constants.recovery_rate * photosynthesis * species_constant)
             # healthy population
             a = dt * self.constants.growth_rate * photosynthesis * species_constant / capacity
             b = 1 - dt * self.constants.growth_rate * photosynthesis * species_constant * (
-                1 - sum([p.recovered, p.pale, p.bleached]) / capacity
+                1 - sum([recovered, pale, bleached]) / capacity
             )
-            c = -(p0.healthy + .5 * dt * self.constants.recovery_rate * photosynthesis * species_constant * p.recovered)
-            p.healthy = (-b + np.sqrt(b ** 2 - 4 * a * c)) / (2 * a)
+            c = -(p0.healthy + .5 * dt * self.constants.recovery_rate * photosynthesis * species_constant * recovered)
+            healthy = (-b + np.sqrt(b ** 2 - 4 * a * c)) / (2 * a)
 
         # bleaching conditions
         else:
             # healthy population
-            p.healthy = p0.healthy / (1 - dt * self.constants.bleaching_rate * photosynthesis * species_constant)
+            healthy = p0.healthy / (1 - dt * self.constants.bleaching_rate * photosynthesis * species_constant)
             # recovered population
-            p.recovered = p0.recovered / (1 - dt * self.constants.bleaching_rate * photosynthesis * species_constant)
+            recovered = p0.recovered / (1 - dt * self.constants.bleaching_rate * photosynthesis * species_constant)
             # pale population
-            p.pale = (p0.pale - dt * self.constants.bleaching_rate * photosynthesis * species_constant * (
-                p.healthy + p.recovered
+            pale = (p0.pale - dt * self.constants.bleaching_rate * photosynthesis * species_constant * (
+                healthy + recovered
             )) / (1 - .5 * dt * self.constants.bleaching_rate * photosynthesis * species_constant)
             # bleached population
-            p.bleached = (
-                p0.bleached - .5 * dt * self.constants.bleaching_rate * photosynthesis * species_constant * p.pale
+            bleached = (
+                p0.bleached - .5 * dt * self.constants.bleaching_rate * photosynthesis * species_constant * pale
             ) / (1 - .25 * dt * self.constants.bleaching_rate * photosynthesis * species_constant)
 
-        return p
+        return _CoralState(healthy=healthy, recovered=recovered, pale=pale, bleached=bleached)
 
 
 class Calcification(_BasicBiophysics):
