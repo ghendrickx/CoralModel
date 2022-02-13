@@ -15,16 +15,16 @@ class Processes:
 
     @classmethod
     def set_processes(
-            cls, flow_micro_environment=True, thermal_micro_environment=True, photosynthetic_flow_dependency=True,
-            photo_acclimation=True, thermal_acclimation=True
+            cls, flow_micro_environment=False, thermal_micro_environment=False, photosynthetic_flow_dependency=False,
+            photo_acclimation=False, thermal_acclimation=False
     ):
         """Define processes to include in the modelling of corals.
 
-        :param flow_micro_environment: include flow micro environment, defaults to True
-        :param thermal_micro_environment: include thermal micro environment, defaults to True
-        :param photosynthetic_flow_dependency: include photosynthetic flow dependency, defaults to True
-        :param photo_acclimation: include photo-acclimation as differential equation, defaults to True
-        :param thermal_acclimation: include thermal-acclimation dynamically, defaults to True
+        :param flow_micro_environment: include flow micro environment, defaults to False
+        :param thermal_micro_environment: include thermal micro environment, defaults to False
+        :param photosynthetic_flow_dependency: include photosynthetic flow dependency, defaults to False
+        :param photo_acclimation: include photo-acclimation as differential equation, defaults to False
+        :param thermal_acclimation: include thermal-acclimation dynamically, defaults to False
 
         :type flow_micro_environment: bool, optional
         :type thermal_micro_environment: bool, optional
