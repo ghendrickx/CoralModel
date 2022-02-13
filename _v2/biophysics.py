@@ -463,14 +463,14 @@ class Temperature(_BasicBiophysics):
 
 class Photosynthesis(_BasicBiophysics):
 
-    def __init__(self, coral_reef, year):
+    def __init__(self, coral_reef, year=None):
         """If :param year: is set to None, thermal limits must be provided manually.
 
         :param coral_reef: grid of corals, i.e. coral reef
-        :param year: year of simulation
+        :param year: year of simulation, defaults to None
 
         :type coral_reef: Grid
-        :type year: int, None
+        :type year: int, optional
         """
         self._year = year
         super().__init__(coral_reef)
@@ -481,21 +481,18 @@ class Photosynthesis(_BasicBiophysics):
         :param cell: grid cell
         :type cell: Cell
         """
-        [self._photosynthetic_rate(coral, self._year) for coral in cell.corals]
+        [self._photosynthetic_rate(coral) for coral in cell.corals]
 
-    def _photosynthetic_rate(self, coral, year):
+    def _photosynthetic_rate(self, coral,):
         """Photosynthetic efficiency.
 
         :param coral: coral
-        :param year: year of simulation
-
         :type coral: Coral
-        :type year: int, None
         """
         # photosynthetic dependencies
         pld = 1 if coral.vars.light is None else self._light_dependency(coral, 'qss')
         pfd = 1 if coral.vars.in_canopy_flow is None else self._flow_dependency(coral)
-        ptd = 1 if coral.vars.temperature is None else self._thermal_dependency(coral, year)
+        ptd = 1 if coral.vars.temperature is None else self._thermal_dependency(coral)
 
         # combined
         coral.vars.photosynthesis = pld * pfd * ptd
@@ -552,24 +549,25 @@ class Photosynthesis(_BasicBiophysics):
             np.tanh(coral.vars.light / saturation) - np.tanh(.01 * self.environment.light / saturation)
         )
 
-    def _thermal_dependency(self, coral, year):
+    def _thermal_dependency(self, coral):
         """Photosynthetic thermal dependency.
 
         :param coral: coral
-        :param year: year of simulation
-
         :type coral: Coral
-        :type year: int
         """
 
         def thermal_acclimation():
             """Thermal acclimation."""
+            if self._year is None:
+                msg = f'Thermal acclimation requires a definition of the year: year = {self._year}'
+                raise ValueError(msg)
+
             if self.processes.thermal_micro_environment:
                 raise NotImplementedError
             else:
                 mmm = self.environment.temperature_mmm[np.logical_and(
-                    self.environment.temperature_mmm.index < year,
-                    self.environment.temperature_mmm.index >= year - int(
+                    self.environment.temperature_mmm.index < self._year,
+                    self.environment.temperature_mmm.index >= self._year - int(
                         self.constants.thermal_acclimation_period / coral.constants.species_constant
                     )
                 )]
