@@ -518,6 +518,10 @@ class CoralSpecies:
         """String-representation."""
         return f'Coral species: {self.name}'
 
+    def __len__(self):
+        """Length of CoralSpecies: Number of defined coral species."""
+        return len(self._coral_species)
+
     @classmethod
     def add_species(cls, coral_species):
         """Add CoralSpecies to collection of species.
@@ -605,7 +609,7 @@ class Coral:
         self._species = species
         self._constants = species.constants
         self._vars = _CoralVariables(**species.variables.__dict__)
-        self._states = _CoralStates()
+        self._states = _CoralStates(healthy=1 / len(CoralSpecies.get_species()))
         self._morphology = species.initial_morphology
 
     def __repr__(self):
