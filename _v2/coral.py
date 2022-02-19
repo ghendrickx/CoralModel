@@ -459,6 +459,41 @@ class _CoralMorphology:
                 self.plate_thickness * self.diameter ** 2
         )
 
+    @classmethod
+    def cell_representative(cls, cell):
+        """Cell-representative coral morphology.
+
+        :param cell: grid-cell
+        :type cell: Cell
+
+        :return: cell-representative coral morphology
+        :rtype: _CoralMorphology
+        """
+
+        def representative_characteristic(char):
+            """Weighted-averaged of coral morphology is used as a cell-representative morphology, where the weights
+            equal the coral cover w.r.t. the total living cover in the cell.
+
+            :param char: morphological characteristic
+            :type char: str
+
+            :return: representative morphological characteristic
+            :rtype: float
+            """
+            return sum(coral.states.sum * getattr(coral.morphology, char) for coral in cell.corals) / \
+                sum(coral.states.sum for coral in cell.corals)
+
+        diameter = representative_characteristic('diameter')
+        height = representative_characteristic('height')
+        distance = representative_characteristic('distance')
+        base_diameter = representative_characteristic('base_diameter')
+        plate_thickness = representative_characteristic('plate_thickness')
+
+        return cls(
+            diameter=diameter, height=height, distance=distance,
+            base_diameter=base_diameter, plate_thickness=plate_thickness
+        )
+
 
 class _CoralEnvironment:
 
