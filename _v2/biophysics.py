@@ -904,7 +904,7 @@ class Dislodgement(_BasicBiophysics):
         :rtype: float
         """
         if self._dislodgement_criterion(coral, flow):
-            return self._dislodgement_mechanical_threshold(coral, flow) / self._canopy_shape_factor(coral)
+            return self._dislodgement_mechanical_threshold(flow) / self._canopy_shape_factor(coral)
         return 1
 
     def _dislodgement_criterion(self, coral, flow):
@@ -919,15 +919,12 @@ class Dislodgement(_BasicBiophysics):
         :return: coral dislodges
         :rtype: bool
         """
-        return self._dislodgement_mechanical_threshold(coral, flow) <= self._canopy_shape_factor(coral)
+        return self._dislodgement_mechanical_threshold(flow) <= self._canopy_shape_factor(coral)
 
-    def _dislodgement_mechanical_threshold(self, coral, flow):
+    def _dislodgement_mechanical_threshold(self, flow):
         """Dislodgement Mechanical Threshold.
 
-        :param coral: coral
         :param flow: flow velocity
-
-        :type coral: Coral
         :type flow: float
 
         :return: dislodgement mechanical threshold
