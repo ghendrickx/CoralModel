@@ -130,6 +130,21 @@ class _CoralVariables:
         """
         return cls.__attr
 
+    def set_variables(self, **kwargs):
+        limits = 'lower_limit', 'upper_limit'
+        if any(k in limits for k in kwargs.keys()):
+            lower_limit = kwargs['lower_limit'] if 'lower_limit' in kwargs.keys() else None
+            upper_limit = kwargs['upper_limit'] if 'upper_limit' in kwargs.keys() else None
+            self._set_thermal_limits(lower_limit=lower_limit, upper_limit=upper_limit)
+
+        [self._set_variable(k, v) for k, v in kwargs.items() if k not in limits]
+
+    def _set_variable(self, key, value):
+        if hasattr(self, key):
+            setattr(self, key, value)
+        else:
+            LOG.warning(f'There are no coral-variables named \"{key}\".')
+
 
 class _CoralState:
 
