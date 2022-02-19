@@ -529,6 +529,10 @@ class CoralSpecies:
         :param coral_species: coral species
         :type coral_species: CoralSpecies
         """
+        if len(cls._coral_species) > 0:
+            msg = f'The ability to model different coral species at the same time has not yet been implemented.'
+            raise NotImplementedError(msg)
+
         # auto-name species
         if coral_species.name is None:
             coral_species.name = f'Coral-{len(cls._coral_species)}'
