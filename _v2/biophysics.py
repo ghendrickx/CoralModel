@@ -717,11 +717,15 @@ class Calcification(_BasicBiophysics):
         :param coral: coral
         :type coral: Coral
         """
-        aragonite_dependency = (self.environment.aragonite - self.constants.dissolution_saturation) / (
-            self.constants.half_rate + self.environment.aragonite - self.constants.dissolution_saturation
-        )
+        if self.environment.aragonite is None:
+            aragonite_dependency = 1
+        else:
+            aragonite_dependency = (self.environment.aragonite - self.constants.dissolution_saturation) / (
+                self.constants.half_rate + self.environment.aragonite - self.constants.dissolution_saturation
+            )
+
         calcification = self.constants.calcification_constant * coral.constants.species_constant * \
-            [cs.healthy for cs in coral.states] * aragonite_dependency * coral.vars.photosynthesis
+            np.array([s.healthy for s in coral.states]) * aragonite_dependency * coral.vars.photosynthesis
 
         coral.vars.calcification = calcification
 
