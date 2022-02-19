@@ -852,6 +852,9 @@ class Morphology(_BasicBiophysics):
 
 class Dislodgement(_BasicBiophysics):
 
+    def __init__(self, coral_reef):
+        raise NotImplementedError
+
     def _update(self, cell):
         """Update corals: Dislodgement.
 
@@ -936,6 +939,9 @@ class Dislodgement(_BasicBiophysics):
 
 
 class Recruitment(_BasicBiophysics):
+
+    def __init__(self, coral_reef):
+        raise NotImplementedError
 
     def _update(self, cell):
         """Update corals: Coral recruitment.
