@@ -8,7 +8,7 @@ import logging
 import numpy as np
 from scipy.optimize import newton
 
-from _v2.coral import Coral, _CoralState
+from _v2.coral import Coral, _CoralState, _CoralMorphology
 from _v2.settings import Constants, Processes
 
 LOG = logging.getLogger(__name__)
@@ -245,46 +245,39 @@ class Flow(_BasicBiophysics):
         :param cell: grid cell
         :type cell: Cell
         """
-        # TODO: Flow micro-environment is influenced by coral canopy, and should be considered on cell-level instead of
-        #  coral-level: Define cell-level representative coral morphology.
-        [self._execute_flow(coral, cell.water_depth) for coral in cell.corals]
+        icf = self._velocities(_CoralMorphology.cell_representative(cell), cell.water_depth)
+        [coral.vars.set_variables(in_canopy_flow=icf) for coral in cell.corals]
+
+        [self._thermal_boundary_layer(coral) for coral in cell.corals]
         cell.flow_velocity = self._wave_current()
 
-    def _execute_flow(self, coral, water_depth):
-        """Execution of Flow-object.
-
-        :param coral: coral
-        :param water_depth: water depth
-
-        :type coral: Coral
-        :type water_depth: float
-        """
-        self._velocities(coral, water_depth)
-        self._thermal_boundary_layer(coral)
-
-    def _velocities(self, coral, water_depth):
+    def _velocities(self, morphology, water_depth):
         """In-canopy flow velocities, and depth-averaged flow velocities.
 
-        :param coral: coral
+        :param morphology: cell-representative morphology
         :param water_depth: water depth
 
-        :type coral: Coral
+        :type morphology: _CoralMorphology
         :type water_depth: float
+
+        :return: (in-canopy) flow velocity
+        :rtype: float
         """
         if self.processes.photosynthetic_flow_dependency:
             if self.processes.flow_micro_environment:
                 wave_attenuation = self._wave_attenuation(
-                    coral.morphology.representative_diameter, coral.morphology.height, coral.morphology.distance,
+                    morphology.representative_diameter, morphology.height, morphology.distance,
                     self.hydrodynamics.wave_velocity, self.hydrodynamics.wave_period, water_depth, 'wave'
                 )
                 current_attenuation = self._wave_attenuation(
-                    coral.morphology.representative_diameter, coral.morphology.height, coral.morphology.distance,
+                    morphology.representative_diameter, morphology.height, morphology.distance,
                     self.hydrodynamics.current_velocity, 1e3, water_depth, 'current'
                 )
             else:
                 wave_attenuation, current_attenuation = 1, 1
 
-            coral.vars.in_canopy_flow = self._wave_current(wave_attenuation, current_attenuation)
+            return self._wave_current(wave_attenuation, current_attenuation)
+        return 0
 
     def _wave_current(self, wave_attenuation=1, current_attenuation=1):
         """Wave-current interaction.
