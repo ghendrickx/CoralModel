@@ -3,15 +3,34 @@ Constants and included processes.
 
 Author: Gijs G. Hendrickx
 """
+import logging
+
 import numpy as np
+
+LOG = logging.getLogger(__name__)
 
 
 class Processes:
 
     @classmethod
     def set_process(cls, **kwargs):
-        """Define single process to be included in the modelling of corals/coral reefs."""
-        [setattr(cls, f'_{k}', v) for k, v in kwargs.items() if hasattr(cls, k)]
+        """Define process to be updated in the modelling of corals/coral reefs."""
+        [cls._set_process(k, v) for k, v in kwargs.items()]
+
+    @classmethod
+    def _set_process(cls, key, value):
+        """Set single process to be in-/excluded in the modelling of corals/coral reefs. Verifies the existence of the
+        provided process, and raises a warning when a process has been updated.
+
+        :param key: key of process-attribute
+        :param value: value of process-attribute
+
+        :type key: str
+        :type value: bool
+        """
+        if hasattr(cls, key):
+            setattr(cls, f'_{key}', value)
+            LOG.warning(f'Process updated: {key} = {value}')
 
     @classmethod
     def set_processes(
