@@ -11,8 +11,6 @@ from _v2.biophysics import _BasicBiophysics
 from _v2.settings import Constants
 from utils.config_directory import DirConfig
 
-CONSTANTS = Constants()
-
 
 class EnvironmentalConditions:
     _light = None
@@ -101,7 +99,7 @@ class EnvironmentalConditions:
         :rtype: numpy.array, None
         """
         if self._light_attenuation is None:
-            self._light_attenuation = CONSTANTS.lac_default
+            self._light_attenuation = Constants.get_constant('lac_default')
         return self._light_attenuation
 
     @property
