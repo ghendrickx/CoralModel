@@ -20,13 +20,26 @@ class _BasicBiophysics:
     _constants = Constants()
     _processes = Processes()
 
+    _essential_data = None
+
     def __init__(self, coral_reef):
         """Initiate biophysical process: Update coral reef.
 
         :param coral_reef: grid of corals, i.e. coral reef
         :type coral_reef: Grid
         """
+        self._verify_essentials()
         self.update(coral_reef)
+
+    def _verify_essentials(self):
+        """Verify if all essential information is available for the biophysical process to execute."""
+        if self.environment is None:
+            msg = f'No environmental conditions defined.'
+            raise ValueError(msg)
+
+        if self._essential_data is not None and getattr(self.environment, self._essential_data) is None:
+            msg = f'Essential environmental data missing: \"{self._essential_data}\".'
+            raise ValueError(msg)
 
     @classmethod
     def set_environment(cls, environment):
@@ -111,6 +124,7 @@ class _BasicBiophysics:
 
 
 class Light(_BasicBiophysics):
+    _essential_data = 'light'
 
     def _update(self, cell):
         """Update corals: Light micro-environment.
@@ -238,6 +252,7 @@ class Light(_BasicBiophysics):
 
 
 class Flow(_BasicBiophysics):
+    _essential_data = 'flow'
 
     def _update(self, cell):
         """Update corals: Flow micro-environment.
@@ -428,6 +443,7 @@ class Flow(_BasicBiophysics):
 
 
 class Temperature(_BasicBiophysics):
+    _essential_data = 'temperature'
 
     def _update(self, cell):
         """Update corals: Thermal micro-environment
