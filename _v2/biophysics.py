@@ -861,7 +861,7 @@ class Morphology(_BasicBiophysics):
 
 class Dislodgement(_BasicBiophysics):
 
-    def __init__(self, coral_reef):
+    def __new__(cls, *args, **kwargs):
         raise NotImplementedError
 
     def _update(self, cell):
@@ -870,16 +870,19 @@ class Dislodgement(_BasicBiophysics):
         :param cell: grid cell
         :type cell: Cell
         """
-        [self._storm_impact(coral) for coral in cell.corals]
+        [self._storm_impact(coral, cell.flow_velocity) for coral in cell.corals]
 
-    def _storm_impact(self, coral):
+    def _storm_impact(self, coral, flow):
         """Update coral population states and morphology due to storm event.
 
         :param coral: coral
+        :param flow: flow velocity
+
         :type coral: Coral
+        :type flow: float
         """
         # survival rate
-        survival = self._partial_dislodgement(coral)
+        survival = self._partial_dislodgement(coral, flow)
         # update population states
         [
             setattr(coral.states[-1], state, survival * getattr(coral.states[-1], state))
@@ -888,41 +891,50 @@ class Dislodgement(_BasicBiophysics):
         # update morphology
         coral.morphology.update(survival * coral.morphology.volume)
 
-    def _partial_dislodgement(self, coral):
+    def _partial_dislodgement(self, coral, flow):
         """Percentage surviving storm event.
 
         :param coral: coral
+        :param flow: flow velocity
+
         :type coral: Coral
+        :type flow: float
 
         :return: surviving fraction
         :rtype: float
         """
-        if self._dislodgement_criterion(coral):
-            return self._dislodgement_mechanical_threshold(coral) / self._canopy_shape_factor(coral)
+        if self._dislodgement_criterion(coral, flow):
+            return self._dislodgement_mechanical_threshold(coral, flow) / self._canopy_shape_factor(coral)
         return 1
 
-    def _dislodgement_criterion(self, coral):
+    def _dislodgement_criterion(self, coral, flow):
         """Potential dislodgement of corals.
 
         :param coral: coral
+        :param flow: flow velocity
+
         :type coral: Coral
+        :type flow: float
 
         :return: coral dislodges
         :rtype: bool
         """
-        return self._dislodgement_mechanical_threshold(coral) <= self._canopy_shape_factor(coral)
+        return self._dislodgement_mechanical_threshold(coral, flow) <= self._canopy_shape_factor(coral)
 
-    def _dislodgement_mechanical_threshold(self, coral):
+    def _dislodgement_mechanical_threshold(self, coral, flow):
         """Dislodgement Mechanical Threshold.
 
         :param coral: coral
+        :param flow: flow velocity
+
         :type coral: Coral
+        :type flow: float
 
         :return: dislodgement mechanical threshold
         :rtype: float
         """
         return self.constants.tensile_stress / (
-                self.constants.water_density * self.constants.drag_coefficient * coral.vars.overall_flow
+                self.constants.water_density * self.constants.drag_coefficient * flow
         )
 
     @staticmethod
@@ -949,7 +961,7 @@ class Dislodgement(_BasicBiophysics):
 
 class Recruitment(_BasicBiophysics):
 
-    def __init__(self, coral_reef):
+    def __new__(cls, *args, **kwargs):
         raise NotImplementedError
 
     def _update(self, cell):
