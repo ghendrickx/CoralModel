@@ -102,12 +102,18 @@ class Processes:
 class Constants:
 
     @classmethod
-    def set_constant(cls, constant, value):
-        if hasattr(cls, f'_{constant}'):
-            setattr(cls, f'_{constant}', value)
+    def get_constant(cls, key):
+        if hasattr(cls, f'_{key}'):
+            return getattr(cls(), key)
         else:
-            msg = f'There is no constant named \"{constant}\".'
-            raise ValueError(msg)
+            LOG.warning(f'There is no constant named \"{key}\".')
+
+    @classmethod
+    def set_constant(cls, key, value):
+        if hasattr(cls, f'_{key}'):
+            setattr(cls, f'_{key}', value)
+        else:
+            LOG.warning(f'There is no constant named \"{key}\".')
 
     # light micro-environment
     _lac_default = None
