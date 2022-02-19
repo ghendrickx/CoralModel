@@ -38,6 +38,7 @@ class EnvironmentalConditions:
         self.set_conditions(
             light=light, light_attenuation=light_attenuation, flow=flow, temperature=temperature, aragonite=aragonite
         )
+        self.export_conditions(self)
 
     @classmethod
     def set_conditions(cls, light, light_attenuation, flow, temperature, aragonite):
@@ -79,6 +80,11 @@ class EnvironmentalConditions:
             return conditions.values.flatten()
 
         return np.array(conditions)
+
+    @staticmethod
+    def export_conditions(env):
+        """Set the defined environmental conditions to the biophysical objects."""
+        _BasicBiophysics.set_environment(env)
 
     @property
     def light(self):
