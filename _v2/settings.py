@@ -29,8 +29,9 @@ class Processes:
         :type value: bool
         """
         if hasattr(cls, key):
+            if not getattr(cls, f'_{key}') == value:
+                LOG.warning(f'Process updated: {key} = {value}')
             setattr(cls, f'_{key}', value)
-            LOG.warning(f'Process updated: {key} = {value}')
 
     @classmethod
     def set_processes(
