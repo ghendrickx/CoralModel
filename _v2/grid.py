@@ -30,6 +30,14 @@ class _CellVariables:
         self.flow_velocity = velocity
         [setattr(self, key, value) for key, value in kwargs]
 
+    def __repr__(self):
+        """Object-representation."""
+        return f'_CellVariables(**kwargs)'
+
+    def __str__(self):
+        """String-representation."""
+        return f'_CellVariables'
+
 
 class Cell:
     _cells = dict()
@@ -162,7 +170,7 @@ class Cell:
         :return: living coral cover, all coral species in grid cell included
         :rtype: float
         """
-        return sum(coral.sum for coral in self.corals)
+        return np.sum([coral.states.sum for coral in self.corals], axis=0)
 
     @property
     def water_depth(self):
