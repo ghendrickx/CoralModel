@@ -131,6 +131,10 @@ class _CoralVariables:
         return cls.__attr
 
     def set_variables(self, **kwargs):
+        """Set coral variables.
+
+        :param kwargs: variables
+        """
         limits = 'lower_limit', 'upper_limit'
         if any(k in limits for k in kwargs.keys()):
             lower_limit = kwargs['lower_limit'] if 'lower_limit' in kwargs.keys() else None
@@ -140,6 +144,14 @@ class _CoralVariables:
         [self._set_variable(k, v) for k, v in kwargs.items() if k not in limits]
 
     def _set_variable(self, key, value):
+        """Set single coral variable.
+
+        :param key: variable-key
+        :param value: value
+
+        :type key: str
+        :type value: iterable, float
+        """
         if hasattr(self, key):
             setattr(self, key, value)
         else:
