@@ -11,6 +11,11 @@ LOG = logging.getLogger(__name__)
 
 
 class Processes:
+    _flow_micro_environment = False
+    _thermal_micro_environment = False
+    _photosynthetic_flow_dependency = False
+    _photo_acclimation = False
+    _thermal_acclimation = False
 
     @classmethod
     def set_process(cls, **kwargs):
@@ -32,6 +37,8 @@ class Processes:
             if not getattr(cls, f'_{key}') == value:
                 LOG.warning(f'Process updated: {key} = {value}')
             setattr(cls, f'_{key}', value)
+        else:
+            LOG.warning(f'There is no process named \"{key}\".')
 
     @classmethod
     def set_processes(
@@ -52,11 +59,21 @@ class Processes:
         :type photo_acclimation: bool, optional
         :type thermal_acclimation: bool, optional
         """
-        cls._flow_micro_environment = flow_micro_environment
-        cls._thermal_micro_environment = thermal_micro_environment
-        cls._photosynthetic_flow_dependency = photosynthetic_flow_dependency
-        cls._photo_acclimation = photo_acclimation
-        cls._thermal_acclimation = thermal_acclimation
+        [cls._set_process(k, v) for k, v in locals().items() if not v == cls]
+
+    @classmethod
+    def get_process(cls, key):
+        """Get process as class-attribute.
+
+        :param key: key of process-attribute
+        :type key: str
+
+        :return: process inclusion
+        :rtype: bool
+        """
+        if hasattr(cls, f'_{key}'):
+            return getattr(cls, f'_{key}')
+        LOG.warning(f'There is no process named \"{key}\".')
 
     @property
     def flow_micro_environment(self):
@@ -121,8 +138,7 @@ class Constants:
 
     @classmethod
     def set_light_micro_environment(cls, lac_default=None, theta_max=None):
-        cls._lac_default = lac_default
-        cls._theta_max = theta_max
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def lac_default(self):
@@ -148,21 +164,12 @@ class Constants:
     _max_iter_attenuation = None
 
     @classmethod
-    def set_flow_micro_environment(cls, smagorinsky=None, inertia=None, friction=None, viscosity=None,
-                                   thermal_diffusivity=None, spacing_ratio=None, angle=None, wall_coordinate=None,
-                                   numeric_theta=None, error=None, max_iter_canopy=None, max_iter_attenuation=None):
-        cls._smagorisnky = smagorinsky
-        cls._inertia = inertia
-        cls._friction = friction
-        cls._viscosity = viscosity
-        cls._thermal_diffusivity = thermal_diffusivity
-        cls._spacing_ratio = spacing_ratio
-        cls._angle = angle
-        cls._wall_coordinate = wall_coordinate
-        cls._numeric_theta = numeric_theta
-        cls._error = error
-        cls._max_iter_canopy = max_iter_canopy
-        cls._max_iter_attenuation = max_iter_attenuation
+    def set_flow_micro_environment(
+            cls, smagorinsky=None, inertia=None, friction=None, viscosity=None, thermal_diffusivity=None,
+            spacing_ratio=None, angle=None, wall_coordinate=None, numeric_theta=None, error=None, max_iter_canopy=None,
+            max_iter_attenuation=None
+    ):
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def smagorinsky(self):
@@ -219,9 +226,7 @@ class Constants:
 
     @classmethod
     def set_thermal_micro_environment(cls, thermal_morphology=None, absorptivity=None, thermal_conductivity=None):
-        cls._thermal_morphology = thermal_morphology
-        cls._absorptivity = absorptivity
-        cls._thermal_conductivity = thermal_conductivity
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def thermal_morphology(self):
@@ -243,13 +248,11 @@ class Constants:
     _exp_max_photosynthesis = None
 
     @classmethod
-    def set_photosynthetic_light_dependency(cls, photo_acc_rate=None, max_satuation=None, max_photosynthesis=None,
-                                            exp_saturation=None, exp_max_photosynthesis=None):
-        cls._photo_acc_rate = photo_acc_rate
-        cls._max_saturation = max_satuation
-        cls._max_photosynthesis = max_photosynthesis
-        cls._exp_saturation = exp_saturation
-        cls._exp_max_photosynthesis = exp_max_photosynthesis
+    def set_photosynthetic_light_dependency(
+            cls, photo_acc_rate=None, max_saturation=None, max_photosynthesis=None,
+            exp_saturation=None, exp_max_photosynthesis=None
+    ):
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def photo_acc_rate(self):
@@ -278,12 +281,10 @@ class Constants:
     _thermal_acclimation_period = None
 
     @classmethod
-    def set_photosynthetic_thermal_dependency(cls, activation_energy=None, gas_constant=None, thermal_variability=None,
-                                              thermal_acclimation_period=None):
-        cls._activation_energy = activation_energy
-        cls._gas_constant = gas_constant
-        cls._thermal_variability = thermal_variability
-        cls._thermal_acclimation_period = thermal_acclimation_period
+    def set_photosynthetic_thermal_dependency(
+            cls, activation_energy=None, gas_constant=None, thermal_variability=None, thermal_acclimation_period=None
+    ):
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def activation_energy(self):
@@ -307,8 +308,7 @@ class Constants:
 
     @classmethod
     def set_photosynthetic_flow_dependency(cls, min_photosynthetic_flow_dependency=None, invariant_flow_velocity=None):
-        cls._min_photosynthetic_flow_dependency = min_photosynthetic_flow_dependency
-        cls._invariant_flow_velocity = invariant_flow_velocity
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def min_photosynthetic_flow_dependency(self):
@@ -317,7 +317,7 @@ class Constants:
 
     @property
     def invariant_flow_velocity(self):
-        default = .17162374 if Processes().flow_micro_environment else .5173
+        default = .17162374 if Processes.get_process('flow_micro_environment') else .5173
         return default if self._invariant_flow_velocity is None else self._invariant_flow_velocity
 
     # population dynamics
@@ -328,10 +328,7 @@ class Constants:
 
     @classmethod
     def set_population_dynamics(cls, growth_rate=None, recovery_rate=None, mortality_rate=None, bleaching_rate=None):
-        cls._growth_rate = growth_rate
-        cls._recovery_rate = recovery_rate
-        cls._mortality_rate = mortality_rate
-        cls._bleaching_rate = bleaching_rate
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def growth_rate(self):
@@ -356,12 +353,10 @@ class Constants:
     _half_rate = None
 
     @classmethod
-    def set_calcification(cls, calcification_constant=None, aragonite_saturation=None, dissolution_saturation=None,
-                          half_rate=None):
-        cls._calcification_constant = calcification_constant
-        cls._aragonite_saturation = aragonite_saturation
-        cls._dissolution_saturation = dissolution_saturation
-        cls._half_rate = half_rate
+    def set_calcification(
+            cls, calcification_constant=None, aragonite_saturation=None, dissolution_saturation=None, half_rate=None
+    ):
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def calcification_constant(self):
@@ -390,23 +385,17 @@ class Constants:
     _coral_density = None
 
     @classmethod
-    def set_morphological_development(cls, proportionality_form=None, proportionality_plate=None,
-                                      proportionality_plate_flow=None, proportionality_space=None,
-                                      proportionality_space_light=None, proportionality_space_flow=None,
-                                      fitting_flow_velocity=None, coral_density=None):
+    def set_morphological_development(
+            cls, proportionality_form=None, proportionality_plate=None, proportionality_plate_flow=None,
+            proportionality_space=None, proportionality_space_light=None, proportionality_space_flow=None,
+            fitting_flow_velocity=None, coral_density=None
+    ):
         if proportionality_space is not None and proportionality_space > .5 / np.sqrt(2):
             msg = f'Space proportionality constant (Xs) must be smaller than 0.5/sqrt(2) : ' \
                 f'{proportionality_space} > {.5 / np.sqrt(2)}'
             raise ValueError(msg)
 
-        cls._proportionality_form = proportionality_form
-        cls._proportionality_plate = proportionality_plate
-        cls._proportionality_plate_flow = proportionality_plate_flow
-        cls._proportionality_space = proportionality_space
-        cls._proportionality_space_light = proportionality_space_light
-        cls._proportionality_space_flow = proportionality_space_flow
-        cls._fitting_flow_velocity = fitting_flow_velocity
-        cls._coral_density = coral_density
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def proportionality_form(self):
@@ -447,9 +436,7 @@ class Constants:
 
     @classmethod
     def set_coral_dislodgement(cls, tensile_stress=None, drag_coefficient=None, water_density=None):
-        cls._tensile_stress = tensile_stress
-        cls._drag_coefficient = drag_coefficient
-        cls._water_density = water_density
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def tensile_stress(self):
@@ -470,9 +457,7 @@ class Constants:
 
     @classmethod
     def set_coral_recruitment(cls, larvae_spawned=None, settle_probability=None, larval_diameter=None):
-        cls._larvae_spawned = larvae_spawned
-        cls._settle_probability = settle_probability
-        cls._larval_diameter = larval_diameter
+        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
 
     @property
     def larvae_spawned(self):
@@ -489,6 +474,7 @@ class Constants:
 
 if __name__ == '__main__':
     c = Constants()
+    Processes.set_processes(flow_micro_environment=True)
     print(c.invariant_flow_velocity)
     Processes.set_processes(flow_micro_environment=False)
     print(c.invariant_flow_velocity)
