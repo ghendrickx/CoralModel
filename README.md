@@ -35,7 +35,7 @@ The Python code is written in Python 3 and makes use of various packages.
 Not all of these packages are automatically included in the standard library of Python, 
 such as ``NetCDF4`` ([download](http://www.ldf.uci.edu/~gohlke/pythonlibs/#netcdf4)). 
 In case the biophysical model framework is to be coupled to Delft3d Flexible Mesh, 
-the ``bmi.wrapper`` package is also required  ([download](https://github.com/openearth/bmi-python)).
+the ``bmi``-package is also required  ([download](https://github.com/openearth/bmi-python)).
 
 The settings of Python and other packages for the online coupling to work properly are the following:
 * Python version 3.6.5
