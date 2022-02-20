@@ -507,8 +507,8 @@ class _CoralMorphology:
             :return: representative morphological characteristic
             :rtype: float
             """
-            return sum(np.array(coral.states.sum) * getattr(coral.morphology, char) for coral in cell.corals) / \
-                sum(np.array(coral.states.sum) for coral in cell.corals)
+            return sum(coral.states.sum[-1] * getattr(coral.morphology, char) for coral in cell.corals) / \
+                sum(coral.states.sum[-1] for coral in cell.corals)
 
         diameter = float(representative_characteristic('diameter'))
         height = float(representative_characteristic('height'))
