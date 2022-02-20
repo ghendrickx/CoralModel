@@ -263,6 +263,8 @@ class Flow(_BasicBiophysics):
             else:
                 cls._essential_data = 'flow'
 
+        return super().__new__(cls)
+
     def _update(self, cell):
         """Update corals: Flow micro-environment.
 
