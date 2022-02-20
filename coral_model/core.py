@@ -1,5 +1,5 @@
 """
-coral_model v3 - core
+coral_model - core
 
 @author: Gijs G. Hendrickx
 """
@@ -15,7 +15,7 @@ from coral_model.utils import DataReshape, coral_only_function
 RESHAPE = DataReshape()
 
 # # processes and constants definition(s)
-PROCESSES = Processes()
+PROCESSES = Processes(warning=False)
 CONSTANTS = Constants(PROCESSES)
 
 
@@ -68,7 +68,10 @@ class Coral:
         self.Thi = None
         # > population states
         self.pop_states = None
-        self.p0 = self.cover
+        self.p0 = None
+        # np.array([
+        #     self.cover, np.zeros(self.cover.shape), np.zeros(self.cover.shape), np.zeros(self.cover.shape),
+        # ])
         # > calcification
         self.calc = None
 
@@ -250,6 +253,9 @@ class Coral:
         else:
             cover = np.ones(RESHAPE.space)
 
+        self.p0 = np.zeros((len(cover), 4))
+        self.p0[:, 0] = cover
+
         self.dc = cover * self.dc
         self.hc = cover * self.hc
         self.bc = cover * self.bc
@@ -390,6 +396,7 @@ class Flow:
         self.uw = RESHAPE.variable2array(u_wave)
         self.h = RESHAPE.variable2matrix(h, 'space')
         self.Tp = RESHAPE.variable2array(peak_period)
+        self.active = False if u_current is None and u_wave is None else True
 
     @property
     def uc_matrix(self):
@@ -410,21 +417,24 @@ class Flow:
         :type coral: Coral
         :type in_canopy: bool, optional
         """
-        alpha_w = np.ones(self.uw.shape)
-        alpha_c = np.ones(self.uc.shape)
-        if in_canopy:
-            idx = coral.volume > 0
-            for i in idx:
-                alpha_w[i] = self.wave_attenuation(
-                    coral.dc_rep[i], coral.hc[i], coral.ac[i],
-                    self.uw[i], self.Tp[i], self.h[i], 'wave'
-                )
-                alpha_c[i] = self.wave_attenuation(
-                    coral.dc_rep[i], coral.hc[i], coral.ac[i],
-                    self.uc[i], 1e3, self.h[i], 'current'
-                )
-        coral.ucm = self.wave_current(alpha_w, alpha_c)
-        coral.um = self.wave_current()
+        if self.active:
+            alpha_w = np.ones(self.uw.shape)
+            alpha_c = np.ones(self.uc.shape)
+            if in_canopy:
+                idx = coral.volume > 0
+                for i in idx:
+                    alpha_w[i] = self.wave_attenuation(
+                        coral.dc_rep[i], coral.hc[i], coral.ac[i],
+                        self.uw[i], self.Tp[i], self.h[i], 'wave'
+                    )
+                    alpha_c[i] = self.wave_attenuation(
+                        coral.dc_rep[i], coral.hc[i], coral.ac[i],
+                        self.uc[i], 1e3, self.h[i], 'current'
+                    )
+            coral.ucm = self.wave_current(alpha_w, alpha_c)
+            coral.um = self.wave_current()
+        else:
+            coral.ucm = 9999 * np.ones(RESHAPE.space)
 
     def wave_current(self, alpha_w=1, alpha_c=1):
         """Wave-current interaction.
@@ -562,8 +572,9 @@ class Flow:
         :param coral: coral animal
         :type coral: Coral
         """
-        delta = self.velocity_boundary_layer(coral)
-        coral.delta_t = delta * ((CONSTANTS.alpha / CONSTANTS.nu) ** (1 / 3))
+        if self.active and PROCESSES.tme:
+            delta = self.velocity_boundary_layer(coral)
+            coral.delta_t = delta * ((CONSTANTS.alpha / CONSTANTS.nu) ** (1 / 3))
 
     @staticmethod
     def velocity_boundary_layer(coral):
@@ -775,7 +786,7 @@ class Photosynthesis:
 
         def thermal_env():
             """Thermal envelope."""
-            return np.exp(CONSTANTS.Ea / CONSTANTS.R) * (1 / 300 - 1 / temp_opt)
+            return np.exp((CONSTANTS.Ea / CONSTANTS.R) * (1 / 300 - 1 / temp_opt))
 
         # # parameter definitions
         thermal_acc()
@@ -1055,6 +1066,9 @@ class Morphology:
 
         # calculations
         self.delta_volume(coral)
+
+        # optimal ratio
+        setattr(self, f'{ratio}_optimal', coral)
 
         # update morphological ratio
         if hasattr(self, f'{ratio}_optimal') and hasattr(coral, ratio):

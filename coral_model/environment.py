@@ -1,34 +1,42 @@
 """
-coral_model v3 - environment
+coral_model - environment
 
 @author: Gijs G. Hendrickx
 """
 
-import os
-
 import pandas as pd
 import numpy as np
+
+from coral_model.utils import DirConfig
 
 
 class Processes:
     """Processes included in coral_model simulations."""
     # TODO: Include the on/off-switch for more processes:
-    #  (1) hydrodynamic coupling; (2) acidity; (3) light; (4) temperature; (5) dislodgement; (6) recruitment; (7) etc.
+    #  (1) hydrodynamic coupling;
+    #  (2) acidity;
+    #  (3) light;
+    #  (4) temperature;
+    #  (5) dislodgement;
+    #  (6) recruitment;
+    #  (7) etc.
 
-    def __init__(self, fme=True, tme=True, pfd=True):
+    def __init__(self, fme=True, tme=True, pfd=True, warning=True):
         """
         :param fme: flow micro-environment, defaults to True
         :param tme: thermal micro-environment, defaults to True
         :param pfd: photosynthetic flow dependency, defaults to True
+        :param warning: print warning(s), defaults to True
 
         :type fme: bool, optional
         :type tme: bool, optional
         :type pfd: bool, optional
+        :type warning: bool, optional
         """
         self.pfd = pfd
 
         if not pfd:
-            if fme:
+            if fme and warning:
                 print(
                     f'WARNING: Flow micro-environment (FME) not possible '
                     f'when photosynthetic flow dependency (PFD) is disabled.'
@@ -39,7 +47,7 @@ class Processes:
         else:
             self.fme = fme
             if not fme:
-                if tme:
+                if tme and warning:
                     print(
                         f'WARNING: Thermal micro-environment (TME) not possible '
                         f'when flow micro-environment is disabled.'
@@ -49,10 +57,10 @@ class Processes:
             else:
                 self.tme = tme
 
-        if tme:
+        if tme and warning:
             print('WARNING: Thermal micro-environment not fully implemented yet.')
 
-        if not pfd:
+        if not pfd and warning:
             print('WARNING: Exclusion of photosynthetic flow dependency not fully implemented yet.')
 
 
@@ -70,6 +78,7 @@ class Constants:
                  prop_plate=None, prop_plate_flow=None, prop_space=None, prop_space_light=None, prop_space_flow=None,
                  u0=None, rho_c=None, sigma_tensile=None, drag_coef=None, rho_w=None, no_larvae=None,
                  prob_settle=None, d_larvae=None):
+        # TODO: Reformat docstring
         """
         Parameters
         ----------
@@ -298,29 +307,53 @@ class Constants:
 
 
 class Environment:
+    # TODO: Make this class robust
 
-    def __init__(self, light=None, light_attenuation=None, temperature=None, acidity=None, storm_category=None):
-        self.light = light
-        self.light_attenuation = light_attenuation
-        self.temp = temperature
-        self.acid = acidity
-        self.storm_category = storm_category
+    _dates = None
+    _light = None
+    _light_attenuation = None
+    _temperature = None
+    _aragonite = None
+    _storm_category = None
+
+    @property
+    def light(self):
+        """Light-intensity in micro-mol photons per square metre-second."""
+        return self._light
+
+    @property
+    def light_attenuation(self):
+        """Light-attenuation coefficient in per metre."""
+        return self._light_attenuation
+
+    @property
+    def temperature(self):
+        """Temperature time-series in either Celsius or Kelvin."""
+        return self._temperature
+
+    @property
+    def aragonite(self):
+        """Aragonite saturation state."""
+        return self._aragonite
+
+    @property
+    def storm_category(self):
+        """Storm category time-series."""
+        return self._storm_category
 
     @property
     def temp_kelvin(self):
         """Temperature in Kelvin."""
-        if all(self.temp) < 100.:
-            return self.temp + 273.15
-        else:
-            return self.temp
+        if all(self.temperature.values < 100) and self.temperature is not None:
+            return self.temperature + 273.15
+        return self.temperature
 
     @property
     def temp_celsius(self):
         """Temperature in Celsius."""
-        if all(self.temp) > 100.:
-            return self.temp - 273.15
-        else:
-            return self.temp
+        if all(self.temperature.values > 100) and self.temperature is not None:
+            return self.temperature - 273.15
+        return self.temperature
 
     @property
     def temp_mmm(self):
@@ -333,33 +366,117 @@ class Environment:
 
     @property
     def dates(self):
-        d = self.temp.reset_index().drop('sst', axis=1)
+        """Dates of time-series."""
+        if self._dates is not None:
+            d = self._dates
+        elif self.light is not None:
+            # TODO: Check column name of light-file
+            d = self.light.reset_index().drop('light', axis=1)
+        elif self.temperature is not None:
+            d = self.temperature.reset_index().drop('sst', axis=1)
+        else:
+            msg = f'No initial data on dates provided.'
+            raise ValueError(msg)
         return pd.to_datetime(d['date'])
 
-    def from_file(self, param, file, file_dir=None):
+    def set_dates(self, start_date, end_date):
+        """Set dates manually, ignoring possible dates in environmental time-series.
 
-        def date2index(parameter):
-            """Function applicable to time-series in Pandas."""
-            parameter['date'] = pd.to_datetime(parameter['date'])
-            parameter.set_index('date', inplace=True)
+        :param start_date: first date of time-series
+        :param end_date: last date of time-series
 
-        if file_dir is None:
-            f = file
+        :type start_date: str, datetime.date
+        :type end_date: str, datetime.date
+        """
+        dates = pd.date_range(start_date, end_date, freq='D')
+        self._dates = pd.DataFrame({'date': dates})
+
+    def set_parameter_values(self, parameter, value, pre_date=None):
+        """Set the time-series data to a time-series, or a default value. In case :param value: is not iterable, the
+        :param parameter: is assumed to be constant over time. In case :param value: is iterable, make sure its length
+        complies with the simulation length.
+
+        Included parameters:
+            light                       :   incoming light-intensity [umol photons m-2 s-1]
+            LAC / light_attenuation     :   light attenuation coefficient [m-1]
+            temperature                 :   sea surface temperature [K]
+            aragonite                   :   aragonite saturation state [-]
+            storm                       :   storm category, annually [-]
+
+        :param parameter: parameter to be set
+        :param value: default value
+        :param pre_date: time-series start before simulation dates [yrs]
+
+        :type parameter: str
+        :type value: float, list, tuple, numpy.ndarray, pandas.DataFrame
+        :type pre_date: None, int, optional
+        """
+
+        def set_value(val):
+            """Function to set default value."""
+            if pre_date is None:
+                return pd.DataFrame({parameter: val}, index=self.dates)
+
+            dates = pd.date_range(self.dates.iloc[0] - pd.DateOffset(years=pre_date), self.dates.iloc[-1], freq='D')
+            return pd.DataFrame({parameter: val}, index=dates)
+
+        if self._dates is None:
+            msg = f'No dates are defined. ' \
+                f'Please, first specify the dates before setting the time-series of {parameter}; ' \
+                f'or make use of the \"from_file\"-method.'
+            raise TypeError(msg)
+
+        if parameter == 'LAC':
+            parameter = 'light_attenuation'
+
+        daily_params = ('light', 'light_attenuation', 'temperature', 'aragonite')
+        if parameter in daily_params:
+            setattr(self, f'_{parameter}', set_value(value))
+        elif parameter == 'storm':
+            years = set(self.dates.dt.year)
+            self._storm_category = pd.DataFrame(data=value, index=years)
         else:
-            f = os.path.join(file_dir, file)
+            msg = f'Entered parameter ({parameter}) not included. See documentation.'
+            raise ValueError(msg)
 
-        if param == 'light':
-            self.light = pd.read_csv(f, sep='\t')
-            date2index(self.light)
-        elif param == 'LAC':
-            self.light_attenuation = pd.read_csv(f, sep='\t')
-            date2index(self.light_attenuation)
-        elif param == 'temperature':
-            self.temp = pd.read_csv(f, sep='\t')
-            date2index(self.temp)
-        elif param == 'acidity':
-            self.acid = pd.read_csv(f, sep='\t')
-            date2index(self.acid)
-        elif param == 'storm':
-            self.storm_category = pd.read_csv(f, sep='\t')
-            self.storm_category.set_index('year', inplace=True)
+    def from_file(self, parameter, file, folder=None):
+        """Read the time-series data from a file.
+
+        Included parameters:
+            light                       :   incoming light-intensity [umol photons m-2 s-1]
+            LAC / light_attenuation     :   light attenuation coefficient [m-1]
+            temperature                 :   sea surface temperature [K]
+            aragonite                   :   aragonite saturation state [-]
+            storm                       :   storm category, annually [-]
+
+        :param parameter: parameter to be read from file
+        :param file: file name, incl. file extension
+        :param folder: folder directory, defaults to None
+
+        :type parameter: str
+        :type file: str
+        :type folder: str, DirConfig, list, tuple, optional
+        """
+        # TODO: Include functionality to check file's existence
+        #  > certain files are necessary: light, temperature
+
+        def date2index(time_series):
+            """Function applicable to time-series in Pandas."""
+            time_series['date'] = pd.to_datetime(time_series['date'])
+            time_series.set_index('date', inplace=True)
+
+        f = DirConfig(folder).config_dir(file)
+
+        if parameter == 'LAC':
+            parameter = 'light_attenuation'
+
+        daily_params = ('light', 'light_attenuation', 'temperature', 'aragonite')
+        if parameter in daily_params:
+            setattr(self, f'__{parameter}', pd.read_csv(f, sep='\t'))
+            date2index(getattr(self, f'__{parameter}'))
+        elif parameter == 'storm':
+            self._storm_category = pd.read_csv(f, sep='\t')
+            self._storm_category.set_index('year', inplace=True)
+        else:
+            msg = f'Entered parameter ({parameter}) not included. See documentation.'
+            raise ValueError(msg)

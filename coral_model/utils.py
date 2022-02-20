@@ -1,10 +1,12 @@
 """
-coral_model v3 - utils
+coral_model - utils
 
 @author: Gijs G. Hendrickx
 """
-
+import os
+# TODO: Restructure all utils-related files, methods, and methods.
 import numpy as np
+from netCDF4 import Dataset
 
 
 class SpaceTime:
@@ -226,6 +228,661 @@ class DataReshape(SpaceTime):
             return getattr(matrix, conversion)(axis=0)
 
 
+class DirConfig:
+
+    __base_dirs = ('C:', )
+
+    def __init__(self, home_dir=None):
+        """
+        :param home_dir: home directory
+        :type home_dir: list, tuple, str
+        """
+        # TODO: allow home_dir to be of type DirConfig
+        self.__home = home_dir
+
+    def __repr__(self):
+        """Representation of DirConfig."""
+        return f'DirConfig(home_dir={self.__home})'
+
+    def __str__(self):
+        """String-representation."""
+        return self._list2str(self.__home_dir)
+
+    @property
+    def __sep(self):
+        """Folder separator."""
+        return os.sep
+
+    @property
+    def __current_dir(self):
+        """Current directory.
+
+        :rtype: list
+        """
+        return self._as_list(os.getcwd())
+
+    @property
+    def __home_dir(self):
+        """Absolute home directory, set to current directory if no absolute directory is provided.
+
+        :rtype: list
+        """
+        # TODO: Ensure this to be a folder, and not a file
+        if self.__home is None:
+            return self.__current_dir
+
+        list_dir = self._as_list(self.__home)
+        return self._dir2abs(list_dir)
+
+    @staticmethod
+    def _str2list(str_dir):
+        """Translate string- to list-directory.
+
+        :param str_dir: string-based directory
+        :type str_dir: str
+
+        :return: list-based directory
+        :rtype: list
+        """
+        return str_dir.replace('/', '\\').split('\\')
+
+    def _as_list(self, folder):
+        """Ensure directory to be a list.
+
+        :param folder: directory to be checked
+        :type folder: str, list, tuple
+
+        :return: list-based directory
+        :rtype: list
+        """
+        if isinstance(folder, (str, DirConfig)):
+            return self._str2list(str(folder))
+
+        elif isinstance(folder, (list, tuple)):
+            list_dir = []
+            for i in folder:
+                list_dir.extend(self._str2list(i))
+            return list_dir
+
+        else:
+            msg = f'Directory must be str, list, or tuple; {type(folder)} is given.'
+            raise TypeError(msg)
+
+    def _list2str(self, list_dir):
+        """Translate list- to string-directory.
+
+        :param list_dir: list-based directory
+        :type list_dir: list
+
+        :return: string-based directory
+        :rtype: str
+        """
+        return self.__sep.join(list_dir)
+
+    def _dir2abs(self, folder):
+        """Translate directory to absolute directory.
+
+        :param folder: directory to be converted
+        :type folder: list
+
+        :return: absolute directory
+        :rtype: list
+        """
+        if folder[0] in self.__base_dirs:
+            return folder
+        return [*self.__current_dir, *folder]
+
+    def _is_abs_dir(self, folder):
+        """Verify if directory is an absolute directory.
+
+        :param folder: directory to be verified
+        :type folder: list
+
+        :return: directory is an absolute directory, or not
+        :rtype: bool
+        """
+        if folder[0] in self.__base_dirs:
+            return True
+        return False
+
+    def config_dir(self, folder):
+        """Configure directory.
+
+        :param folder: directory to be converted
+        :type folder: list, tuple, str
+
+        :return: absolute, configured directory
+        :rtype: str
+        """
+        list_dir = self._as_list(folder)
+        if self._is_abs_dir(list_dir):
+            return self._list2str(list_dir)
+        return self._list2str([*self.__home_dir, *list_dir])
+
+    def create_dir(self, folder):
+        """Create directory, if non-existing.
+
+        :param folder: directory to be created
+        :type folder: list, tuple, str
+        """
+        folder = self.config_dir(folder)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+
+
+class Output:
+    """Output files based on predefined output content."""
+
+    _file_name_map = None
+    _file_name_his = None
+    _folder = DirConfig()
+
+    _map_output = None
+    _his_output = None
+
+    _map_data = None
+    _his_data = None
+
+    _xy_stations = None
+    _idx_stations = None
+
+    def __init__(self, xy_coordinates, first_date):
+        """Generate output files of CoralModel simulation. Output files are formatted as NetCDF4-files.
+
+        :param xy_coordinates: (x,y)-coordinates
+        :param first_date: first date of simulation
+
+        :type xy_coordinates: numpy.ndarray
+        :type first_date: pandas
+        """
+        self.xy_coordinates = xy_coordinates
+        self.space = len(xy_coordinates)
+
+        self.first_date = first_date
+        self.first_year = first_date.year
+
+    def __str__(self):
+        """String-representation of Output."""
+        return f'Output exported:\n\t{self._map_output}\n\t{self._his_output}' if self.defined else f'Output undefined.'
+
+    def __repr__(self):
+        """Representation of Output."""
+        return f'Output(xy_coordinates={self.xy_coordinates}, first_date={self.first_date})'
+
+    @property
+    def defined(self):
+        """Output is defined."""
+        return False if self._map_output is None and self._his_output is None else True
+
+    def define_output(self, output_type, lme=True, fme=True, tme=True, pd=True, ps=True, calc=True, md=True):
+        """Define output dictionary.
+
+        :param output_type: mapping or history output
+        :param lme: light micro-environment, defaults to True
+        :param fme: flow micro-environment, defaults to True
+        :param tme: thermal micro-environment, defaults to True
+        :param pd: photosynthetic dependencies, defaults to True
+        :param ps: population states, defaults to True
+        :param calc: calcification rates, defaults to True
+        :param md: morphological development, defaults to True
+
+        :type output_type: str
+        :type lme: bool, optional
+        :type fme: bool, optional
+        :type tme: bool, optional
+        :type pd: bool, optional
+        :type ps: bool, optional
+        :type calc: bool, optional
+        :type md: bool, optional
+        """
+        types = ('map', 'his')
+        if output_type not in types:
+            msg = f'{output_type} not in {types}.'
+            raise ValueError(msg)
+
+        setattr(self, f'_{output_type}_output', locals())
+
+    @staticmethod
+    def __file_ext(file_name):
+        """Ensure NetCDF file extension.
+
+        :param file_name: file name
+        :type file_name: str
+        """
+        if not file_name.endswith('.nc'):
+            return f'{file_name}.nc'
+        return file_name
+
+    @property
+    def folder(self):
+        """
+        :return: output directory
+        :rtype: str
+        """
+        return self._folder.__str__()
+
+    @folder.setter
+    def folder(self, output_folder):
+        """Output folder.
+
+        :param output_folder: output folder for output files
+        :type output_folder: None, str, list, tuple
+        """
+        self._folder = DirConfig(home_dir=output_folder)
+
+    @property
+    def file_name_map(self):
+        """File name of mapping output.
+
+        :rtype: str
+        """
+        if self._file_name_map is None:
+            return 'CoralModel_map.nc'
+        return self._file_name_map
+
+    @file_name_map.setter
+    def file_name_map(self, file_name):
+        """
+        :param file_name: file name of mapping output
+        :type file_name: None, str
+        """
+        self._file_name_map = self.__file_ext(file_name)
+
+    @property
+    def file_dir_map(self):
+        """Full file directory of mapping output.
+
+        :rtype: str
+        """
+        return self._folder.config_dir(self.file_name_map)
+
+    @property
+    def file_name_his(self):
+        """File name of history output.
+
+        :rtype: str
+        """
+        if self._file_name_his is None:
+            return 'CoralModel_his.nc'
+        return self._file_name_his
+
+    @file_name_his.setter
+    def file_name_his(self, file_name):
+        """
+        :param file_name: file name of history output
+        :type file_name: str
+        """
+        self._file_name_his = self.__file_ext(file_name)
+
+    @property
+    def file_dir_his(self):
+        """Full file directory of history output.
+
+        :rtype: str
+        """
+        return self._folder.config_dir(self.file_name_his)
+
+    def initiate_map(self, coral):
+        """Initiate mapping output file in which annual output covering the whole model domain is stored.
+
+        :param coral: coral animal
+        :type coral: Coral
+        """
+        if self._map_output is not None and any(self._map_output.values()):
+            self._map_data = Dataset(self.file_dir_map, 'w', format='NETCDF4')
+            self._map_data.description = 'Mapped simulation data of the CoralModel.'
+
+            # dimensions
+            self._map_data.createDimension('time', None)
+            self._map_data.createDimension('nmesh2d_face', self.space)
+
+            # variables
+            t = self._map_data.createVariable('time', int, ('time',))
+            t.long_name = 'year'
+            t.units = 'years since 0 B.C.'
+
+            x = self._map_data.createVariable('nmesh2d_x', 'f8', ('nmesh2d_face',))
+            x.long_name = 'x-coordinate'
+            x.units = 'm'
+
+            y = self._map_data.createVariable('nmesh2d_y', 'f8', ('nmesh2d_face',))
+            y.long_name = 'y-coordinate'
+            y.units = 'm'
+
+            t[:] = self.first_year
+            x[:] = self.xy_coordinates[:, 0]
+            y[:] = self.xy_coordinates[:, 1]
+
+            # initial conditions
+            if self._map_output['lme']:
+                light_set = self._map_data.createVariable('Iz', 'f8', ('time', 'nmesh2d_face'))
+                light_set.long_name = 'annual mean representative light-intensity'
+                light_set.units = 'micro-mol photons m-2 s-1'
+                light_set[:, :] = np.zeros(self.space)
+            if self._map_output['fme']:
+                flow_set = self._map_data.createVariable('ucm', 'f8', ('time', 'nmesh2d_face'))
+                flow_set.long_name = 'annual mean in-canopy flow'
+                flow_set.units = 'm s-1'
+                flow_set[:, :] = np.zeros(self.space)
+            if self._map_output['tme']:
+                temp_set = self._map_data.createVariable('Tc', 'f8', ('time', 'nmesh2d_face'))
+                temp_set.long_name = 'annual mean coral temperature'
+                temp_set.units = 'K'
+                temp_set[:, :] = np.zeros(self.space)
+
+                low_temp_set = self._map_data.createVariable('Tlo', 'f8', ('time', 'nmesh2d_face'))
+                low_temp_set.long_name = 'annual mean lower thermal limit'
+                low_temp_set.units = 'K'
+                low_temp_set[:, :] = np.zeros(self.space)
+
+                high_temp_set = self._map_data.createVariable('Thi', 'f8', ('time', 'nmesh2d_face'))
+                high_temp_set.long_name = 'annual mean upper thermal limit'
+                high_temp_set.units = 'K'
+                high_temp_set[:, :] = np.zeros(self.space)
+            if self._map_output['pd']:
+                pd_set = self._map_data.createVariable('PD', 'f8', ('time', 'nmesh2d_face'))
+                pd_set.long_name = 'annual sum photosynthetic rate'
+                pd_set.units = '-'
+                pd_set[:, :] = np.zeros(self.space)
+            if self._map_output['ps']:
+                pt_set = self._map_data.createVariable('PT', 'f8', ('time', 'nmesh2d_face'))
+                pt_set.long_name = 'total living coral population at the end of the year'
+                pt_set.units = '-'
+                pt_set[:, :] = coral.living_cover
+
+                ph_set = self._map_data.createVariable('PH', 'f8', ('time', 'nmesh2d_face'))
+                ph_set.long_name = 'healthy coral population at the end of the year'
+                ph_set.units = '-'
+                ph_set[:, :] = coral.living_cover
+
+                pr_set = self._map_data.createVariable('PR', 'f8', ('time', 'nmesh2d_face'))
+                pr_set.long_name = 'recovering coral population at the end of the year'
+                pr_set.units = '-'
+                pr_set[:, :] = np.zeros(self.space)
+
+                pp_set = self._map_data.createVariable('PP', 'f8', ('time', 'nmesh2d_face'))
+                pp_set.long_name = 'pale coral population at the end of the year'
+                pp_set.units = '-'
+                pp_set[:, :] = np.zeros(self.space)
+
+                pb_set = self._map_data.createVariable('PB', 'f8', ('time', 'nmesh2d_face'))
+                pb_set.long_name = 'bleached coral population at the end of the year'
+                pb_set.units = '-'
+                pb_set[:, :] = np.zeros(self.space)
+            if self._map_output['calc']:
+                calc_set = self._map_data.createVariable('calc', 'f8', ('time', 'nmesh2d_face'))
+                calc_set.long_name = 'annual sum calcification rate'
+                calc_set.units = 'kg m-2 yr-1'
+                calc_set[:, :] = np.zeros(self.space)
+            if self._map_output['md']:
+                dc_set = self._map_data.createVariable('dc', 'f8', ('time', 'nmesh2d_face'))
+                dc_set.long_name = 'coral plate diameter'
+                dc_set.units = 'm'
+                dc_set[:, :] = coral.dc
+
+                hc_set = self._map_data.createVariable('hc', 'f8', ('time', 'nmesh2d_face'))
+                hc_set.long_name = 'coral height'
+                hc_set.units = 'm'
+                hc_set[:, :] = coral.hc
+
+                bc_set = self._map_data.createVariable('bc', 'f8', ('time', 'nmesh2d_face'))
+                bc_set.long_name = 'coral base diameter'
+                bc_set.units = 'm'
+                bc_set[:, :] = coral.bc
+
+                tc_set = self._map_data.createVariable('tc', 'f8', ('time', 'nmesh2d_face'))
+                tc_set.long_name = 'coral plate thickness'
+                tc_set.units = 'm'
+                tc_set[:, :] = coral.tc
+
+                ac_set = self._map_data.createVariable('ac', 'f8', ('time', 'nmesh2d_face'))
+                ac_set.long_name = 'coral axial distance'
+                ac_set.units = 'm'
+                ac_set[:, :] = coral.ac
+
+                vc_set = self._map_data.createVariable('Vc', 'f8', ('time', 'nmesh2d_face'))
+                vc_set.long_name = 'coral volume'
+                vc_set.units = 'm3'
+                vc_set[:, :] = coral.volume
+            self._map_data.close()
+
+    def update_map(self, coral, year):
+        """Write data as annual output covering the whole model domain.
+
+        :param coral: coral animal
+        :param year: simulation year
+
+        :type coral: Coral
+        :type year: int
+        """
+        if self._map_output is not None and any(self._map_output.values()):
+            self._map_data = Dataset(self.file_dir_map, mode='a')
+
+            i = int(year - self.first_year)
+            self._map_data['time'][i] = year
+            if self._map_output['lme']:
+                self._map_data['Iz'][-1, :] = coral.light[:, -1]
+            if self._map_output['fme']:
+                self._map_data['ucm'][-1, :] = coral.ucm
+            if self._map_output['tme']:
+                self._map_data['Tc'][-1, :] = coral.temp[:, -1]
+                self._map_data['Tlo'][-1, :] = coral.Tlo if len(DataReshape.variable2array(coral.Tlo)) > 1 else coral.Tlo * np.ones(self.space)
+                self._map_data['Thi'][-1, :] = coral.Thi if len(DataReshape.variable2array(coral.Thi)) > 1 else coral.Thi * np.ones(self.space)
+            if self._map_output['pd']:
+                self._map_data['PD'][-1, :] = coral.photo_rate.mean(axis=1)
+            if self._map_output['ps']:
+                self._map_data['PT'][-1, :] = coral.pop_states[:, -1, :].sum(axis=1)
+                self._map_data['PH'][-1, :] = coral.pop_states[:, -1, 0]
+                self._map_data['PR'][-1, :] = coral.pop_states[:, -1, 1]
+                self._map_data['PP'][-1, :] = coral.pop_states[:, -1, 2]
+                self._map_data['PB'][-1, :] = coral.pop_states[:, -1, 3]
+            if self._map_output['calc']:
+                self._map_data['calc'][-1, :] = coral.calc.sum(axis=1)
+            if self._map_output['md']:
+                self._map_data['dc'][-1, :] = coral.dc
+                self._map_data['hc'][-1, :] = coral.hc
+                self._map_data['bc'][-1, :] = coral.bc
+                self._map_data['tc'][-1, :] = coral.tc
+                self._map_data['ac'][-1, :] = coral.ac
+                self._map_data['Vc'][-1, :] = coral.volume
+
+            self._map_data.close()
+
+    @property
+    def xy_stations(self):
+        """(x,y)-coordinates of the stations.
+
+        :rtype: numpy.ndarray
+        """
+        return self._xy_stations
+
+    @property
+    def idx_stations(self):
+        """Space indeces of stations.
+
+        :rtype: numpy.ndarray
+        """
+        return self._idx_stations
+
+    @xy_stations.setter
+    def xy_stations(self, station_coordinates):
+        """Determine space indices based on the (x,y)-coordinates of the stations.
+
+        :param station_coordinates: (x,y)-coordinates stations
+        :type station_coordinates: tuple
+        """
+        x = self.xy_coordinates[:, 0]
+        y = self.xy_coordinates[:, 1]
+        x_station, y_station = station_coordinates
+        try:
+            idx = np.zeros(len(station_coordinates[0]))
+        except TypeError:
+            idx = np.array([0])
+            x_station = [x_station]
+            y_station = [y_station]
+
+        for s in range(len(idx)):
+            idx[s] = np.argmin((x - x_station[s]) ** 2 + (y - y_station[s]) ** 2)
+
+        self._idx_stations = idx.astype(int)
+        self._xy_stations = self.xy_coordinates[self._idx_stations]
+
+    def initiate_his(self):
+        """Initiate history output file in which daily output at predefined locations within the model is stored."""
+        if self._his_output is not None and any(self._his_output.values()):
+            self._his_data = Dataset(self.file_dir_his, 'w', format='NETCDF4')
+            self._his_data.description = 'Historic simulation data of the CoralModel'
+
+            # dimensions
+            self._his_data.createDimension('time', None)
+            self._his_data.createDimension('stations', len(self.xy_stations))
+
+            # variables
+            t = self._his_data.createVariable('time', 'f8', ('time',))
+            t.long_name = f'days since {self.first_date}'
+            t.units = 'days'
+
+            x = self._his_data.createVariable('station_x_coordinate', 'f8', ('stations',))
+            y = self._his_data.createVariable('station_y_coordinate', 'f8', ('stations',))
+
+            # setup data set
+            x[:] = self.xy_stations[:, 0]
+            y[:] = self.xy_stations[:, 1]
+
+            if self._his_output['lme']:
+                light_set = self._his_data.createVariable('Iz', 'f8', ('time', 'stations'))
+                light_set.long_name = 'representative light-intensity'
+                light_set.units = 'micro-mol photons m-2 s-1'
+            if self._his_output['fme']:
+                flow_set = self._his_data.createVariable('ucm', 'f8', ('time', 'stations'))
+                flow_set.long_name = 'in-canopy flow'
+                flow_set.units = 'm s-1'
+            if self._his_output['tme']:
+                temp_set = self._his_data.createVariable('Tc', 'f8', ('time', 'stations'))
+                temp_set.long_name = 'coral temperature'
+                temp_set.units = 'K'
+
+                low_temp_set = self._his_data.createVariable('Tlo', 'f8', ('time', 'stations'))
+                low_temp_set.long_name = 'lower thermal limit'
+                low_temp_set.units = 'K'
+
+                high_temp_set = self._his_data.createVariable('Thi', 'f8', ('time', 'stations'))
+                high_temp_set.long_name = 'upper thermal limit'
+                high_temp_set.units = 'K'
+            if self._his_output['pd']:
+                pd_set = self._his_data.createVariable('PD', 'f8', ('time', 'stations'))
+                pd_set.long_name = 'photosynthetic rate'
+                pd_set.units = '-'
+            if self._his_output['ps']:
+                pt_set = self._his_data.createVariable('PT', 'f8', ('time', 'stations'))
+                pt_set.long_name = 'total coral population'
+                pt_set.units = '-'
+
+                ph_set = self._his_data.createVariable('PH', 'f8', ('time', 'stations'))
+                ph_set.long_name = 'healthy coral population'
+                ph_set.units = '-'
+
+                pr_set = self._his_data.createVariable('PR', 'f8', ('time', 'stations'))
+                pr_set.long_name = 'recovering coral population'
+                pr_set.units = '-'
+
+                pp_set = self._his_data.createVariable('PP', 'f8', ('time', 'stations'))
+                pp_set.long_name = 'pale coral population'
+                pp_set.units = '-'
+
+                pb_set = self._his_data.createVariable('PB', 'f8', ('time', 'stations'))
+                pb_set.long_name = 'bleached coral population'
+                pb_set.units = '-'
+            if self._his_output['calc']:
+                calc_set = self._his_data.createVariable('G', 'f8', ('time', 'stations'))
+                calc_set.long_name = 'calcification'
+                calc_set.units = 'kg m-2 d-1'
+            if self._his_output['md']:
+                dc_set = self._his_data.createVariable('dc', 'f8', ('time', 'stations'))
+                dc_set.long_name = 'coral plate diameter'
+                dc_set.units = 'm'
+
+                hc_set = self._his_data.createVariable('hc', 'f8', ('time', 'stations'))
+                hc_set.long_name = 'coral height'
+                hc_set.units = 'm'
+
+                bc_set = self._his_data.createVariable('bc', 'f8', ('time', 'stations'))
+                bc_set.long_name = 'coral base diameter'
+                bc_set.units = 'm'
+
+                tc_set = self._his_data.createVariable('tc', 'f8', ('time', 'stations'))
+                tc_set.long_name = 'coral plate thickness'
+                tc_set.units = 'm'
+
+                ac_set = self._his_data.createVariable('ac', 'f8', ('time', 'stations'))
+                ac_set.long_name = 'coral axial distance'
+                ac_set.units = 'm'
+
+                vc_set = self._his_data.createVariable('Vc', 'f8', ('time', 'stations'))
+                vc_set.long_name = 'coral volume'
+                vc_set.units = 'm3'
+            self._his_data.close()
+
+    def update_his(self, coral, dates):
+        """Write data as daily output at predefined locations within the model domain.
+
+        :param coral: coral animal
+        :param dates: dates of simulation year
+
+        :type coral: Coral
+        :type dates: pandas
+        """
+        if self._his_output is not None and any(self._his_output.values()):
+            self._his_data = Dataset(self.file_dir_his, mode='a')
+
+            y_dates = dates.reset_index(drop=True)
+            ti = (y_dates - self.first_date).dt.days.values
+            self._his_data['time'][ti] = y_dates.values
+            if self._his_output['lme']:
+                self._his_data['Iz'][ti, :] = coral.light[self.idx_stations, :].transpose()
+            if self._his_output['fme']:
+                self._his_data['ucm'][ti, :] = np.tile(coral.ucm, (len(y_dates), 1))[:, self.idx_stations]
+            if self._his_output['tme']:
+                self._his_data['Tc'][ti, :] = coral.temp[self.idx_stations, :].transpose()
+                if len(DataReshape.variable2array(coral.Tlo)) > 1 and len(DataReshape.variable2array(coral.Thi)) > 1:
+                    self._his_data['Tlo'][ti, :] = np.tile(coral.Tlo, (len(y_dates), 1))[:, self.idx_stations]
+                    self._his_data['Thi'][ti, :] = np.tile(coral.Thi, (len(y_dates), 1))[:, self.idx_stations]
+                else:
+                    self._his_data['Tlo'][ti, :] = coral.Tlo * np.ones((len(y_dates), len(self.idx_stations)))
+                    self._his_data['Thi'][ti, :] = coral.Thi * np.ones((len(y_dates), len(self.idx_stations)))
+            if self._his_output['pd']:
+                self._his_data['PD'][ti, :] = coral.photo_rate[self.idx_stations, :].transpose()
+            if self._his_output['ps']:
+                self._his_data['PT'][ti, :] = coral.pop_states[self.idx_stations, :, :].sum(axis=2).transpose()
+                self._his_data['PH'][ti, :] = coral.pop_states[self.idx_stations, :, 0].transpose()
+                self._his_data['PR'][ti, :] = coral.pop_states[self.idx_stations, :, 1].transpose()
+                self._his_data['PP'][ti, :] = coral.pop_states[self.idx_stations, :, 2].transpose()
+                self._his_data['PB'][ti, :] = coral.pop_states[self.idx_stations, :, 3].transpose()
+            if self._his_output['calc']:
+                self._his_data['G'][ti, :] = coral.calc[self.idx_stations, :].transpose()
+            if self._his_output['md']:
+                self._his_data['dc'][ti, :] = np.tile(coral.dc, (len(y_dates), 1))[:, self.idx_stations]
+                self._his_data['hc'][ti, :] = np.tile(coral.hc, (len(y_dates), 1))[:, self.idx_stations]
+                self._his_data['bc'][ti, :] = np.tile(coral.bc, (len(y_dates), 1))[:, self.idx_stations]
+                self._his_data['tc'][ti, :] = np.tile(coral.tc, (len(y_dates), 1))[:, self.idx_stations]
+                self._his_data['ac'][ti, :] = np.tile(coral.ac, (len(y_dates), 1))[:, self.idx_stations]
+                self._his_data['Vc'][ti, :] = np.tile(coral.volume, (len(y_dates), 1))[:, self.idx_stations]
+
+            self._his_data.close()
+
+
+def time_series_year(time_series, year):
+    """Extract a section of the time-series based on the year.
+
+    :param time_series: time-series to be extracted
+    :param year: year to be extracted
+
+    :type time_series: pandas.DataFrame
+    :type year: int
+    """
+    return time_series[time_series.index.year == year].values.transpose()[0]
+
+
 def coral_only_function(coral, function, args, no_cover_value=0):
     """Only execute the function when there is coral cover.
 
@@ -256,5 +913,3 @@ def coral_only_function(coral, function, args, no_cover_value=0):
         arg[coral.cover > 0] for arg in args
     ])
     return output
-
-# TODO: Include methods on writing the output files here in "utils.py"
