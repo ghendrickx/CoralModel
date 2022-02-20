@@ -138,6 +138,22 @@ class _Base:
         """String-representation."""
         return self.__class__.__name__
 
+    @property
+    def x(self):
+        """
+        :return: x-coordinate(s)
+        :rtype: float, iterable
+        """
+        return
+
+    @property
+    def y(self):
+        """
+        :return: y-coordinate(s)
+        :rtype: float, iterable
+        """
+        return
+
     def _initialise(self):
         """Initialise hydrodynamic model."""
 
