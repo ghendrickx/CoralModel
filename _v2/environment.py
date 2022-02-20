@@ -199,6 +199,17 @@ class Environment:
         EnvironmentalConditions.from_snippet(snippet)
 
     @classmethod
+    def annual_update(cls, year):
+        """Update environment for biophysical calculations by taking an annual snippet of the overall environmental
+        time-series.
+
+        :param year: year of snippet
+        :type year: int
+        """
+        date_range = f'{year}-01-01', f'{year}-12-31'
+        cls.update(date_range)
+
+    @classmethod
     def _set_conditions(cls, conditions):
         """Set environmental conditions.
 
