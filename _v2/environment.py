@@ -177,6 +177,17 @@ class EnvironmentalConditions:
 
 
 class Environment:
+    _data = None
+
+    @classmethod
+    def get_data_set(cls):
+        return cls._data
+
+    @classmethod
+    def get_condition(cls, col):
+        if col == 'date':
+            return cls._dates
+        return cls._data[col]
 
     @classmethod
     def update(cls, date_range):
@@ -267,23 +278,49 @@ class Environment:
         if aragonite_col is not None:
             cls.set_aragonite_conditions(data[aragonite_col])
 
+    @classmethod
+    def _update_data_set(cls, col, values):
+        # initialise data set
+        if cls._data is None:
+            cls._data = pd.DataFrame(columns=['date', 'light', 'light_attenuation', 'flow', 'temperature', 'aragonite'])
+
+        # update data set
+        cls._data[col] = np.array(values)
+
+        # set dates as index
+        if col == 'date':
+            cls._data.set_index(col, inplace=True)
+
     # dates
     _dates = None
 
     @classmethod
     def set_dates(cls, dates):
         if len(dates) == 2:
-            d = pd.date_range(dates[0], dates[1], freq='D')
-            cls._dates = pd.DataFrame({'date': d})
-        else:
-            cls._dates = dates
+            dates = pd.date_range(*dates, freq='D')
+
+        cls._update_data_set('date', dates)
+
+        cls._dates = cls._data.index
+        # if len(dates) == 2:
+        #     d = pd.date_range(dates[0], dates[1], freq='D')
+        #     cls._dates = pd.DataFrame({'date': d})
+        #     cls._update_data_set('date', d)
+        # else:
+        #     cls._dates = dates
 
     @classmethod
     def set_dates_from_file(cls, file_name, directory=None, **kwargs):
-        cls._dates = cls._from_file(file_name, directory, **kwargs)
+        dates = cls._from_file(file_name, directory, **kwargs)
+        cls.set_dates(dates)
+        # cls._dates = cls._from_file(file_name, directory, **kwargs)
 
     def _extract_dates_from_environmental_conditions(self, data):
         raise NotImplementedError
+
+    @property
+    def dates(self):
+        return self._dates
 
     # light conditions
     _light = None
@@ -291,19 +328,27 @@ class Environment:
 
     @classmethod
     def set_light_conditions(cls, daily_averages):
-        cls._light = daily_averages
+        cls._update_data_set('light', daily_averages)
+        cls._light = cls._data['light']
+        # cls._light = daily_averages
 
     @classmethod
     def set_light_attenuation(cls, daily_averages):
-        cls._light_attenuation = daily_averages
+        cls._update_data_set('light_attenuation', daily_averages)
+        cls._light_attenuation = cls._data['light_attenuation']
+        # cls._light_attenuation = daily_averages
 
     @classmethod
     def set_light_from_file(cls, file_name, directory=None, **kwargs):
-        cls._light = cls._from_file(file_name, directory, **kwargs)
+        light = cls._from_file(file_name, directory, **kwargs)
+        cls.set_light_conditions(light)
+        # cls._light = cls._from_file(file_name, directory, **kwargs)
 
     @classmethod
     def set_light_attenuation_from_file(cls, file_name, directory=None, **kwargs):
-        cls._light_attenuation = cls._from_file(file_name, directory, **kwargs)
+        light_attenuation = cls._from_file(file_name, directory, **kwargs)
+        cls.set_light_attenuation(light_attenuation)
+        # cls._light_attenuation = cls._from_file(file_name, directory, **kwargs)
 
     @property
     def light(self):
@@ -316,6 +361,9 @@ class Environment:
     # hydrodynamic conditions
     _flow = None
     _storm_category = None
+
+    # TODO: Determine how to store the hydrodynamic conditions, which are on an annual basis instead of a daily
+    #  frequency.
 
     @classmethod
     def set_flow_conditions(cls, flow):
@@ -348,7 +396,9 @@ class Environment:
 
     @classmethod
     def set_thermal_conditions(cls, daily_averages):
-        cls._temperature = daily_averages
+        cls._update_data_set('temperature', daily_averages)
+        cls._temperature = cls._data['temperature']
+        # cls._temperature = daily_averages
 
     @classmethod
     def set_thermal_from_file(cls, file_name, directory=None, **kwargs):
@@ -405,9 +455,10 @@ class _EnvironmentSnippet:
     def __init__(self, environment, date_range):
         """
         :param environment: full environmental conditions
-        :param date_range: date range of snippet
+        :param date_range: date range of snippet defined as starting and ending date: ('yyyy-mm-dd', 'yyyy-mm-dd')
 
         :type environment: Environment
+        :type date_range: tuple, list
         """
         self._date_range = date_range
         # light conditions
@@ -426,11 +477,11 @@ class _EnvironmentSnippet:
         if conditions is None:
             return None
 
-        return conditions[self._date_range]
+        return conditions[self._date_range[0]:self._date_range[-1]]
 
     @property
     def date_range(self):
-        return self._date_range
+        return pd.date_range(*self._date_range, freq='D')
 
     @property
     def light(self):
