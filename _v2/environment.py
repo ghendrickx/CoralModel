@@ -306,6 +306,9 @@ class Environment:
         # read file
         data = cls._read_file(file_name=file_name, directory=directory, **kwargs)
 
+        # TODO: auto-fill column names if none are specified:
+        #  1. auto-fill column-name if none specified;
+        #  2. check if auto-name is present in file: (a) if not, skip, (b) if so, use this column.
         # set dates
         cls.set_dates(data[0 if date_col is None else date_col])
         # set light
