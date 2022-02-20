@@ -507,14 +507,14 @@ class _CoralMorphology:
             :return: representative morphological characteristic
             :rtype: float
             """
-            return sum(coral.states.sum * getattr(coral.morphology, char) for coral in cell.corals) / \
-                sum(coral.states.sum for coral in cell.corals)
+            return sum(np.array(coral.states.sum) * getattr(coral.morphology, char) for coral in cell.corals) / \
+                sum(np.array(coral.states.sum) for coral in cell.corals)
 
-        diameter = representative_characteristic('diameter')
-        height = representative_characteristic('height')
-        distance = representative_characteristic('distance')
-        base_diameter = representative_characteristic('base_diameter')
-        plate_thickness = representative_characteristic('plate_thickness')
+        diameter = float(representative_characteristic('diameter'))
+        height = float(representative_characteristic('height'))
+        distance = float(representative_characteristic('distance'))
+        base_diameter = float(representative_characteristic('base_diameter'))
+        plate_thickness = float(representative_characteristic('plate_thickness'))
 
         return cls(
             diameter=diameter, height=height, distance=distance,
