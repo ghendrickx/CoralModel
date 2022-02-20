@@ -84,7 +84,7 @@ class _CoralVariables:
         """
         self.light = light
         self.biomass = biomass
-        self.in_canopy_flow = 0 if in_canopy_flow is None else in_canopy_flow
+        self.in_canopy_flow = in_canopy_flow
         self.tbl = tbl
         self.temperature = temperature
         self.lower_limit, self.upper_limit = self._set_thermal_limits(lower_limit, upper_limit)

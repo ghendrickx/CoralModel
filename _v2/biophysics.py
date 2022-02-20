@@ -253,12 +253,15 @@ class Light(_BasicBiophysics):
 
 
 class Flow(_BasicBiophysics):
-    _essential_data = 'flow'
 
     def __new__(cls, *args, **kwargs):
+        """Verify the availabitility of essential data to execute the Flow-module."""
         if cls._hydrodynamics is None:
-            msg = f'Flow-module requires a hydrodynamic-model; none is initialised.'
-            raise InitialisationError(msg)
+            if cls._environment.flow is None:
+                msg = f'Flow-module requires flow conditions OR a hydrodynamic-model; none is initialised.'
+                raise InitialisationError(msg)
+            else:
+                cls._essential_data = 'flow'
 
     def _update(self, cell):
         """Update corals: Flow micro-environment.
@@ -273,7 +276,8 @@ class Flow(_BasicBiophysics):
         cell.flow_velocity = self._wave_current()
 
     def _velocities(self, morphology, water_depth):
-        """In-canopy flow velocities, and depth-averaged flow velocities.
+        """In-canopy flow velocities, and depth-averaged flow velocities. These velocities are based on a hydrodynamic
+        model if one is specified; otherwise, they are determined using the provided flow conditions.
 
         :param morphology: cell-representative morphology
         :param water_depth: water depth
@@ -282,23 +286,59 @@ class Flow(_BasicBiophysics):
         :type water_depth: float
 
         :return: (in-canopy) flow velocity
-        :rtype: float
+        :rtype: float, None
         """
         if self.processes.photosynthetic_flow_dependency:
-            if self.processes.flow_micro_environment:
-                wave_attenuation = self._wave_attenuation(
-                    morphology.representative_diameter, morphology.height, morphology.distance,
-                    self.hydrodynamics.wave_velocity, self.hydrodynamics.wave_period, water_depth, 'wave'
-                )
-                current_attenuation = self._wave_attenuation(
-                    morphology.representative_diameter, morphology.height, morphology.distance,
-                    self.hydrodynamics.current_velocity, 1e3, water_depth, 'current'
-                )
-            else:
-                wave_attenuation, current_attenuation = 1, 1
+            return self._data_velocities(morphology, water_depth) if self.hydrodynamics is None \
+                else self._model_velocities(morphology, water_depth)
 
-            return self._wave_current(wave_attenuation, current_attenuation)
-        return 0
+    def _data_velocities(self, morphology, water_depth):
+        """In-canopy flow velocities, and depth-averaged flow velocities, based on flow conditions.
+
+        :param morphology: cell-representative morphology
+        :param water_depth: water depth
+
+        :type morphology: _CoralMorphology
+        :type water_depth: float
+
+        :return: (in-canopy) flow velocity
+        :rtype: float, None
+        """
+        if self.processes.flow_micro_environment:
+            flow_attenuation = self._wave_attenuation(
+                morphology.representative_diameter, morphology.height, morphology.distance,
+                self.environment.flow, 1e3, water_depth, 'current'
+            )
+        else:
+            flow_attenuation = 1
+
+        return flow_attenuation * self.environment.flow
+
+    def _model_velocities(self, morphology, water_depth):
+        """In-canopy flow velocities, and depth-averaged flow velocities, based on hydrodynamic model.
+
+        :param morphology: cell-representative morphology
+        :param water_depth: water depth
+
+        :type morphology: _CoralMorphology
+        :type water_depth: float
+
+        :return: (in-canopy) flow velocity
+        :rtype: float, None
+        """
+        if self.processes.flow_micro_environment:
+            wave_attenuation = self._wave_attenuation(
+                morphology.representative_diameter, morphology.height, morphology.distance,
+                self.hydrodynamics.wave_velocity, self.hydrodynamics.wave_period, water_depth, 'wave'
+            )
+            current_attenuation = self._wave_attenuation(
+                morphology.representative_diameter, morphology.height, morphology.distance,
+                self.hydrodynamics.current_velocity, 1e3, water_depth, 'current'
+            )
+        else:
+            wave_attenuation, current_attenuation = 1, 1
+
+        return self._wave_current(wave_attenuation, current_attenuation)
 
     def _wave_current(self, wave_attenuation=1, current_attenuation=1):
         """Wave-current interaction.
