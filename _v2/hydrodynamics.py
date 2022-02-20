@@ -6,6 +6,7 @@ Author: Gijs G. Hendrickx
 import logging
 import sys
 
+from _v2._errors import InitialisationError
 from _v2.grid import Grid
 
 LOG = logging.getLogger(__name__)
@@ -296,6 +297,9 @@ class Reef2D(_Base):
         :type engine: str
         :type config_file: str
         """
+        if cls._wrapper is None:
+            cls._import_wrapper()
+
         cls._dfm = cls._wrapper.BMIWrapper(engine=engine, configfile=config_file)
 
     @property
@@ -316,6 +320,9 @@ class Reef2D(_Base):
         :type engine: str
         :type config_file: str
         """
+        if cls._wrapper is None:
+            cls._import_wrapper()
+
         cls._dimr = cls._wrapper.BMIWrapper(engine=engine, configfile=config_file)
 
     @property
@@ -357,12 +364,16 @@ class Reef2D(_Base):
         return self._n_internal_cells
 
     def _initialise(self):
-        """Initiate DFM."""
+        """Initiate DFM/DIMR."""
+        if self._model is None:
+            msg = f'No model set, thus nothing to initialise: Set a DFM- (and DIMR-) model.'
+            raise InitialisationError(msg)
+
         self._model.initialize()
 
         if Grid.get_size() > 0:
             Grid.reset()
-            LOG.warning('Grid is reset and will be drawn from DFM-model.')
+            LOG.critical('Grid is reset and will be drawn from DFM-model.')
 
         # re-initialise grid
         Grid(x=self.x, y=self.y)
