@@ -24,7 +24,7 @@ class EnvironmentalConditions:
         :param light: light conditions, defaults to None
         :param light_attenuation: light attenuation conditions, defaults to None
         :param flow: flow conditions, defaults to None
-        :param temperature: thermal conditions, defaults to None
+        :param temperature: thermal conditions in degree Kelvin, defaults to None
         :param aragonite: aragonite conditions, defaults to None
 
         :type light: float, int, iterable, optional
@@ -69,7 +69,7 @@ class EnvironmentalConditions:
         :rtype: numpy.array, float, None
         """
         if conditions is None:
-            return
+            return None
 
         if isinstance(conditions, (float, int, np.ndarray)):
             return conditions
@@ -78,6 +78,55 @@ class EnvironmentalConditions:
             return conditions.values.flatten()
 
         return np.array(conditions)
+
+    @classmethod
+    def from_snippet(cls, snippet):
+        """Set environmental conditions from a snippet from the environmental conditions record.
+
+        :param snippet: snippet of environmental conditions
+        :type snippet: _EnvironmentSnippet
+        """
+        cls(snippet.light, snippet.light_attenuation, snippet.flow, snippet.temperature, snippet.aragonite)
+
+    @classmethod
+    def from_file(
+            cls, file_name, directory=None, light_col=None, light_attenuation_col=None, flow_col=None,
+            temperature_col=None, aragonite_col=None, **kwargs
+    ):
+        """Set environmental conditions from a file.
+
+        :param file_name: file-name
+        :param directory: directory, defaults to None
+        :param light_col: column name/index with light conditions, defaults to None
+        :param light_attenuation_col: column name/index with light attenuation conditions, defaults to None
+        :param flow_col: column name/index with flow conditions, defaults to None
+        :param temperature_col: column name/index with thermal conditions, defaults to None
+        :param aragonite_col: column name/index with aragonite conditions, defaults to None
+        :param kwargs: key-worded arguments for reading file with `pandas.read_csv()`
+
+        :type file_name: str
+        :type directory: DirConfig, str, list, tuple, optional
+        :type light_col: str, int, optional
+        :type light_attenuation_col: str, int, optional
+        :type flow_col: str, int, optional
+        :type temperature_col: str, int, optional
+        :type aragonite_col: str, int, optional
+        """
+        # read file
+        data = pd.read_csv(DirConfig(directory).config_dir(file_name), **kwargs)
+
+        # extract and set data
+
+        def extract_data(col): return None if col is None else data[col]
+
+        light = extract_data(light_col)
+        light_attenuation = extract_data(light_attenuation_col)
+        flow = extract_data(flow_col)
+        temperature = extract_data(temperature_col)
+        aragonite = extract_data(aragonite_col)
+
+        # initiate EnvironmentalConditions
+        cls(light=light, light_attenuation=light_attenuation, flow=flow, temperature=temperature, aragonite=aragonite)
 
     @staticmethod
     def export_conditions(env):
