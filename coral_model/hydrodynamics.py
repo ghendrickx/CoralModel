@@ -10,6 +10,7 @@ import os
 from scipy.optimize import fsolve
 import bmi.wrapper
 import faulthandler
+# TODO: Importing BMI-package raises potential errors
 
 from coral_model.utils import DirConfig
 
