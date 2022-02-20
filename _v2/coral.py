@@ -84,7 +84,7 @@ class _CoralVariables:
         """
         self.light = light
         self.biomass = biomass
-        self.in_canopy_flow = 0 if in_canopy_flow is None else in_canopy_flow
+        self.in_canopy_flow = in_canopy_flow
         self.tbl = tbl
         self.temperature = temperature
         self.lower_limit, self.upper_limit = self._set_thermal_limits(lower_limit, upper_limit)
@@ -507,14 +507,14 @@ class _CoralMorphology:
             :return: representative morphological characteristic
             :rtype: float
             """
-            return sum(coral.states.sum * getattr(coral.morphology, char) for coral in cell.corals) / \
-                sum(coral.states.sum for coral in cell.corals)
+            return sum(coral.states.sum[-1] * getattr(coral.morphology, char) for coral in cell.corals) / \
+                sum(coral.states.sum[-1] for coral in cell.corals)
 
-        diameter = representative_characteristic('diameter')
-        height = representative_characteristic('height')
-        distance = representative_characteristic('distance')
-        base_diameter = representative_characteristic('base_diameter')
-        plate_thickness = representative_characteristic('plate_thickness')
+        diameter = float(representative_characteristic('diameter'))
+        height = float(representative_characteristic('height'))
+        distance = float(representative_characteristic('distance'))
+        base_diameter = float(representative_characteristic('base_diameter'))
+        plate_thickness = float(representative_characteristic('plate_thickness'))
 
         return cls(
             diameter=diameter, height=height, distance=distance,
