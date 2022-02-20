@@ -11,8 +11,6 @@ from _v2.grid import Grid
 
 LOG = logging.getLogger(__name__)
 
-IMPLEMENTED = (None, '0D')
-
 
 class Hydrodynamics:
     __modes = (None, '0D', '1D', '2D')
@@ -220,11 +218,11 @@ class Reef1D(_Base):
     update_interval = None
     update_interval_storm = None
 
+    def __new__(cls, *args, **kwargs):
+        raise NotImplementedError
+
     def __init__(self):
         super().__init__(calculations=True)
-
-        if '1D' not in IMPLEMENTED:
-            raise NotImplementedError
 
     @property
     def x(self):
@@ -261,11 +259,11 @@ class Reef2D(_Base):
     _y = None
     _n_internal_cells = None
 
+    def __new__(cls, *args, **kwargs):
+        raise NotImplementedError
+
     def __init__(self):
         super().__init__(calculations=True)
-
-        if '2D' not in IMPLEMENTED:
-            raise NotImplementedError
 
         self._import_wrapper()
 
