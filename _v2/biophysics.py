@@ -8,6 +8,7 @@ import logging
 import numpy as np
 from scipy.optimize import newton
 
+from _v2._errors import DataError
 from _v2.coral import Coral, _CoralState, _CoralMorphology
 from _v2.settings import Constants, Processes
 
@@ -35,11 +36,11 @@ class _BasicBiophysics:
         """Verify if all essential information is available for the biophysical process to execute."""
         if self.environment is None:
             msg = f'No environmental conditions defined.'
-            raise ValueError(msg)
+            raise DataError(msg)
 
         if self._essential_data is not None and getattr(self.environment, self._essential_data) is None:
             msg = f'Essential environmental data missing: \"{self._essential_data}\".'
-            raise ValueError(msg)
+            raise DataError(msg)
 
     @classmethod
     def set_environment(cls, environment):
