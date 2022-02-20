@@ -185,7 +185,7 @@ class Environment:
         :param date_range: snippet range of dates
         """
         snippet = _EnvironmentSnippet(cls.__call__(), date_range)
-        _BasicBiophysics.set_environment(snippet)
+        EnvironmentalConditions.from_snippet(snippet)
 
     @classmethod
     def _set_conditions(cls, conditions):
@@ -373,16 +373,16 @@ class Environment:
     @property
     def temperature_mmm(self):
         if self._temperature_mmm is None:
-            self._monthly_maximin_mean()
+            self._monthly_max_min_mean()
         return self._temperature_mmm
 
-    def _monthly_maximin_mean(self):
+    def _monthly_max_min_mean(self):
         monthly_mean = self.temperature_kelvin.groupby([
             self.temperature_kelvin.index.year, self.temperature_kelvin.index.month
         ]).agg(['mean'])
-        monthly_maximin_mean = monthly_mean.groupby(level=0).agg(['min', 'max'])
-        monthly_maximin_mean.columns = monthly_maximin_mean.columns.droplevel([0, 1])
-        self._temperature_mmm = monthly_maximin_mean
+        monthly_max_min_mean = monthly_mean.groupby(level=0).agg(['min', 'max'])
+        monthly_max_min_mean.columns = monthly_max_min_mean.columns.droplevel([0, 1])
+        self._temperature_mmm = monthly_max_min_mean
 
     # acidic conditions
     _aragonite = None
@@ -423,6 +423,9 @@ class _EnvironmentSnippet:
         self._aragonite = self._get_snippet(environment.aragonite)
 
     def _get_snippet(self, conditions):
+        if conditions is None:
+            return None
+
         return conditions[self._date_range]
 
     @property
