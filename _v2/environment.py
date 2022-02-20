@@ -181,10 +181,23 @@ class Environment:
 
     @classmethod
     def get_data_set(cls):
+        """Get data set with all environmental data.
+
+        :return: environmental data set
+        :rtype: pandas.DataFrame
+        """
         return cls._data
 
     @classmethod
     def get_condition(cls, col):
+        """Get a single environmental condition (or the dates).
+
+        :param col: environmental condition key
+        :type col: str
+
+        :return: environmental data
+        :rtype: pandas.Series
+        """
         if col == 'date':
             return cls._dates
         return cls._data[col]
@@ -249,7 +262,7 @@ class Environment:
             raise DataError(msg)
 
     @staticmethod
-    def _from_file(file_name, directory=None, **kwargs):
+    def _read_file(file_name, directory=None, **kwargs):
         """Extract data from file.
 
         :param file_name: file name
@@ -269,7 +282,29 @@ class Environment:
             cls, file_name, directory=None, date_col=None, light_col=None, light_attenuation_col=None,
             flow_col=None, temperature_col=None, aragonite_col=None, **kwargs
     ):
-        data = cls._from_file(file_name=file_name, directory=directory, **kwargs)
+        """Set all environmental data from the same file, where the environmental data is a time-series.
+
+        :param file_name: file-name
+        :param directory: directory
+        :param date_col: column name/index with dates, defaults to None
+        :param light_col: column name/index with light conditions, defaults to None
+        :param light_attenuation_col: column name/index with light attenuation conditions, defaults to None
+        :param flow_col: column name/index with flow conditions, defaults to None
+        :param temperature_col: column name/index with thermal conditions, defaults to None
+        :param aragonite_col: column name/index with aragonite conditions, defaults to None
+        :param kwargs: key-worded arguments for reading file with `pandas.read_csv()`
+
+        :type file_name: str
+        :type directory: DirConfig, str, list, tuple, optional
+        :type date_col: str, int, optional
+        :type light_col: str, int, optional
+        :type light_attenuation_col: str, int, optional
+        :type flow_col: str, int, optional
+        :type temperature_col: str, int, optional
+        :type aragonite_col: str, int, optional
+        """
+        # read file
+        data = cls._read_file(file_name=file_name, directory=directory, **kwargs)
 
         # set dates
         cls.set_dates(data[0 if date_col is None else date_col])
@@ -291,6 +326,17 @@ class Environment:
 
     @classmethod
     def _update_data_set(cls, col, values):
+        """Update environmental data set per environmental condition.
+
+        :param col: column name/index of environmental condition
+        :param values: environmental conditions
+
+        :type col: str, int
+        :type values: float, iterable
+
+        :return: environmental conditions
+        :rtype: pandas.Series
+        """
         # initialise data set
         if cls._data is None:
             cls._data = pd.DataFrame(columns=['date', 'light', 'light_attenuation', 'flow', 'temperature', 'aragonite'])
@@ -301,36 +347,48 @@ class Environment:
         # set dates as index
         if col == 'date':
             cls._data.set_index(col, inplace=True)
+            return cls._data.index
+        return cls._data[col]
 
     # dates
     _dates = None
 
     @classmethod
     def set_dates(cls, dates):
+        """Set dates to environmental data set.
+
+        :param dates: dates, or date range
+        :type dates: iterable
+        """
         if len(dates) == 2:
             dates = pd.date_range(*dates, freq='D')
 
-        cls._update_data_set('date', dates)
-
-        cls._dates = cls._data.index
-        # if len(dates) == 2:
-        #     d = pd.date_range(dates[0], dates[1], freq='D')
-        #     cls._dates = pd.DataFrame({'date': d})
-        #     cls._update_data_set('date', d)
-        # else:
-        #     cls._dates = dates
+        # set dates
+        cls._dates = cls._update_data_set('date', dates)
 
     @classmethod
     def set_dates_from_file(cls, file_name, directory=None, **kwargs):
-        dates = cls._from_file(file_name, directory, **kwargs)
+        """Set dates from a file.
+
+        :param file_name: file-name
+        :param directory: directory, defaults to None
+        :param kwargs: key-worded arguments for reading file with `pandas.read_csv`
+
+        :type file_name: str
+        :type directory: DirConfig, str, list, tuple, optional
+        """
+        dates = cls._read_file(file_name, directory, **kwargs)
         cls.set_dates(dates)
-        # cls._dates = cls._from_file(file_name, directory, **kwargs)
 
     def _extract_dates_from_environmental_conditions(self, data):
         raise NotImplementedError
 
     @property
     def dates(self):
+        """
+        :return: dates
+        :rtype: pandas.Series
+        """
         return self._dates
 
     # light conditions
@@ -339,105 +397,224 @@ class Environment:
 
     @classmethod
     def set_light_conditions(cls, daily_averages):
-        cls._update_data_set('light', daily_averages)
-        cls._light = cls._data['light']
-        # cls._light = daily_averages
+        """Set light conditions.
+
+        :param daily_averages: daily-averaged light conditions
+        :type daily_averages: float, iterable
+        """
+        cls._light = cls._update_data_set('light', daily_averages)
 
     @classmethod
     def set_light_attenuation(cls, daily_averages):
-        cls._update_data_set('light_attenuation', daily_averages)
-        cls._light_attenuation = cls._data['light_attenuation']
-        # cls._light_attenuation = daily_averages
+        """Set light attenuation conditions.
+
+        :param daily_averages: daily-averaged light attenuation conditions
+        :type daily_averages: float, iterable
+        """
+        cls._light_attenuation = cls._update_data_set('light_attenuation', daily_averages)
 
     @classmethod
     def set_light_from_file(cls, file_name, directory=None, **kwargs):
-        light = cls._from_file(file_name, directory, **kwargs)
+        """Set light conditions from a file.
+
+        :param file_name: file-name
+        :param directory: directory, defaults to None
+        :param kwargs: key-worded arguments for reading file with `pandas.read_csv`
+
+        :type file_name: str
+        :type directory: DirConfig, str, list, tuple, optional
+        """
+        light = cls._read_file(file_name, directory, **kwargs)
         cls.set_light_conditions(light)
-        # cls._light = cls._from_file(file_name, directory, **kwargs)
 
     @classmethod
     def set_light_attenuation_from_file(cls, file_name, directory=None, **kwargs):
-        light_attenuation = cls._from_file(file_name, directory, **kwargs)
+        """Set light attenuation conditions from a file.
+
+        :param file_name: file-name
+        :param directory: directory, defaults to None
+        :param kwargs: key-worded arguments for reading file with `pandas.read_csv`
+
+        :type file_name: str
+        :type directory: DirConfig, str, list, tuple, optional
+        """
+        light_attenuation = cls._read_file(file_name, directory, **kwargs)
         cls.set_light_attenuation(light_attenuation)
-        # cls._light_attenuation = cls._from_file(file_name, directory, **kwargs)
 
     @property
     def light(self):
+        """
+        :return: light conditions
+        :rtype: pandas.Series
+        """
         return self._light
 
     @property
     def light_attenuation(self):
+        """
+        :return: light attenuation conditions
+        :rtype: pandas.Series
+        """
         return self._light_attenuation
 
     # hydrodynamic conditions
     _flow = None
     _storm_category = None
 
-    # TODO: Determine how to store the hydrodynamic conditions, which are on an annual basis instead of a daily
-    #  frequency.
-
     @classmethod
-    def set_flow_conditions(cls, flow):
-        cls._flow = flow
+    def set_flow_conditions(cls, daily_averages):
+        """Set flow conditions.
+
+        :param daily_averages: daily-averaged flow conditions
+        :type daily_averages: float, iterable
+        """
+        cls._flow = daily_averages
 
     @classmethod
     def set_flow_from_file(cls, file_name, directory=None, **kwargs):
-        cls._flow = cls._from_file(file_name, directory, **kwargs)
+        """Set flow conditions from a file.
+
+        :param file_name: file-name
+        :param directory: directory, defaults to None
+        :param kwargs: key-worded arguments for reading file with `pandas.read_csv`
+
+        :type file_name: str
+        :type directory: DirConfig, str, list, tuple, optional
+        """
+        cls._flow = cls._read_file(file_name, directory, **kwargs)
 
     @property
     def flow(self):
+        """
+        :return: flow conditions
+        :rtype: pandas.Series
+        """
         return self._flow
+
+    # TODO: Determine how to store the storm conditions/categories, which are on an annual basis instead of a daily
+    #  frequency.
 
     @classmethod
     def set_storm_conditions(cls, annual_storm):
+        """Set storm conditions, annual storm category.
+
+        :param annual_storm: storm categories
+        :type annual_storm: int, iterable
+        """
         cls._storm_category = annual_storm
 
     @classmethod
     def set_storm_from_file(cls, file_name, directory=None, **kwargs):
-        cls._storm_category = cls._from_file(file_name, directory, **kwargs)
+        """Set storm categories from a file.
+
+        :param file_name: file-name
+        :param directory: directory, defaults to None
+        :param kwargs: key-worded arguments for reading file with `pandas.read_csv`
+
+        :type file_name: str
+        :type directory: DirConfig, str, list, tuple, optional
+        """
+        cls._storm_category = cls._read_file(file_name, directory, **kwargs)
 
     @property
     def storm_category(self):
+        """
+        :return: storm categories
+        :rtype: pandas.Series
+        """
         return self._storm_category
 
     # thermal conditions
     _temperature = None
+    _temperature_kelvin = None
+    _temperature_celsius = None
     _temperature_mmm = None
     __temp_conversion = 273.15
+    __thermal_threshold = 100
 
     @classmethod
     def set_thermal_conditions(cls, daily_averages):
-        cls._update_data_set('temperature', daily_averages)
-        cls._temperature = cls._data['temperature']
-        # cls._temperature = daily_averages
+        """Set thermal conditions.
+
+        :param daily_averages: daily-averaged thermal conditions
+        :type daily_averages: float, iterable
+        """
+        cls._temperature = cls._update_data_set('temperature', daily_averages)
 
     @classmethod
     def set_thermal_from_file(cls, file_name, directory=None, **kwargs):
-        cls._temperature = cls._from_file(file_name, directory, **kwargs)
+        """Set thermal conditions from a file.
 
-    @property
-    def temperature(self):
-        return self._temperature
+        :param file_name: file-name
+        :param directory: directory, defaults to None
+        :param kwargs: key-worded arguments for reading file with `pandas.read_csv`
+
+        :type file_name: str
+        :type directory: DirConfig, str, list, tuple, optional
+        """
+        temperature = cls._read_file(file_name, directory, **kwargs)
+        cls.set_thermal_conditions(temperature)
 
     @property
     def temperature_kelvin(self):
-        if self._temperature is not None and all(self._temperature.values < 100):
-            return self.temperature + self.__temp_conversion
-        return self._temperature
+        """Thermal conditions expressed in degrees Kelvin, based on a thermal threshold (100):
+         -  all(T) < 100    ->  T + 273.15
+         -  all(T) > 100    ->  T
+
+        :return: thermal conditions in degrees Kelvin
+        :rtype: pandas.Series
+        """
+        if self._temperature_kelvin is None and self._temperature is not None:
+            self._temperature_kelvin = self._temperature.add(
+                self.__temp_conversion if all(self._temperature.values < self.__thermal_threshold) else 0
+            )
+
+        return self._temperature_kelvin
 
     @property
     def temperature_celsius(self):
-        if self._temperature is not None and all(self._temperature.values > 100):
-            return self._temperature - self.__temp_conversion
-        return self._temperature
+        """Thermal conditions expressed in degrees Celsius, based on a thermal thershold (100):
+         -  all(T) < 100    ->  T
+         -  all(T) > 100    ->  T - 273.15
+
+        :return: thermal conditions in degrees Celsius
+        :rtype: pandas.Series
+        """
+        if self._temperature_celsius is None and self._temperature is not None:
+            self._temperature_celsius = self._temperature.add(
+                self.__temp_conversion if all(self._temperature.values > self.__thermal_threshold) else 0
+            )
+
+        return self._temperature_celsius
+
+    @property
+    def temperature(self):
+        """For computations, the thermal conditions are required in degrees Kelvin. Therefore, the thermal conditions
+        are expressed in degrees Kelvin by default.
+
+        :return: thermal conditions in degrees Kelvin
+        :rtype: pandas.Series
+        """
+        return self.temperature_kelvin
 
     @property
     def temperature_mmm(self):
+        """The maximum and minimum monthly means (MMMs) of the thermal conditions.
+
+        :return: MMMS of thermal conditions
+        :rtype: pandas.DataFrame
+        """
         if self._temperature_mmm is None and Processes.get_process('thermal_acclimation'):
             self._monthly_max_min_mean()
+
         return self._temperature_mmm
 
     def _monthly_max_min_mean(self):
+        """Determine maximum and minimum monthly means (MMMs) of the thermal time-series. This data is required for the
+        inclusion of the thermal acclimation.
+
+        This method requires a sufficiently long time-series of thermal conditions to be valuable; order of decades.
+        """
         monthly_mean = self.temperature_kelvin.groupby([
             self.temperature_kelvin.index.year, self.temperature_kelvin.index.month
         ]).agg(['mean'])
@@ -450,14 +627,33 @@ class Environment:
 
     @classmethod
     def set_aragonite_conditions(cls, daily_averages):
-        cls._aragonite = daily_averages
+        """Set aragonite conditions.
+
+        :param daily_averages: daily-averaged aragonite conditions
+        :type daily_averages: float, iterable
+        """
+        cls._update_data_set('aragonite', daily_averages)
+        cls._aragonite = cls._data['aragonite']
 
     @classmethod
     def set_aragonite_from_file(cls, file_name, directory=None, **kwargs):
-        cls._aragonite = cls._from_file(file_name, directory, **kwargs)
+        """Set aragonite conditions from a file.
+
+        :param file_name: file-name
+        :param directory: directory, defaults to None
+        :param kwargs: key-worded arguments for reading file with `pandas.read_csv`
+
+        :type file_name: str
+        :type directory: DirConfig, str, list, tuple, optional
+        """
+        cls._aragonite = cls._read_file(file_name, directory, **kwargs)
 
     @property
     def aragonite(self):
+        """
+        :return: aragonite conditions
+        :rtype: pandas.Series
+        """
         return self._aragonite
 
 
