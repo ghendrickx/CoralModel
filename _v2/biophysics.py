@@ -255,7 +255,7 @@ class Light(_BasicBiophysics):
 class Flow(_BasicBiophysics):
 
     def __new__(cls, *args, **kwargs):
-        """Verify the availabitility of essential data to execute the Flow-module."""
+        """Verify the availability of essential data to execute the Flow-module."""
         if cls._hydrodynamics is None:
             if cls._environment.flow is None:
                 msg = f'Flow-module requires flow conditions OR a hydrodynamic-model; none is initialised.'
@@ -263,6 +263,7 @@ class Flow(_BasicBiophysics):
             else:
                 cls._essential_data = 'flow'
 
+        # continue with initiation
         return super().__new__(cls)
 
     def _update(self, cell):
@@ -275,7 +276,7 @@ class Flow(_BasicBiophysics):
         [coral.vars.set_variables(in_canopy_flow=icf) for coral in cell.corals]
 
         [self._thermal_boundary_layer(coral) for coral in cell.corals]
-        cell.flow_velocity = self._wave_current()
+        cell.flow_velocity = self.environment.flow if self.hydrodynamics is None else self._wave_current()
 
     def _velocities(self, morphology, water_depth):
         """In-canopy flow velocities, and depth-averaged flow velocities. These velocities are based on a hydrodynamic
@@ -307,10 +308,12 @@ class Flow(_BasicBiophysics):
         :rtype: float, None
         """
         if self.processes.flow_micro_environment:
-            flow_attenuation = self._wave_attenuation(
-                morphology.representative_diameter, morphology.height, morphology.distance,
-                self.environment.flow, 1e3, water_depth, 'current'
-            )
+            flow_attenuation = [
+                self._wave_attenuation(
+                    morphology.representative_diameter, morphology.height, morphology.distance, u, 1e3, water_depth,
+                    'current'
+                ) for u in self.environment.flow
+            ]
         else:
             flow_attenuation = 1
 
