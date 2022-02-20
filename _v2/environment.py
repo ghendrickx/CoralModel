@@ -468,7 +468,7 @@ class Environment:
         :param daily_averages: daily-averaged flow conditions
         :type daily_averages: float, iterable
         """
-        cls._flow = daily_averages
+        cls._flow = cls._update_data_set('flow', daily_averages)
 
     @classmethod
     def set_flow_from_file(cls, file_name, directory=None, **kwargs):
@@ -481,7 +481,8 @@ class Environment:
         :type file_name: str
         :type directory: DirConfig, str, list, tuple, optional
         """
-        cls._flow = cls._read_file(file_name, directory, **kwargs)
+        flow = cls._read_file(file_name, directory, **kwargs)
+        cls.set_flow_conditions(flow)
 
     @property
     def flow(self):
