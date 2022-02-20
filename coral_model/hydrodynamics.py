@@ -8,9 +8,11 @@ import sys
 import numpy as np
 import os
 from scipy.optimize import fsolve
-# TODO: Check if the BMI-package can be removed from this project; i.e. check if once installed, it is no longer needed.
 import bmi.wrapper
 import faulthandler
+
+from coral_model.utils import DirConfig
+
 faulthandler.enable()
 
 
@@ -19,6 +21,8 @@ class Hydrodynamics:
 
     __model = None
 
+    _x_coordinates = None
+    _y_coordinates = None
     _xy_coordinates = None
     _water_depth = None
 
@@ -28,6 +32,14 @@ class Hydrodynamics:
         :type mode: None, str
         """
         self.mode = self.set_model(mode)
+
+    def __str__(self):
+        """String-representation of Hydrodynamics."""
+        return f'Coupled hydrodynamic model: {str(self.model)}\n\tmode={self.mode}'
+
+    def __repr__(self):
+        """Representation of Hydrodynamics."""
+        return f'Hydrodynamics(mode={self.mode})'
 
     @property
     def model(self):
@@ -50,14 +62,30 @@ class Hydrodynamics:
             msg = f'{mode} not in {modes}.'
             raise ValueError(msg)
 
-        # TODO: Facilitate Reef1D and Delft3D as well
-        if mode in ('Reef1D', 'Delft3D'):
-            msg = f'{mode} not yet implemented.'
-            raise NotImplementedError(msg)
-
         self.__model = getattr(sys.modules[__name__], model_cls)()
 
         return mode
+
+    @property
+    def space(self):
+        """Space-dimension."""
+        return len(self.xy_coordinates)
+
+    @property
+    def x_coordinates(self):
+        """The x-coordinates of the model domain.
+
+        :rtype: numpy.ndarray
+        """
+        return self.model.x if isinstance(self.model, Delft3D) else self._x_coordinates
+
+    @property
+    def y_coordinates(self):
+        """The y-coordinates of the model domain.
+
+        :rtype: numpy.ndarray
+        """
+        return self.model.y if isinstance(self.model, Delft3D) else self._y_coordinates
 
     @property
     def xy_coordinates(self):
@@ -80,8 +108,9 @@ class Hydrodynamics:
                 return np.array([[0, 0]])
             return self._xy_coordinates
         elif self.mode == 'Delft3D':
-            # TODO: Have the (x,y)-coordinates be based on the model
-            raise NotImplementedError
+            return np.array([
+                [self.x_coordinates[i], self.y_coordinates[i]] for i in range(len(self.x_coordinates))
+            ])
 
     @property
     def water_depth(self):
@@ -98,8 +127,10 @@ class Hydrodynamics:
                 raise ValueError(msg)
             return self._water_depth
         elif self.mode == 'Delft3D':
-            raise NotImplementedError
+            return self.model.water_depth
 
+    # TODO: Set coordinates based on x- and y-, or xy-coordinates;
+    #  include both options and translate them both directions.
     def set_coordinates(self, xy_coordinates):
         """Set (x,y)-coordinates if not provided by hydrodynamic model.
 
@@ -115,6 +146,23 @@ class Hydrodynamics:
                 [*xy] for xy in xy_coordinates
             ])
 
+        if self._x_coordinates is None and self._y_coordinates is None:
+            try:
+                _ = len(xy_coordinates[0])
+            except TypeError:
+                self._x_coordinates, self._y_coordinates = xy_coordinates
+            else:
+                self._x_coordinates = np.array([
+                    xy[0] for xy in xy_coordinates
+                ])
+                self._y_coordinates = np.array([
+                    xy[1] for xy in xy_coordinates
+                ])
+
+        if self.mode == 'Delft3D':
+            msg = f'INFO: (x,y)-coordinates are extracted from the hydrodynamic model.'
+            print(msg)
+
     def set_water_depth(self, water_depth):
         """Set water depth if not provided by hydrodynamic model.
 
@@ -128,23 +176,82 @@ class Hydrodynamics:
         else:
             self._water_depth = np.array([*water_depth])
 
+        if self.mode == 'Delft3D':
+            msg = f'INFO: Water depth is extracted from the hydrodynamic model.'
+            print(msg)
+
+    def set_files(self, mdu=None, config=None):
+        """Set critical files of hydrodynamic model.
+
+        :param mdu: MDU-file (req. Delft3D)
+        :param config: config-file (req. Delft3D)
+
+        :type mdu: str
+        :type config: str
+        """
+        [self.__set_file(key, val) for key, val in locals().items()]
+
+    def __set_file(self, obj, file):
+        """Set file of hydrodynamic model.
+
+        :param obj: file-object to be defined
+        :param file: file
+
+        :type obj: str
+        :type file: str
+        """
+        if file is not None and hasattr(self.model, obj):
+            setattr(self.model, obj, file)
+
+    def set_update_intervals(self, default, storm=None):
+        """Set update intervals; required for Delft3D-model.
+
+        :param default: default update interval
+        :param storm: storm update interval, defaults to None
+
+        :type default: int
+        :type storm: int, optional
+        """
+        self.__model.update_interval = default
+        self.__model.update_interval_storm = default if storm is None else storm
+
+        if not isinstance(self.model, Delft3D):
+            print(f'INFO: Update intervals unused; {self.mode} does not use update intervals.')
+
     def input_check(self):
         """Check if all requested content is provided, depending on the mode chosen."""
         _ = self.xy_coordinates
         _ = self.water_depth
 
+        if isinstance(self.model, Delft3D):
+            self.input_check_extra_d3d()
+
+    def input_check_extra_d3d(self):
+        """Delft3D-specific input check."""
+        files = ('mdu',)
+        [self.input_check_definition(file) for file in files]
+
+        interval_types = ('update_interval', 'update_interval_storm')
+        [self.input_check_definition(interval) for interval in interval_types]
+
+    def input_check_definition(self, obj):
+        """Check definition of critical object."""
+        if getattr(self.model, obj) is None:
+            msg = f'{obj} undefined (required for {self.mode}-mode)'
+            raise ValueError(msg)
+
     def initiate(self):
         """Initiate hydrodynamic model."""
         self.input_check()
-        self.__model.initiate()
+        self.model.initiate()
 
     def update(self, coral, storm=False):
         """Update hydrodynamic model."""
-        return self.__model.update(coral, storm=storm)
+        return self.model.update(coral, storm=storm)
 
     def finalise(self):
         """Finalise hydrodynamic model."""
-        self.__model.finalise()
+        self.model.finalise()
 
 
 class BaseHydro:
@@ -157,6 +264,22 @@ class BaseHydro:
     def __str__(cls):
         """String-representation of BaseHydro."""
         return cls.__name__
+
+    @property
+    def settings(self):
+        """Print settings of BaseHydro-model."""
+        msg = 'No hydrodynamic model coupled.'
+        return msg
+
+    @property
+    def x(self):
+        """x-coordinate(s)."""
+        return None
+
+    @property
+    def y(self):
+        """y-coordinate(s)."""
+        return None
 
     def initiate(self):
         """Initiate hydrodynamic model."""
@@ -186,6 +309,12 @@ class Reef0D(BaseHydro):
     def __init__(self):
         super().__init__()
 
+    @property
+    def settings(self):
+        """Print settings of Reef0D-model."""
+        msg = f'Not yet implemented.'
+        return msg
+
     def initiate(self):
         pass
 
@@ -200,63 +329,39 @@ class Reef1D(BaseHydro):
     """Simplified one-dimensional hydrodynamic model over a (coral) reef."""
     # TODO: Complete the one-dimensional hydrodynamic model
 
-    def __init__(self, bathymetry, wave_height, wave_period, dx=1):
+    def __init__(self):
         """Internal 1D hydrodynamic model for order-of-magnitude calculations on the hydrodynamic conditions on a coral
         reef, where both flow and waves are included.
-
-        Parameters
-        ----------
-        bathymetry : numeric
-            Bathymetric cross-shore data with means sea level as reference [m]
-            and x=0 at the offshore boundary.
-        wave_height : numeric
-            Significant wave height [m].
-        wave_period : numeric
-            Peak wave period [s].
-        dx : numeric
-            Spatial step between bathymetric data points [m].
         """
         super().__init__()
 
-        self.bath = bathymetry
-        self.Hs = wave_height
-        self.Tp = wave_period
-        self.dx = dx
+        self.bath = None
+        self.Hs = None
+        self.Tp = None
+        self.dx = None
 
-        self.z = np.zeros(self.space)
+        # self.z = np.zeros(self.space)
 
         self._diameter = None
         self._height = None
         self._density = None
 
-    def __str__(self):
-        # TODO: Place this explanation of the model settings under another method
-        msg = (
-            f'One-dimensional simple hydrodynamic model to simulate the '
-            f'hydrodynamics on a (coral) reef with the following settings:'
-            f'\n\tBathymetric cross-shore data : {type(self.bath).__name__}'
-            f'\n\t\trange [m]  : {min(self.bath)}-{max(self.bath)}'
-            f'\n\t\tlength [m] : {self.space * self.dx}'
-            f'\n\tSignificant wave height [m]  : {self.Hs}'
-            f'\n\tPeak wave period [s]         : {self.Tp}'
-        )
-        return msg
-
     def __repr__(self):
-        msg = (
-            f'Reef1D(bathymetry={self.bath}, wave_height={self.Hs}, '
+        msg = f'Reef1D(bathymetry={self.bath}, wave_height={self.Hs}, ' \
             f'wave_period={self.Tp})'
-        )
         return msg
 
-    def initiate(self):
-        pass
-
-    def update(self, coral, storm=False):
-        pass
-
-    def finalise(self):
-        pass
+    @property
+    def settings(self):
+        """Print settings of Reef1D-model."""
+        msg = f'One-dimensional simple hydrodynamic model to simulate the ' \
+            f'hydrodynamics on a (coral) reef with the following settings:' \
+            f'\n\tBathymetric cross-shore data : {type(self.bath).__name__}' \
+            f'\n\t\trange [m]  : {min(self.bath)}-{max(self.bath)}' \
+            f'\n\t\tlength [m] : {self.space * self.dx}' \
+            f'\n\tSignificant wave height [m]  : {self.Hs}' \
+            f'\n\tPeak wave period [s]         : {self.Tp}'
+        return msg
 
     @property
     def space(self):
@@ -287,8 +392,12 @@ class Reef1D(BaseHydro):
         return self.Tp
 
     @property
+    def water_level(self):
+        return 0
+
+    @property
     def depth(self):
-        return self.bath + self.z
+        return self.bath + self.water_level
 
     @property
     def can_dia(self):
@@ -325,7 +434,7 @@ class Reef1D(BaseHydro):
 
     @property
     def wave_length(self):
-        """Solve the dispersion relation to retrive the wave length."""
+        """Solve the dispersion relation to retrieve the wave length."""
         L0 = 9.81 * self.per_wav ** 2
         L = np.zeros(len(self.depth))
         for i, h in enumerate(self.depth):
@@ -354,220 +463,289 @@ class Reef1D(BaseHydro):
                   (np.sinh(self.wave_number * self.depth)))
         return n * self.wave_celerity
 
+    def initiate(self):
+        pass
+
+    def update(self, coral, storm=False):
+        pass
+
+    def finalise(self):
+        pass
+
 
 class Delft3D(BaseHydro):
     """Coupling of coral_model to Delft3D using the BMI wrapper."""
-    
-    def __init__(self, home_dir, mdu_file, config_file=None):
-        super().__init__()
 
-        self.home = home_dir
-        self.mdu = mdu_file
-        self.config = config_file
-        
-        self.environment()
-        self.initiate()
+    _home = None
+    _dflow_dir = None
+    _dimr_dir = None
+    
+    _working_dir = None
+    _mdu = None
+    _config = None
+    
+    _model_fm = None
+    _model_dimr = None
+    
+    _space = None
+    _x = None
+    _y = None
+    _water_depth = None
+
+    def __init__(self):
+        super().__init__()
         
         self.time_step = None
     
-    def __str__(self):
-        # TODO: Place this explanation of the model settings under another method
+    def __repr__(self):
+        msg = f'Delft3D()'
+        return msg
+
+    @property
+    def settings(self):
+        """Print settings of Delft3D-model."""
         if self.config:
             incl = f'DFlow- and DWaves-modules'
-            files = f'\n\tDFlow file         : {self.mdu}'\
-                    f'\n\tConfiguration file : {self.config}'
+            files = f'\n\tDFlow file         : {self.mdu}' \
+                f'\n\tConfiguration file : {self.config}'
         else:
             incl = f'DFlow-module'
             files = f'\n\tDFlow file         : {self.mdu}'
-        msg = (
-            f'Coupling with Delft3D model (incl. {incl}) with the following '
-            f'settings:'
-            f'\n\tDelft3D home dir.  : {self.home}'
+
+        msg = f'Coupling with Delft3D model (incl. {incl}) with the following settings:' \
+            f'\n\tDelft3D home dir.  : {self.d3d_home}' \
             f'{files}'
-        )
         return msg
+
+    @property
+    def d3d_home(self):
+        """Delft3D home directory.
+
+        :rtype: DirConfig
+        """
+        if self._home is None:
+            return DirConfig()
+        return self._home
+
+    @d3d_home.setter
+    def d3d_home(self, folder):
+        """
+        :param folder: Delft3D home directory
+        :type folder: DirConfig, str, list, tuple
+        """
+        self._home = folder if isinstance(folder, DirConfig) else DirConfig(folder)
+        
+    @property
+    def working_dir(self):
+        """Model working directory."""
+        return DirConfig() if self._working_dir is None else self._working_dir
     
-    def __repr__(self):
-        msg = (
-            f'Delft3D(home_dir={self.home}, mdu_file={self.mdu}, '
-            f'config_file={self.config})'
-        )
-        return msg
+    @working_dir.setter
+    def working_dir(self, folder):
+        """
+        :param folder: working directory
+        :type folder: DirConfig, str, list, tuple
+        """
+        self._working_dir = folder if isinstance(folder, DirConfig) else DirConfig(folder)
         
     @property
     def dflow_dir(self):
         """Directory to DFlow-ddl."""
-        return os.path.join(self.home, 'dflowfm', 'bin', 'dflowfm.dll')
+        if self._dflow_dir is None:
+            return self.d3d_home.config_dir(['dflowfm', 'bin', 'dflowfm.dll'])
+        return self._dflow_dir
     
     @dflow_dir.setter
     def dflow_dir(self, directory):
         """Set directory to DFlow-ddl."""
-        if isinstance(directory, str):
-            directory = directory.replace('/', '\\').split('\\')
-        self.dflow_dir = os.path.join(self.home, *directory)
+        self._dflow_dir = self.d3d_home.config_dir(directory)
     
     @property
     def dimr_dir(self):
         """Directory to DIMR-dll."""
-        return os.path.join(self.home, 'dimr', 'bin', 'dimr_dll.dll')
+        if self._dimr_dir is None:
+            return self.d3d_home.config_dir(['dimr', 'bin', 'dimr_dll.dll'])
+        return self._dimr_dir
     
     @dimr_dir.setter
     def dimr_dir(self, directory):
         """Set directory to DIMR-dll."""
-        if isinstance(directory, str):
-            directory = directory.replace('/', '\\').split('\\')
-        self.dimr_dir = os.path.join(self.home, *directory)
+        self._dimr_dir = self.d3d_home.config_dir(directory)
+
+    @property
+    def mdu(self):
+        """Delft3D's MDU-file.
+        
+        :rtype: str
+        """
+        return self._mdu
+    
+    @mdu.setter
+    def mdu(self, file_dir):
+        """
+        :param file_dir: file directory of MDU-file
+        :type file_dir: str, list, tuple
+        """
+        self._mdu = self.working_dir.config_dir(file_dir)
+
+    @property
+    def config(self):
+        """Delft3D's config-file.
+        
+        :rtype: str
+        """
+        return self._config
+    
+    @config.setter
+    def config(self, file_dir):
+        """
+        :param file_dir: file directory of config-file
+        :type file_dir: str, list, tuple
+        """
+        self._config = self.working_dir.config_dir(file_dir)
         
     @property
     def model(self):
         """Main model-object."""
-        if self.config:
-            return self.model_dimr
-        return self.model_fm
+        return self.model_dimr if self.config else self.model_fm
     
     @property
     def model_fm(self):
         """Deflt3D-FM model-object."""
-        return bmi.wrapper.BMIWrapper(
-            engine=self.dflow_dir, 
-            configfile=self.mdu
-        )
+        return self._model_fm
         
     @property
     def model_dimr(self):
         """Delft3D DIMR model-object."""
-        if not self.config:
-            return bmi.wrapper.BMIWrapper(
-                engine=self.dimr_dir,
-                configfile=self.config
-            )
+        return self._model_dimr
     
     def environment(self):
         """Set Python environment to include Delft3D-code."""
         dirs = [
-            os.path.join(self.home, 'share', 'bin'),
-            os.path.join(self.home, 'dflowfm', 'bin'),
+            self.d3d_home.config_dir(['share', 'bin']),
+            self.d3d_home.config_dir(['dflowfm', 'bin']),
         ]
         if self.config:
             dirs.extend([
-                os.path.join(self.home, 'dimr', 'bin'),
-                os.path.join(self.home, 'dwaves', 'bin'),
-                os.path.join(self.home, 'esmf', 'scripts'),
-                os.path.join(self.home, 'swan', 'scripts'),
+                self.d3d_home.config_dir(['dimr', 'bin']),
+                self.d3d_home.config_dir(['dwaves', 'bin']),
+                self.d3d_home.config_dir(['esmf', 'scripts']),
+                self.d3d_home.config_dir(['swan', 'scripts']),
             ])
-            
+
         env = ';'.join(dirs)
         os.environ['PATH'] = env
             
         print(f'\nEnvironment \"PATH\":')
         [print(f'\t{path}') for path in dirs]
-        
-    def initiate(self):
-        """Initialize the working model."""
-        self.model.initialize()
-        
-    def update(self, coral, storm=False):
-        """Update the working model."""
-        self.time_step = self.update_interval_storm if storm else self.update_interval
-        self.reset_counters()
-        self.model.update(self.time_step)
+
+    def get_var(self, variable):
+        """Get variable from DFlow-model.
+
+        :param variable: variable to get
+        :type variable: str
+        """
+        return self.model_fm.get_var(variable)
+
+    def set_var(self, variable, value):
+        """Set variable to DFlow-model.
+
+        :param variable: variable to set
+        :param value: value of variable
+
+        :type variable: str
+        :type value: float, list, tuple, numpy.ndarray
+        """
+        self.model_fm.set_var(variable, value)
+
+    @property
+    def space(self):
+        """Number of non-boundary boxes; i.e. within-domain boxes."""
+        return self.get_var('ndxi') if self._space is None else self._space
     
-    def finalise(self):
-        """Finalize the working model."""
-        self.model.finalize()
-        
+    @property
+    def x(self):
+        """Center of gravity's x-coordinates as part of `space`."""
+        return self.get_var('xzw')[range(self.space)] if self._x is None else self._x
+
+    @property
+    def y(self):
+        """Center of gravity's y-coodinates as part of `space`."""
+        return self.get_var('yzw')[range(self.space)] if self._y is None else self._y
+
+    @property
+    def water_depth(self):
+        """Water depth."""
+        if self._water_depth is None:
+            return self.get_var('is_sumvalsnd')[range(self.space), 2] / self.time_step
+        else:
+            return self._water_depth
+
     def reset_counters(self):
         """Reset properties for next model update."""
         sums = self.model_fm.get_var('is_sumvalsnd')
         sums.fill(0.)
         self.model_fm.set_var('is_sumvalsnd', sums)
-        
+
         maxs = self.model_fm.get_var('is_maxvalsnd')
         maxs.fill(0.)
         self.model_fm.set_var('is_maxvalsnd', maxs)
-    
-    def get_var(self, variable):
-        """Get variable from DFlow-model."""
-        return self.model_fm.get_var(variable)
-    
-    def set_var(self, variable):
-        """Set variable to DFlow-model."""
-        self.model_fm.set_var(variable)
-    
-    @property
-    def space(self):
-        """Number of non-boundary boxes; i.e. within-domain boxes."""
-        return self.model_fm.get_var('ndxi')
-    
-    @property
-    def x(self):
-        """Center of gravity's x-coordinates as part of `space`."""
-        return self.model_fm.get_var('xzw')[range(self.space)]
-    
-    @property
-    def y(self):
-        """Center of gravity's y-coodinates as part of `space`."""
-        return self.model_fm.get_var('yzw')[range(self.space)]
-    
-    @property
-    def vel_wave(self):
-        """Wave orbital velocity [ms-1] as part of `space`."""
-        return self.model_fm.get_var('Uorb')[range(self.space)]
-    
-    @property
-    def vel_curr_mn(self):
-        """Mean current velocity [ms-1] as part of `space`."""      
-        vel_sum = self.model_fm.get_var('is_sumvalsnd')[range(self.space), 1]
-        return vel_sum / self.time_step
-    
-    @property
-    def vel_curr_mx(self):
-        """Maximum current velocity [ms-1] as part of `space`."""
-        return self.model_fm.get_var('is_maxvalsnd')[range(self.space), 1]
-    
-    @property
-    def per_wave(self):
-        """Peak wave period [s] as part of `space`."""
-        return self.model_fm.get_var('twav')[range(self.space)]
-    
-    @property
-    def depth(self):
-        """Water depth [m] as part of `space`"""
-        dep_sum = self.model_fm.get_var('is_sumvalsnd')[range(self.space), 2]
-        return dep_sum / self.time_step
+
+    def set_morphology(self, coral):
+        """Set morphological dimensions to Delft3D-model.
+
+        :param coral: coral animal
+        :type coral: Coral
+        """
+        self.set_var('rnveg', coral.as_vegetation_density)
+        self.set_var('diaveg', coral.dc_rep)
+        self.set_var('stemheight', coral.hc)
+
+    def get_mean_hydrodynamics(self):
+        """Get hydrodynamic results; mean values."""
+        current_vel = self.get_var('is_sumvalsnd')[range(self.space), 1] / self.time_step
+        wave_vel = self.get_var('Uorb')[range(self.space)]
+        wave_per = self.get_var('twav')[range(self.space)]
+        return current_vel, wave_vel, wave_per
+
+    def get_max_hydrodynamics(self):
+        """Get hydrodynamic results; max. values."""
+        current_vel = self.get_var('is_maxvalsnd')[range(self.space), 1]
+        wave_vel = self.get_var('Uorb')[range(self.space)]
+        return current_vel, wave_vel
         
-    @property
-    def can_dia(self):
-        """Representative diameter of the canopy [m] as part of `space`."""
-        return self.model_fm.get_var('diaveg')[range(self.space)]
+    def initiate(self):
+        """Initialize the working model."""
+        self.environment()
+        self._model_fm = bmi.wrapper.BMIWrapper(
+            engine=self.dflow_dir, 
+            configfile=self.mdu
+        )
+        if self.config:
+            self._model_dimr = bmi.wrapper.BMIWrapper(
+                engine=self.dimr_dir,
+                configfile=self.config
+            )
+        self.model.initialize()  # if self.model_dimr is None else self.model_dimr.initialize()
+        
+    def update(self, coral, storm=False):
+        """Update the Delft3D-model."""
+        self.time_step = self.update_interval_storm if storm else self.update_interval
+        self.reset_counters()
+        self.model.update(self.time_step)
+
+        return self.get_max_hydrodynamics() if storm else self.get_mean_hydrodynamics()
     
-    @can_dia.setter
-    def can_dia(self, canopy_diameter):
-        self.model_fm.set_var('diaveg', canopy_diameter)
-    
-    @property
-    def can_height(self):
-        """Height of the canopy [m] as part of `space`."""
-        return self.model_fm.get_var('stemheight')[range(self.space)]
-    
-    @can_height.setter
-    def can_height(self, canopy_height):
-        self.model_fm.set_var('stemheight', canopy_height)
-    
-    @property
-    def can_den(self):
-        """Density of the canopy [pcs m-2] as part of `space`."""
-        return self.model_fm.get_var('rnveg')[range(self.space)]
-    
-    @can_den.setter
-    def can_den(self, canopy_density):
-        self.model_fm.set_var('rnveg', canopy_density)
+    def finalise(self):
+        """Finalize the working model."""
+        self.model.finalize()
     
     
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    model = Reef1D(np.linspace(20, 2), 1, 4)
-    plt.plot(model.x, model.z)
-    plt.plot(model.x, -model.depth)
-    plt.plot(model.x, model.wave_celerity)
-    plt.plot(model.x, model.group_celerity)
+    pass
+    # import matplotlib.pyplot as plt
+    # model = Reef1D(np.linspace(20, 2), 1, 4)
+    # plt.plot(model.x, model.z)
+    # plt.plot(model.x, -model.depth)
+    # plt.plot(model.x, model.wave_celerity)
+    # plt.plot(model.x, model.group_celerity)

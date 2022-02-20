@@ -9,17 +9,9 @@ class TestHydrodynamics(unittest.TestCase):
 
     def test_init(self):
         modes = (None, 'Reef0D', 'Reef1D', 'Delft3D')
-        nir_modes = ('Reef1D', 'Delft3D')
 
-        # implemented modes
         for mode in modes:
-            if mode not in nir_modes:
-                _ = Hydrodynamics(mode=mode)
-
-        # not implemented modes
-        for mode in nir_modes:
-            with self.assertRaises(NotImplementedError):
-                _ = Hydrodynamics(mode=mode)
+            _ = Hydrodynamics(mode=mode)
 
     def test_input_check01(self):
         model = Hydrodynamics(mode=None)
@@ -73,7 +65,40 @@ class TestHydrodynamics(unittest.TestCase):
         model.input_check()
 
     # TODO: test input_check Reef1D
-    # TODO: test input_check Delft3D
+
+    def test_input_check31(self):
+        model = Hydrodynamics(mode='Delft3D')
+        with self.assertRaises(ValueError) as context:
+            model.input_check_definition('update_interval')
+
+        self.assertTrue('update_interval undefined' in str(context.exception))
+
+    def test_input_check32(self):
+        model = Hydrodynamics(mode='Delft3D')
+        with self.assertRaises(ValueError) as context:
+            model.input_check_definition('update_interval_storm')
+
+        self.assertTrue('update_interval_storm undefined' in str(context.exception))
+
+    def test_input_check33(self):
+        model = Hydrodynamics(mode='Delft3D')
+        model.set_update_intervals(10, 20)
+
+        intervals = ('update_interval', 'update_interval_storm')
+        [model.input_check_definition(interval) for interval in intervals]
+
+    def test_input_check34(self):
+        model = Hydrodynamics(mode='Delft3D')
+        with self.assertRaises(ValueError) as context:
+            model.input_check_definition('mdu')
+
+        self.assertTrue('mdu undefined' in str(context.exception))
+
+    def test_input_check35(self):
+        model = Hydrodynamics(mode='Delft3D')
+        model.set_files(mdu='FlowFM.mdu')
+
+        model.input_check_definition('mdu')
 
     def test_coordinates01(self):
         model = Hydrodynamics(mode=None)

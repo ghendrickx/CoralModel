@@ -21,6 +21,8 @@ class SpaceTime:
         """
         if spacetime is not None:
             self.spacetime = spacetime
+        
+        self.set_coral_only(self.spacetime)
 
     def __repr__(self):
         """Development representation."""
@@ -59,6 +61,7 @@ class SpaceTime:
             raise TypeError(msg)
 
         self.__spacetime = tuple(space_time)
+        self.set_coral_only(tuple(space_time))
 
     @property
     def space(self):
@@ -91,7 +94,16 @@ class SpaceTime:
         :type t: int
         """
         self.spacetime = (self.space, t)
-
+        
+    # TODO: Refactor to a private method
+    def set_coral_only(self, spacetime):
+        """Automatically set the spacetime dimensions for the CoralOnly-class.
+        
+        :param spacetime: spacetime dimension
+        :type spacetime: tuple
+        """
+        CoralOnly.spacetime = spacetime
+        
 
 class DataReshape(SpaceTime):
     """Reshape data to create a spacetime matrix."""
@@ -230,7 +242,7 @@ class DataReshape(SpaceTime):
 
 class DirConfig:
 
-    __base_dirs = ('C:', )
+    __base_dirs = ('C:', 'P:')
 
     def __init__(self, home_dir=None):
         """
@@ -558,32 +570,32 @@ class Output:
                 light_set = self._map_data.createVariable('Iz', 'f8', ('time', 'nmesh2d_face'))
                 light_set.long_name = 'annual mean representative light-intensity'
                 light_set.units = 'micro-mol photons m-2 s-1'
-                light_set[:, :] = np.zeros(self.space)
+                light_set[:, :] = 0
             if self._map_output['fme']:
                 flow_set = self._map_data.createVariable('ucm', 'f8', ('time', 'nmesh2d_face'))
                 flow_set.long_name = 'annual mean in-canopy flow'
                 flow_set.units = 'm s-1'
-                flow_set[:, :] = np.zeros(self.space)
+                flow_set[:, :] = 0
             if self._map_output['tme']:
                 temp_set = self._map_data.createVariable('Tc', 'f8', ('time', 'nmesh2d_face'))
                 temp_set.long_name = 'annual mean coral temperature'
                 temp_set.units = 'K'
-                temp_set[:, :] = np.zeros(self.space)
+                temp_set[:, :] = 0
 
                 low_temp_set = self._map_data.createVariable('Tlo', 'f8', ('time', 'nmesh2d_face'))
                 low_temp_set.long_name = 'annual mean lower thermal limit'
                 low_temp_set.units = 'K'
-                low_temp_set[:, :] = np.zeros(self.space)
+                low_temp_set[:, :] = 0
 
                 high_temp_set = self._map_data.createVariable('Thi', 'f8', ('time', 'nmesh2d_face'))
                 high_temp_set.long_name = 'annual mean upper thermal limit'
                 high_temp_set.units = 'K'
-                high_temp_set[:, :] = np.zeros(self.space)
+                high_temp_set[:, :] = 0
             if self._map_output['pd']:
                 pd_set = self._map_data.createVariable('PD', 'f8', ('time', 'nmesh2d_face'))
                 pd_set.long_name = 'annual sum photosynthetic rate'
                 pd_set.units = '-'
-                pd_set[:, :] = np.zeros(self.space)
+                pd_set[:, :] = 0
             if self._map_output['ps']:
                 pt_set = self._map_data.createVariable('PT', 'f8', ('time', 'nmesh2d_face'))
                 pt_set.long_name = 'total living coral population at the end of the year'
@@ -598,52 +610,52 @@ class Output:
                 pr_set = self._map_data.createVariable('PR', 'f8', ('time', 'nmesh2d_face'))
                 pr_set.long_name = 'recovering coral population at the end of the year'
                 pr_set.units = '-'
-                pr_set[:, :] = np.zeros(self.space)
+                pr_set[:, :] = 0
 
                 pp_set = self._map_data.createVariable('PP', 'f8', ('time', 'nmesh2d_face'))
                 pp_set.long_name = 'pale coral population at the end of the year'
                 pp_set.units = '-'
-                pp_set[:, :] = np.zeros(self.space)
+                pp_set[:, :] = 0
 
                 pb_set = self._map_data.createVariable('PB', 'f8', ('time', 'nmesh2d_face'))
                 pb_set.long_name = 'bleached coral population at the end of the year'
                 pb_set.units = '-'
-                pb_set[:, :] = np.zeros(self.space)
+                pb_set[:, :] = 0
             if self._map_output['calc']:
                 calc_set = self._map_data.createVariable('calc', 'f8', ('time', 'nmesh2d_face'))
                 calc_set.long_name = 'annual sum calcification rate'
                 calc_set.units = 'kg m-2 yr-1'
-                calc_set[:, :] = np.zeros(self.space)
+                calc_set[:, :] = 0
             if self._map_output['md']:
                 dc_set = self._map_data.createVariable('dc', 'f8', ('time', 'nmesh2d_face'))
                 dc_set.long_name = 'coral plate diameter'
                 dc_set.units = 'm'
-                dc_set[:, :] = coral.dc
+                dc_set[0, :] = coral.dc
 
                 hc_set = self._map_data.createVariable('hc', 'f8', ('time', 'nmesh2d_face'))
                 hc_set.long_name = 'coral height'
                 hc_set.units = 'm'
-                hc_set[:, :] = coral.hc
+                hc_set[0, :] = coral.hc
 
                 bc_set = self._map_data.createVariable('bc', 'f8', ('time', 'nmesh2d_face'))
                 bc_set.long_name = 'coral base diameter'
                 bc_set.units = 'm'
-                bc_set[:, :] = coral.bc
+                bc_set[0, :] = coral.bc
 
                 tc_set = self._map_data.createVariable('tc', 'f8', ('time', 'nmesh2d_face'))
                 tc_set.long_name = 'coral plate thickness'
                 tc_set.units = 'm'
-                tc_set[:, :] = coral.tc
+                tc_set[0, :] = coral.tc
 
                 ac_set = self._map_data.createVariable('ac', 'f8', ('time', 'nmesh2d_face'))
                 ac_set.long_name = 'coral axial distance'
                 ac_set.units = 'm'
-                ac_set[:, :] = coral.ac
+                ac_set[0, :] = coral.ac
 
                 vc_set = self._map_data.createVariable('Vc', 'f8', ('time', 'nmesh2d_face'))
                 vc_set.long_name = 'coral volume'
                 vc_set.units = 'm3'
-                vc_set[:, :] = coral.volume
+                vc_set[0, :] = coral.volume
             self._map_data.close()
 
     def update_map(self, coral, year):
@@ -869,6 +881,76 @@ class Output:
                 self._his_data['Vc'][ti, :] = np.tile(coral.volume, (len(y_dates), 1))[:, self.idx_stations]
 
             self._his_data.close()
+            
+            
+class CoralOnly:
+    """Execute functions only in the presence of corals."""
+    
+    spacetime = None
+    
+    @property
+    def space(self):
+        """Space dimension."""
+        return None if self.spacetime is None else self.spacetime[0]
+    
+    @property
+    def time(self):
+        """Time dimension."""
+        return None if self.spacetime is None else self.spacetime[1]
+
+    def in_space(self, coral, function, args, no_cover_value=0):
+        """Only execute the function when there is coral cover.
+    
+        :param coral: coral object
+        :param function: function to be executed
+        :param args: input arguments of the function
+        :param no_cover_value: default value in absence of coral cover
+    
+        :type coral: Coral
+        :type args: tuple
+        :type no_cover_value: float, optional
+        """    
+        args = list(args)
+        for i, arg in enumerate(args):
+            if isinstance(arg, (float, int)) or (isinstance(arg, np.ndarray) and not arg.shape):
+                args[i] = np.repeat(arg, self.space)
+            elif not len(arg) == self.space:
+                msg = f'Sizes do not match up, {len(arg)} =/= {self.space}.'
+                raise ValueError(msg)
+    
+        output = no_cover_value * np.ones(self.space)
+        output[coral.cover > 0] = function(*[
+            arg[coral.cover > 0] for arg in args
+        ])
+        return output
+    
+    def in_spacetime(self, coral, function, args, no_cover_value=0):
+        """Only execute the function when there is coral cover.
+    
+        :param coral: coral object
+        :param function: function to be executed
+        :param args: input arguments of the function
+        :param no_cover_value: default value in absence of coral cover
+    
+        :type coral: Coral
+        :type args: tuple
+        :type no_cover_value: float, optional
+        """
+        args = list(args)
+        for i, arg in enumerate(args):
+            if isinstance(arg, (float, int)) or (isinstance(arg, np.ndarray) and not arg.shape):
+                args[i] = arg * np.ones(self.spacetime)
+            elif arg.shape == coral.cover.shape:
+                args[i] = np.tile(arg, (self.time, 1)).transpose()
+            elif not arg.shape == self.spacetime:
+                msg = f'Sizes do not match up, {arg.shape} =/= {self.spacetime}.'
+                raise ValueError(msg)
+    
+        output = no_cover_value * np.ones(self.spacetime)
+        output[coral.cover > 0] = function(*[
+            arg[coral.cover > 0] for arg in args
+        ])
+        return output
 
 
 def time_series_year(time_series, year):
@@ -881,35 +963,3 @@ def time_series_year(time_series, year):
     :type year: int
     """
     return time_series[time_series.index.year == year].values.transpose()[0]
-
-
-def coral_only_function(coral, function, args, no_cover_value=0):
-    """Only execute the function when there is coral cover.
-
-    :param coral: coral object
-    :param function: function to be executed
-    :param args: input arguments of the function
-    :param no_cover_value: default value in absence of coral cover
-
-    :type coral: Coral
-    :type args: tuple
-    :type no_cover_value: float, optional
-    """
-    try:
-        size = len(coral.cover)
-    except TypeError:
-        size = 1
-
-    args = list(args)
-    for i, arg in enumerate(args):
-        if isinstance(arg, (float, int)) or (isinstance(arg, np.ndarray) and not arg.shape):
-            args[i] = np.repeat(arg, size)
-        elif not len(arg) == size:
-            msg = f'Sizes do not match up, {len(arg)} =/= {size}.'
-            raise ValueError(msg)
-
-    output = no_cover_value * np.ones(size)
-    output[coral.cover > 0] = function(*[
-        arg[coral.cover > 0] for arg in args
-    ])
-    return output
