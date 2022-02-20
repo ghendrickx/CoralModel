@@ -681,6 +681,14 @@ class _EnvironmentSnippet:
         self._aragonite = self._get_snippet(environment.aragonite)
 
     def _get_snippet(self, conditions):
+        """Extract snippet from data set, if the environmental conditions are defined.
+
+        :param conditions: environmental conditions
+        :type conditions: pandas.Series, None
+
+        :return: snippet of environmental conditions
+        :rtype: pandas.Series, None
+        """
         if conditions is None:
             return None
 
@@ -688,32 +696,64 @@ class _EnvironmentSnippet:
 
     @property
     def date_range(self):
+        """
+        :return: date-range of snippet
+        :rtype: pandas.Series
+        """
         return pd.date_range(*self._date_range, freq='D')
 
     @property
     def light(self):
+        """
+        :return: light conditions of snippet
+        :rtype: pandas.Series
+        """
         return self._light
 
     @property
     def light_attenuation(self):
+        """
+        :return: light attenuation conditions of snippet
+        :rtype: pandas.Series
+        """
         return self._light_attenuation
 
     @property
     def flow(self):
+        """
+        :return: flow conditions of snippet
+        :rtype: pandas.Series
+        """
         return self._flow
 
     @property
     def storm_category(self):
+        """
+        :return: storm categories of snippet
+        :rtype: pandas.Series
+        """
         return self._storm_category
 
     @property
     def temperature(self):
+        """
+        :return: thermal conditions of snippet
+        :rtype: pandas.Series
+        """
         return self._temperature
 
     @property
     def temperature_mmm(self):
+        """
+        :return: maximum/minimum monthly means of thermal conditions of snippet
+        :rtype: pandas.DataFrame
+        """
         return self._temperature_mmm
 
     @property
     def aragonite(self):
+        """
+        :return: aragonite conditions of snippet
+        :rtype: pandas.Series
+        """
         return self._aragonite
