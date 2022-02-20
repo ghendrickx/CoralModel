@@ -196,7 +196,7 @@ class Environment:
     @classmethod
     def set_all_from_file(
             cls, file_name, directory=None, date_col=None, light_col=None, light_attenuation_col=None,
-            temperature_col=None, aragonite_col=None, **kwargs
+            flow_col=None, temperature_col=None, aragonite_col=None, **kwargs
     ):
         data = cls._from_file(file_name=file_name, directory=directory, **kwargs)
 
@@ -208,6 +208,9 @@ class Environment:
         # set light attenuation
         if light_attenuation_col is not None:
             cls.set_light_attenuation(data[light_attenuation_col])
+        # set flow
+        if flow_col is not None:
+            cls.set_flow_conditions(data[flow_col])
         # set temperature
         if temperature_col is not None:
             cls.set_thermal_conditions(data[temperature_col])
@@ -261,8 +264,21 @@ class Environment:
     def light_attenuation(self):
         return self._light_attenuation
 
-    # storm conditions
+    # hydrodynamic conditions
+    _flow = None
     _storm_category = None
+
+    @classmethod
+    def set_flow_conditions(cls, flow):
+        cls._flow = flow
+
+    @classmethod
+    def set_flow_from_file(cls, file_name, directory=None, **kwargs):
+        cls._flow = cls._from_file(file_name, directory, **kwargs)
+
+    @property
+    def flow(self):
+        return self._flow
 
     @classmethod
     def set_storm_conditions(cls, annual_storm):
@@ -348,7 +364,8 @@ class _EnvironmentSnippet:
         # light conditions
         self._light = self._get_snippet(environment.light)
         self._light_attenuation = self._get_snippet(environment.light_attenuation)
-        # storm conditions
+        # hydrodynamic conditions
+        self._flow = self._get_snippet(environment.flow)
         self._storm_category = self._get_snippet(environment.storm_category)
         # thermal conditions
         self._temperature = self._get_snippet(environment.temperature_kelvin)
@@ -370,6 +387,10 @@ class _EnvironmentSnippet:
     @property
     def light_attenuation(self):
         return self._light_attenuation
+
+    @property
+    def flow(self):
+        return self._flow
 
     @property
     def storm_category(self):
