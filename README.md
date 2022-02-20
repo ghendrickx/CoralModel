@@ -60,3 +60,21 @@ and the biophysical modelling of coral development.
 
 ``coral_model_v0`` will be depreciated in the future, when ``coral_model`` is fully operational
 and possibly even incorporates more aspects of coral (reef) development.
+
+# How to cite
+This repository has a [DOI](https://doi.org/10.4121/19164869.v1) and should be cited as:
+> Hendrickx, Gijs (2022): CoralModel: A Python-based model that resembles the biophysical interactions on a coral reef. 4TU.ResearchData. Software. https://doi.org/10.4121/19164869.v1
+
+Or using the following BibTex-entry:
+```
+@misc{CoralModelv1,
+    title	=	{CoralModel: A Python-based model that resembles the biophysical interactions on a coral reef},
+    author	=	{\myname},
+    publisher	=	{4TU.ResearchData},
+    year	=	{2022},
+    month	=	{feb},
+    version	=	{0.1},
+    url		=	{https://data.4tu.nl/articles/software/CoralModel_A_Python-based_model_that_resembles_the_biophysical_interactions_on_a_coral_reef/19164869/1},
+    doi		=	{10.4121/19164869.v1},
+}
+```
