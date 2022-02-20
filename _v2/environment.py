@@ -8,7 +8,7 @@ import pandas as pd
 
 from _v2._errors import DataError
 from _v2.biophysics import _BasicBiophysics
-from _v2.settings import Constants
+from _v2.settings import Constants, Processes
 from utils.config_directory import DirConfig
 
 
@@ -433,7 +433,7 @@ class Environment:
 
     @property
     def temperature_mmm(self):
-        if self._temperature_mmm is None:
+        if self._temperature_mmm is None and Processes.get_process('thermal_acclimation'):
             self._monthly_max_min_mean()
         return self._temperature_mmm
 
