@@ -8,7 +8,7 @@ import logging
 import numpy as np
 from scipy.optimize import newton
 
-from _v2._errors import DataError
+from _v2._errors import DataError, InitialisationError
 from _v2.coral import Coral, _CoralState, _CoralMorphology
 from _v2.settings import Constants, Processes
 
@@ -254,6 +254,11 @@ class Light(_BasicBiophysics):
 
 class Flow(_BasicBiophysics):
     _essential_data = 'flow'
+
+    def __new__(cls, *args, **kwargs):
+        if cls._hydrodynamics is None:
+            msg = f'Flow-module requires a hydrodynamic-model; none is initialised.'
+            raise InitialisationError(msg)
 
     def _update(self, cell):
         """Update corals: Flow micro-environment.
