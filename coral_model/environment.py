@@ -66,17 +66,19 @@ class Processes:
 class Constants:
     """Object containing all constants used in coral_model simulations."""
 
-    def __init__(self, processes, lac_default=None, light_spreading_max=None,
-                 turbulence_coef=None, inertia_coef=None,
-                 friction_coef=None, kin_viscosity=None, therm_diff=None, spacing_ratio=None, wc_angle=None, rd=None,
-                 theta=None, err=None, maxiter_k=None, maxiter_aw=None, thermal_coef=None, absorptivity=None,
-                 therm_cond=None, pa_rate=None, sat_intensity_max=None, photo_max=None,
-                 beta_sat_intensity=None, beta_photo=None, act_energy=None, gas_constant=None, thermal_variability=None,
-                 nn=None, pfd_min=None, ucr=None, r_growth=None, r_recovery=None, r_mortality=None, r_bleaching=None,
-                 calcification_const=None, arg_sat_default=None, omega0=None, kappa0=None, prop_form=None,
-                 prop_plate=None, prop_plate_flow=None, prop_space=None, prop_space_light=None, prop_space_flow=None,
-                 u0=None, rho_c=None, sigma_tensile=None, drag_coef=None, rho_w=None, no_larvae=None,
-                 prob_settle=None, d_larvae=None):
+    def __init__(
+            self, processes, lac_default=None, light_spreading_max=None,
+            turbulence_coef=None, inertia_coef=None,
+            friction_coef=None, kin_viscosity=None, therm_diff=None, spacing_ratio=None, wc_angle=None, rd=None,
+            theta=None, err=None, maxiter_k=None, maxiter_aw=None, thermal_coef=None, absorptivity=None,
+            therm_cond=None, pa_rate=None, sat_intensity_max=None, photo_max=None,
+            beta_sat_intensity=None, beta_photo=None, act_energy=None, gas_constant=None, thermal_variability=None,
+            nn=None, pfd_min=None, ucr=None, r_growth=None, r_recovery=None, r_mortality=None, r_bleaching=None,
+            calcification_const=None, arg_sat_default=None, omega0=None, kappa0=None, prop_form=None,
+            prop_plate=None, prop_plate_flow=None, prop_space=None, prop_space_light=None, prop_space_flow=None,
+            u0=None, rho_c=None, sigma_tensile=None, drag_coef=None, rho_w=None, no_larvae=None,
+            prob_settle=None, d_larvae=None
+    ):
         # TODO: Reformat docstring
         """
         Parameters
