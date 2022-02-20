@@ -78,3 +78,6 @@ Or using the following BibTex-entry:
     doi		=	{10.4121/19164869.v1},
 }
 ```
+In addition, this repository is created as part of the studies described in 
+[*Predicting the survival of coral reefs*](https://repository.tudelft.nl/islandora/object/uuid%3Ae211380e-3f92-4afe-b371-f1e87b0c3bbd?collection=education) 
+and [*Online-coupling of widely-ranged timescales to model coral reef development*](https://www.sciencedirect.com/science/article/pii/S1364815221001468?via%3Dihub).
