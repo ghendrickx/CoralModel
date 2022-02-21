@@ -69,7 +69,7 @@ Or using the following BibTex-entry:
 ```
 @misc{CoralModelv1,
     title	=	{CoralModel: A Python-based model that resembles the biophysical interactions on a coral reef},
-    author	=	{\myname},
+    author	=	{Gijs G. Hendrickx},
     publisher	=	{4TU.ResearchData},
     year	=	{2022},
     month	=	{feb},
