@@ -238,7 +238,7 @@ class Reef0D(_Base):
     update_interval = None
     update_interval_storm = None
 
-    def __init__(self, tidal_amplitude, wave_height, wave_period, storm_wave_height, storm_wave_period):
+    def __init__(self, tidal_amplitude, wave_height, wave_period, storm_wave_height):
         super().__init__(calculations=True)
 
         self._tidal_amplitude = tidal_amplitude
@@ -246,18 +246,46 @@ class Reef0D(_Base):
         self._wave_period = wave_period
 
         self._storm_wave_height = storm_wave_height
-        self._storm_wave_period = storm_wave_period
 
     def _set_tidal_velocity(self, cell):
+        """Estimate tidal velocity from tidal amplitude (and water depth).
+
+        :param cell: grid cell
+        :type cell: Cell
+        """
         self._current_velocity = 1 / np.sqrt(2) * np.sqrt(GRAVITY / cell.water_depth) * self._tidal_amplitude
 
-    def _set_wave_velocity(self, cell):
+    @staticmethod
+    def _estimate_wave_velocity(wave_height, water_depth):
+        """Estimate wave velocity based on the wave height and water depth.
+
+        :param wave_height: wave height
+        :param water_depth: water depth
+
+        :type wave_height: float, iterable
+        :type water_depth: float
+
+        :return: wave velocity estimation
+        :rtype: float, iterable
+        """
         # TODO: Verify the validness of this approximation!
-        self._wave_velocity = np.sqrt(GRAVITY / cell.water_depth) * self._wave_height
+        return np.sqrt(GRAVITY / water_depth) * wave_height
+
+    def _set_wave_velocity(self, cell):
+        """Estimate wave velocity.
+
+        :param cell: grid cell
+        :type cell: Cell
+        """
+        self._wave_velocity = self._estimate_wave_velocity(self._wave_height, cell.water_depth)
 
     def _set_storm_wave_velocity(self, cell):
-        # TODO: Verify the validness of this approximation!
-        self._storm_wave_velocity = np.sqrt(GRAVITY / cell.water_depth) * self._storm_wave_height
+        """Estimate storm wave velocity.
+
+        :param cell: grid cell
+        :type cell: Cell
+        """
+        self._storm_wave_velocity = self._estimate_wave_velocity(self._storm_wave_height, cell.water_depth)
 
     def _initialise(self):
         """Initialise 0D-hydrodynamic model."""
