@@ -62,7 +62,7 @@ and the biophysical modelling of coral development.
 and possibly even incorporates more aspects of coral (reef) development.
 
 # How to cite
-This repository has a [DOI](https://doi.org/10.4121/19164869.v1) and should be cited as:
+This repository should be cited as:
 > Hendrickx, Gijs (2022): CoralModel: A Python-based model that resembles the biophysical interactions on a coral reef. 4TU.ResearchData. Software. https://doi.org/10.4121/19164869.v1
 
 Or using the following BibTex-entry:
