@@ -7,6 +7,7 @@ import logging
 import sys
 
 import numpy as np
+from scipy.optimize import newton
 
 from _v2._errors import InitialisationError
 from _v2.grid import Grid
@@ -238,25 +239,19 @@ class Reef0D(_Base):
     update_interval = None
     update_interval_storm = None
 
-    def __init__(self, tidal_amplitude, wave_height, wave_period, storm_wave_height):
+    def __init__(self, tidal_range, tidal_period, wave_height, wave_period, storm_wave_height, storm_wave_period):
         super().__init__(calculations=True)
 
-        self._tidal_amplitude = tidal_amplitude
+        self._tidal_range = tidal_range
+        self._tidal_period = tidal_period
         self._wave_height = wave_height
         self._wave_period = wave_period
 
         self._storm_wave_height = storm_wave_height
-
-    def _set_tidal_velocity(self, cell):
-        """Estimate tidal velocity from tidal amplitude (and water depth).
-
-        :param cell: grid cell
-        :type cell: Cell
-        """
-        self._current_velocity = 1 / np.sqrt(2) * np.sqrt(GRAVITY / cell.water_depth) * self._tidal_amplitude
+        self._storm_wave_period = storm_wave_period
 
     @staticmethod
-    def _estimate_wave_velocity(wave_height, water_depth):
+    def _estimate_wave_velocity(wave_height, wave_period, water_depth):
         """Estimate wave velocity based on the wave height and water depth.
 
         :param wave_height: wave height
@@ -268,8 +263,28 @@ class Reef0D(_Base):
         :return: wave velocity estimation
         :rtype: float, iterable
         """
-        # TODO: Verify the validness of this approximation!
-        return np.sqrt(GRAVITY / water_depth) * wave_height
+        # tidal frequency
+        frequency = 2 * np.pi / wave_period
+
+        def dispersion(k):
+            """Dispersion relation."""
+            return GRAVITY * k * np.tanh(k * water_depth) - (frequency ** 2)
+
+        # solve for wave number
+        wave_number = newton(dispersion, x0=frequency / np.sqrt(GRAVITY * water_depth))
+
+        # depth-averaged, tidal-averaged horizontal velocity
+        return (frequency * wave_height) / (wave_number * water_depth * np.pi)
+
+    def _set_tidal_velocity(self, cell):
+        """Estimate tidal velocity.
+
+        :param cell: grid cell
+        :type cell: Cell
+        """
+        self._current_velocity = self._estimate_wave_velocity(
+            self._tidal_range, self._tidal_period, cell.water_depth
+        )
 
     def _set_wave_velocity(self, cell):
         """Estimate wave velocity.
@@ -277,7 +292,9 @@ class Reef0D(_Base):
         :param cell: grid cell
         :type cell: Cell
         """
-        self._wave_velocity = self._estimate_wave_velocity(self._wave_height, cell.water_depth)
+        self._wave_velocity = self._estimate_wave_velocity(
+            self._wave_height, self._wave_period, cell.water_depth
+        )
 
     def _set_storm_wave_velocity(self, cell):
         """Estimate storm wave velocity.
@@ -285,7 +302,9 @@ class Reef0D(_Base):
         :param cell: grid cell
         :type cell: Cell
         """
-        self._storm_wave_velocity = self._estimate_wave_velocity(self._storm_wave_height, cell.water_depth)
+        self._storm_wave_velocity = self._estimate_wave_velocity(
+            self._storm_wave_height, self._storm_wave_period, cell.water_depth
+        )
 
     def _initialise(self):
         """Initialise 0D-hydrodynamic model."""
