@@ -240,6 +240,21 @@ class Reef0D(_Base):
     update_interval_storm = None
 
     def __init__(self, tidal_range, tidal_period, wave_height, wave_period, storm_wave_height, storm_wave_period):
+        """
+        :param tidal_range: tidal range
+        :param tidal_period: tidal period
+        :param wave_height: (significant) wave height
+        :param wave_period: (peak) wave period
+        :param storm_wave_height: (significant) storm wave height
+        :param storm_wave_period: (peak) storm wave period
+
+        :type tidal_range: float
+        :type tidal_period: float
+        :type wave_height: float
+        :type wave_period: float
+        :type storm_wave_height: float
+        :type storm_wave_period: float
+        """
         super().__init__(calculations=True)
 
         self._tidal_range = tidal_range
