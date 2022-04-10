@@ -171,3 +171,13 @@ class DirConfig:
             os.makedirs(folder)
             LOG.info(f'Directory created: {folder}')
         return folder
+
+    def delete_file(self, file_name):
+        """Delete file, if existing.
+
+        :param file_name: file name
+        :type file_name: list, tuple, str
+        """
+        if self.existence_file(file_name):
+            os.remove(self.config_dir(file_name))
+            LOG.info(f'File deleted: {self.config_dir(file_name)}')
