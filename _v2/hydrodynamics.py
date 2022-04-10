@@ -14,7 +14,7 @@ from _v2.grid import Grid
 
 LOG = logging.getLogger(__name__)
 
-GRAVITY = 9.81
+_GRAVITY = 9.81
 
 
 class Hydrodynamics:
@@ -380,10 +380,10 @@ class Reef0D(_Base):
 
         def dispersion(k):
             """Dispersion relation."""
-            return GRAVITY * k * np.tanh(k * water_depth) - (frequency ** 2)
+            return _GRAVITY * k * np.tanh(k * water_depth) - (frequency ** 2)
 
         # solve for wave number
-        wave_number = opt.newton(dispersion, x0=frequency / np.sqrt(GRAVITY * water_depth))
+        wave_number = opt.newton(dispersion, x0=frequency / np.sqrt(_GRAVITY * water_depth))
 
         # depth-averaged, tidal-averaged horizontal velocity
         return (frequency * wave_height) / (wave_number * water_depth * np.pi)
