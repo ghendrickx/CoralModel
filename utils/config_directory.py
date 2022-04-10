@@ -29,12 +29,12 @@ class DirConfig:
         return self._list2str(self.__home_dir)
 
     @property
-    def __sep(self):
+    def _sep(self):
         """Folder separator."""
         return os.sep
 
     @property
-    def __current_dir(self):
+    def _current_dir(self):
         """Current directory.
 
         :rtype: list
@@ -42,16 +42,17 @@ class DirConfig:
         return self._as_list(os.getcwd())
 
     @property
-    def __home_dir(self):
+    def _home_dir(self):
         """Absolute home directory, set to current directory if no absolute directory is provided.
 
         :rtype: list
         """
-        # TODO: Ensure this to be a folder, and not a file
-        if self.__home is None:
-            return self.__current_dir
+        if not self._home:
+            return self._current_dir
 
-        list_dir = self._as_list(self.__home)
+        list_dir = self._as_list(
+            os.path.dirname(self._home) if os.path.splitext(self._home)[1] else self._home
+        )
         return self._dir2abs(list_dir)
 
     @staticmethod
@@ -97,7 +98,7 @@ class DirConfig:
         :return: string-based directory
         :rtype: str
         """
-        return self.__sep.join(list_dir)
+        return self._sep.join(list_dir)
 
     def _dir2abs(self, folder):
         """Translate directory to absolute directory.
@@ -110,7 +111,7 @@ class DirConfig:
         """
         if folder[0] in self.__base_dirs:
             return folder
-        return [*self.__current_dir, *folder]
+        return [*self._current_dir, *folder]
 
     def _is_abs_dir(self, folder):
         """Verify if directory is an absolute directory.
