@@ -55,6 +55,25 @@ class DirConfig:
         )
         return self._dir2abs(list_dir)
 
+    def _unpack(self, directory):
+        """Unpack defined directory, which may be a mix of str, tuple, list, and/or DirConfig.
+
+        :param directory: defined directory
+        :type directory: tuple, list
+
+        :return: directory
+        :rtype: str
+        """
+        out = []
+        for item in directory:
+            if isinstance(item, type(self)):
+                out.append(str(item))
+            elif isinstance(item, str):
+                out.append(str(item))
+            elif isinstance(item, (tuple, list)):
+                out.append(self._unpack(item))
+        return self._list2str(out)
+
     @staticmethod
     def _str2list(str_dir):
         """Translate string- to list-directory.
