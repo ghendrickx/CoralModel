@@ -12,13 +12,16 @@ LOG = logging.getLogger(__name__)
 class DirConfig:
     __base_dirs = ('', 'C:', 'D:', 'P:', 'U:')
 
-    def __init__(self, home_dir=None):
+    def __init__(self, *home_dir, create_dir=True):
         """
-        :param home_dir: home directory
-        :type home_dir: list, tuple, str
+        :param home_dir: home directory, defaults to None
+        :param create_dir: automatically create home directory if non-existent, defaults to True
+
+        :type home_dir: str, tuple, list, DirConfig
+        :type create_dir: bool, optional
         """
-        # TODO: allow home_dir to be of type DirConfig
-        self.__home = home_dir
+        self._home = self._unpack(home_dir)
+        self.create_dir() if create_dir else None
 
     def __repr__(self):
         """Representation of DirConfig."""
