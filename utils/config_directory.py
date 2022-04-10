@@ -160,12 +160,14 @@ class DirConfig:
             return self._list2str(list_dir)
         return self._list2str([*self._home_dir, *list_dir])
 
-    def create_dir(self, folder):
-        """Create directory, if non-existing.
+    def create_dir(self, folder=None):
+        """Configure and create directory, if non-existing.
 
         :param folder: directory to be created
         :type folder: list, tuple, str
         """
-        folder = self.config_dir(folder)
+        folder = self.__str__() if folder is None else self.config_dir(folder)
         if not os.path.exists(folder):
             os.makedirs(folder)
+            LOG.info(f'Directory created: {folder}')
+        return folder
