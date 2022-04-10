@@ -100,8 +100,7 @@ class DirConfig:
 
         elif isinstance(folder, (list, tuple)):
             list_dir = []
-            for i in folder:
-                list_dir.extend(self._str2list(i))
+            [list_dir.extend(self._str2list(i)) for i in folder]
             return list_dir
 
         else:
