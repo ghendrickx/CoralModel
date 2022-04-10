@@ -6,9 +6,9 @@ Configuration of directories to ensure absolute directories
 import os
 
 
-class DirConfig:
 
-    __base_dirs = ('C:', )
+class DirConfig:
+    __base_dirs = ('', 'C:', 'D:', 'P:', 'U:')
 
     def __init__(self, home_dir=None):
         """
