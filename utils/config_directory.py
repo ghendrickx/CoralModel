@@ -181,3 +181,18 @@ class DirConfig:
         if self.existence_file(file_name):
             os.remove(self.config_dir(file_name))
             LOG.info(f'File deleted: {self.config_dir(file_name)}')
+
+    def existence_file(self, file_name):
+        """Verify if file exists.
+
+        :param file_name: file name
+        :type file_name: list, tuple, str
+
+        :rtype: bool
+        """
+        file = self.config_dir(file_name)
+        if os.path.exists(file):
+            LOG.info(f'File exists: {file}')
+            return True
+        LOG.warning(f'File does not exist: {file}')
+        return False
