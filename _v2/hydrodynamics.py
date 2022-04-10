@@ -87,6 +87,42 @@ class Hydrodynamics:
         """
         return self._model
 
+    def set_model_environment(
+            self, tidal_range, tidal_period, wave_height, wave_period, storm_wave_height, storm_wave_period
+    ):
+        """Set environmental conditions for hydrodynamic model.
+
+        :param tidal_range: tidal range
+        :param tidal_period: tidal period
+        :param wave_height: (significant) wave height
+        :param wave_period: (peak) wave period
+        :param storm_wave_height: (significant) storm wave height
+        :param storm_wave_period: (peak) storm wave period
+
+        :type tidal_range: float
+        :type tidal_period: float
+        :type wave_height: float
+        :type wave_period: float
+        :type storm_wave_height: float
+        :type storm_wave_period: float
+        """
+        if self.model is None:
+            # no hydrodynamic model defined: raise error
+            msg = 'No hydrodynamic model defined.'
+            raise InitialisationError(msg)
+
+        elif isinstance(self._model, Reef0D):
+            # set the environmental conditions: Reef0D
+            self._model.set_environment(
+                tidal_range=tidal_range, tidal_period=tidal_period, wave_height=wave_height, wave_period=wave_period,
+                storm_wave_height=storm_wave_height, storm_wave_period=storm_wave_period
+            )
+
+        else:
+            # defined hydrodynamic model does not have such a method: raise error
+            msg = f'The chosen hydrodynamic model ({self.model}) does not require/allow setting its environment.'
+            raise TypeError(msg)
+
     @property
     def x_coordinates(self):
         """
