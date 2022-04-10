@@ -55,9 +55,11 @@ class Hydrodynamics:
         cls._model = getattr(sys.modules[__name__], model_cls)()
 
     def initialise(self):
+        """Initialise hydrodynamic model."""
         self._model.initialise()
 
     def initialize(self):
+        """Initialise hydrodynamic model; American-spelling."""
         self.initialise()
 
     def update(self, storm=False):
@@ -70,9 +72,11 @@ class Hydrodynamics:
         self._model.update(self.grid, storm=storm)
 
     def finalise(self):
+        """Finalise hydrodynamic model."""
         self._model.finalise()
 
     def finalize(self):
+        """Finalise hydrodynamic model; American-spelling."""
         self.finalise()
 
     @property
