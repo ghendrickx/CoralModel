@@ -42,7 +42,8 @@ class Hydrodynamics:
         :rtype: _Base
         """
         if mode not in cls.__modes:
-            raise ValueError
+            msg = f'Unknown mode for hydrodynamic model ({mode}); choose one of {cls.__modes}.'
+            raise ValueError(msg)
 
         model_cls = '_Base' if mode is None else f'Reef{mode}'
 
