@@ -25,11 +25,7 @@ class DirConfig:
 
     def __repr__(self):
         """Representation of DirConfig."""
-        return f'DirConfig(home_dir={self.__home})'
-
-    def __str__(self):
-        """String-representation."""
-        return self._list2str(self.__home_dir)
+        return self._list2str(self._home_dir)
 
     @property
     def _sep(self):
