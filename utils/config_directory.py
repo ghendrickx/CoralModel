@@ -3,8 +3,10 @@ Configuration of directories to ensure absolute directories
 
 @author: Gijs G. Hendrickx
 """
+import logging
 import os
 
+LOG = logging.getLogger(__name__)
 
 
 class DirConfig:
