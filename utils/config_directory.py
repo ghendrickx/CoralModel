@@ -143,19 +143,22 @@ class DirConfig:
             return True
         return False
 
-    def config_dir(self, folder):
+    def config_dir(self, *folder, relative_dir=False):
         """Configure directory.
 
         :param folder: directory to be converted
-        :type folder: list, tuple, str
+        :param relative_dir: directory as relative directory, defaults to True
 
-        :return: absolute, configured directory
+        :type folder: list, tuple, str
+        :type relative_dir: bool, optional
+
+        :return: (absolute) configured directory
         :rtype: str
         """
-        list_dir = self._as_list(folder)
-        if self._is_abs_dir(list_dir):
+        list_dir = self._as_list(self._unpack(folder))
+        if self._is_abs_dir(list_dir) or relative_dir:
             return self._list2str(list_dir)
-        return self._list2str([*self.__home_dir, *list_dir])
+        return self._list2str([*self._home_dir, *list_dir])
 
     def create_dir(self, folder):
         """Create directory, if non-existing.
