@@ -6,10 +6,15 @@ Author: Gijs G. Hendrickx
 import logging
 import sys
 
-from _v2._errors import InitialisationError
+import numpy as np
+import scipy.optimize as opt
+
+from _v2._errors import InitialisationError, DataError
 from _v2.grid import Grid
 
 LOG = logging.getLogger(__name__)
+
+GRAVITY = 9.81
 
 
 class Hydrodynamics:
@@ -25,10 +30,6 @@ class Hydrodynamics:
         :type mode: str, optional
         """
         self._set_model(mode)
-
-        self._current_velocity = None
-        self._wave_velocity = None
-        self._wave_period = None
 
     @classmethod
     def _set_model(cls, mode):
@@ -52,6 +53,12 @@ class Hydrodynamics:
 
         cls._model = getattr(sys.modules[__name__], model_cls)()
 
+    def initialise(self):
+        self._model.initialise()
+
+    def initialize(self):
+        self.initialise()
+
     def update(self, storm=False):
         """Update hydrodynamic model.
 
@@ -60,6 +67,12 @@ class Hydrodynamics:
         """
         # TODO: Update hydrodynamic conditions
         self._model.update(self.grid, storm=storm)
+
+    def finalise(self):
+        self._model.finalise()
+
+    def finalize(self):
+        self.finalise()
 
     @property
     def model(self):
@@ -102,7 +115,7 @@ class Hydrodynamics:
         :return: current flow velocity
         :rtype: float, iterable
         """
-        return self._current_velocity
+        return self.model.current_velocity
 
     @property
     def wave_velocity(self):
@@ -110,7 +123,7 @@ class Hydrodynamics:
         :return: wave flow velocity
         :rtype: float, iterable
         """
-        return self._wave_velocity
+        return self.model.wave_velocity
 
     @property
     def wave_period(self):
@@ -118,7 +131,7 @@ class Hydrodynamics:
         :return: wave period
         :rtype: float, iterable
         """
-        return self._wave_period
+        return self.model.wave_period
 
 
 class _Base:
@@ -133,6 +146,12 @@ class _Base:
         :type calculations: bool, optional
         """
         self._calc = calculations
+
+        self._current_velocity = None
+        self._wave_velocity = None
+        self._wave_period = None
+
+        self._storm_wave_velocity = None
 
     def __str__(self):
         """String-representation."""
@@ -154,6 +173,38 @@ class _Base:
         """
         return
 
+    @property
+    def current_velocity(self):
+        """
+        :return: current flow velocity
+        :rtype: float, iterable
+        """
+        return self._current_velocity
+
+    @property
+    def wave_velocity(self):
+        """
+        :return: wave velocity
+        :rtype: float, iterable
+        """
+        return self._wave_velocity
+
+    @property
+    def wave_period(self):
+        """
+        :return: wave period
+        :rtype: float, iterable
+        """
+        return self._wave_period
+
+    @property
+    def storm_wave_velocity(self):
+        """
+        :return: wave velocity, storm conditions
+        :rtype: float, iterable
+        """
+        return self._storm_wave_velocity
+
     def _initialise(self):
         """Initialise hydrodynamic model."""
 
@@ -163,7 +214,7 @@ class _Base:
         self._initialised = True
 
     def initialize(self):
-        """Initialise hyodrynamic model; American-spelling."""
+        """Initialise hydrodynamic model; American-spelling."""
         self.initialise()
 
     def update(self, grid, storm=False):
@@ -175,6 +226,10 @@ class _Base:
         :type grid: Grid
         :type storm: bool, optional
         """
+        if not self._initialised:
+            msg = f'Hydrodynamic model is not yet initialised. Please, do so before updating the hydrodynamic output.'
+            raise InitialisationError(msg)
+
         if self._calc:
             [self._update(cell, storm) for cell in grid.cells]
 
@@ -187,9 +242,6 @@ class _Base:
         :type cell: Cell
         :type storm: bool, optional
         """
-        if storm:
-            return None, None
-        return None, None, None
 
     def finalise(self):
         """Finalise hydrodynamic model."""
@@ -206,11 +258,150 @@ class Reef0D(_Base):
     def __init__(self):
         super().__init__(calculations=True)
 
+        self._tidal_range = None
+        self._tidal_period = None
+        self._wave_height = None
+        self._wave_period = None
+        self._storm_wave_height = None
+        self._storm_wave_period = None
+
+    def set_environment(self, tidal_range, tidal_period, wave_height, wave_period, storm_wave_height, storm_wave_period):
+        """Set environmental conditions for hydrodynamic model.
+
+        :param tidal_range: tidal range
+        :param tidal_period: tidal period
+        :param wave_height: (significant) wave height
+        :param wave_period: (peak) wave period
+        :param storm_wave_height: (significant) storm wave height
+        :param storm_wave_period: (peak) storm wave period
+
+        :type tidal_range: float
+        :type tidal_period: float
+        :type wave_height: float
+        :type wave_period: float
+        :type storm_wave_height: float
+        :type storm_wave_period: float
+        """
+        # set base environmental conditions
+        self.set_base_conditions(
+            tidal_range=tidal_range, tidal_period=tidal_period, wave_height=wave_height, wave_period=wave_period
+        )
+        # set storm environmental conditions
+        self.set_storm_conditions(
+            storm_wave_height=storm_wave_height, storm_wave_period=storm_wave_period
+        )
+
+    def set_base_conditions(self, tidal_range, tidal_period, wave_height, wave_period):
+        """Set "base" environmental conditions (i.e. excluding storm conditions) for hydrodynamic model.
+
+        :param tidal_range: tidal range
+        :param tidal_period: tidal period
+        :param wave_height: (significant) wave height
+        :param wave_period: (peak) wave period
+
+        :type tidal_range: float
+        :type tidal_period: float
+        :type wave_height: float
+        :type wave_period: float
+        """
+        self._tidal_range = tidal_range
+        self._tidal_period = tidal_period
+        self._wave_height = wave_height
+        self._wave_period = wave_period
+
+    def set_storm_conditions(self, storm_wave_height, storm_wave_period):
+        """Set storm environmental conditions for hydrodynamic model.
+
+        :param storm_wave_height: (significant) storm wave height
+        :param storm_wave_period: (peak) storm wave period
+
+        :type storm_wave_height: float
+        :type storm_wave_period: float
+        """
+        self._storm_wave_height = storm_wave_height
+        self._storm_wave_period = storm_wave_period
+
+    @staticmethod
+    def _estimate_wave_velocity(wave_height, wave_period, water_depth):
+        """Estimate wave velocity based on the wave height and water depth.
+
+        :param wave_height: wave height
+        :param water_depth: water depth
+
+        :type wave_height: float, iterable
+        :type water_depth: float
+
+        :return: wave velocity estimation
+        :rtype: float, iterable
+        """
+        # tidal frequency
+        frequency = 2 * np.pi / wave_period
+
+        def dispersion(k):
+            """Dispersion relation."""
+            return GRAVITY * k * np.tanh(k * water_depth) - (frequency ** 2)
+
+        # solve for wave number
+        wave_number = opt.newton(dispersion, x0=frequency / np.sqrt(GRAVITY * water_depth))
+
+        # depth-averaged, tidal-averaged horizontal velocity
+        return (frequency * wave_height) / (wave_number * water_depth * np.pi)
+
+    def _set_tidal_velocity(self, cell):
+        """Estimate tidal velocity.
+
+        :param cell: grid cell
+        :type cell: Cell
+        """
+        if self._tidal_range is None or self._tidal_period is None:
+            msg = f'Tidal data is missing: tidal range = {self._tidal_range}; tidal period = {self._tidal_period}.'
+            raise DataError(msg)
+
+        self._current_velocity = self._estimate_wave_velocity(
+            self._tidal_range, self._tidal_period, cell.water_depth
+        )
+
+    def _set_wave_velocity(self, cell):
+        """Estimate wave velocity.
+
+        :param cell: grid cell
+        :type cell: Cell
+        """
+        if self._wave_height is None or self._wave_period is None:
+            msg = f'Wave data is missing: ' \
+                f'wave height = {self._wave_height}; wave period = {self._wave_period}.'
+            raise DataError(msg)
+
+        self._wave_velocity = self._estimate_wave_velocity(
+            self._wave_height, self._wave_period, cell.water_depth
+        )
+
+    def _set_storm_wave_velocity(self, cell):
+        """Estimate storm wave velocity.
+
+        :param cell: grid cell
+        :type cell: Cell
+        """
+        if self._storm_wave_height is None or self._storm_wave_period is None:
+            msg = f'Storm data is missing: ' \
+                f'wave height = {self._storm_wave_height}; wave period = {self._storm_wave_period}'
+            raise DataError(msg)
+
+        self._storm_wave_velocity = self._estimate_wave_velocity(
+            self._storm_wave_height, self._storm_wave_period, cell.water_depth
+        )
+
     def _initialise(self):
         """Initialise 0D-hydrodynamic model."""
-        if Grid.get_size() > 1:
+        if not Grid.get_size() == 1:
+            # message
+            if Grid.get_size() > 1:
+                LOG.warning('Grid is reset and will be set to a 0D-grid: (0, 0).')
+            else:
+                LOG.info('Grid is initiated as a 0D-grid: (0, 0).')
+
+            # reset grid
             Grid.reset()
-            LOG.warning('Grid is reset and will be set to a 0D-grid: (0, 0).')
 
             # re-initiate grid
             Grid(x=0, y=0)
@@ -224,10 +415,16 @@ class Reef0D(_Base):
         :type cell: Cell
         :type storm: bool, optional
         """
-        # TODO: Define _update()-method
+        # determine tidal flow velocity
+        self._set_tidal_velocity(cell)
+
+        # determine relevant wave velocity
+        self._set_storm_wave_velocity(cell) if storm else self._set_wave_velocity(cell)
+
+        # return relevant hydrodynamic data
         if storm:
-            return None, None
-        return None, None, None
+            return self.current_velocity, self.storm_wave_velocity
+        return self.current_velocity, self.wave_velocity, self.wave_period
 
 
 class Reef1D(_Base):
