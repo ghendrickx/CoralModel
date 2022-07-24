@@ -49,10 +49,8 @@ class Hydrodynamics:
 
         if cls._model is not None:
             print(f'Hydrodynamic model already defined: {cls._model}')
-            if input(f'Overwrite with {model_cls}? [y/n]') == 'n':
-                return
-
-        cls._model = getattr(sys.modules[__name__], model_cls)()
+            if input(f'Overwrite with {model_cls}? [y/n]') == 'y':
+                cls._model = getattr(sys.modules[__name__], model_cls)()
 
     def initialise(self):
         """Initialise hydrodynamic model."""
@@ -121,7 +119,7 @@ class Hydrodynamics:
         else:
             # defined hydrodynamic model does not have such a method: raise error
             msg = f'The chosen hydrodynamic model ({self.model}) does not require/allow setting its environment.'
-            raise TypeError(msg)
+            raise NotImplementedError(msg)
 
     @property
     def x_coordinates(self):
