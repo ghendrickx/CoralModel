@@ -35,7 +35,7 @@ The Python code is written in Python 3 and makes use of various packages.
 Not all of these packages are automatically included in the standard library of Python, 
 such as ``NetCDF4`` ([download](http://www.ldf.uci.edu/~gohlke/pythonlibs/#netcdf4)). 
 In case the biophysical model framework is to be coupled to Delft3d Flexible Mesh, 
-the ``bmi.wrapper`` package is also required  ([download](https://github.com/openearth/bmi-python)).
+the ``bmi``-package is also required  ([download](https://github.com/openearth/bmi-python)).
 
 The settings of Python and other packages for the online coupling to work properly are the following:
 * Python version 3.6.5
@@ -62,19 +62,22 @@ and the biophysical modelling of coral development.
 and possibly even incorporates more aspects of coral (reef) development.
 
 # How to cite
-This repository has a [DOI](https://doi.org/10.4121/19164869.v1) and should be cited as:
-> Hendrickx, Gijs (2022): CoralModel: A Python-based model that resembles the biophysical interactions on a coral reef. 4TU.ResearchData. Software. https://doi.org/10.4121/19164869.v1
+This repository should be cited as:
+> Hendrickx, Gijs G. (2022): CoralModel: A Python-based model that resembles the biophysical interactions on a coral reef. 4TU.ResearchData. Software. https://doi.org/10.4121/19164869
 
 Or using the following BibTex-entry:
 ```
 @misc{CoralModelv1,
     title	=	{CoralModel: A Python-based model that resembles the biophysical interactions on a coral reef},
-    author	=	{\myname},
+    author	=	{Gijs G. Hendrickx},
     publisher	=	{4TU.ResearchData},
     year	=	{2022},
     month	=	{feb},
     version	=	{0.1},
     url		=	{https://data.4tu.nl/articles/software/CoralModel_A_Python-based_model_that_resembles_the_biophysical_interactions_on_a_coral_reef/19164869/1},
-    doi		=	{10.4121/19164869.v1},
+    doi		=	{10.4121/19164869},
 }
 ```
+In addition, this repository is created as part of the studies described in 
+[*Predicting the survival of coral reefs*](https://repository.tudelft.nl/islandora/object/uuid%3Ae211380e-3f92-4afe-b371-f1e87b0c3bbd?collection=education) 
+and [*Online-coupling of widely-ranged timescales to model coral reef development*](https://www.sciencedirect.com/science/article/pii/S1364815221001468?via%3Dihub).
