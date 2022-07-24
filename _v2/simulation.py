@@ -20,7 +20,8 @@ class Simulation:
         """
         self._hydrodynamics = self._get_hydrodynamics(hydrodynamics)
 
-    def _get_hydrodynamics(self, hydrodynamics):
+    @staticmethod
+    def _get_hydrodynamics(hydrodynamics):
         """Get hydrodynamic model definition as an Hydrodynamics-object.
 
         :param hydrodynamics: hydrodynamic model
