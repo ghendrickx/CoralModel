@@ -132,24 +132,60 @@ class Constants:
         else:
             LOG.warning(f'There is no constant named \"{key}\".')
 
-    # light micro-environment
-    _lac_default = None
+    @classmethod
+    def set_multiple_constants(cls, **kwargs):
+        [cls.set_constant(k, v) for k, v in kwargs.items() if not v == cls]
+
+    """Environmental conditions."""
+    _light = None
+    _light_attenuation = None
+    _flow = None
+    _temperature = None
+    _aragonite = None
+
+    @classmethod
+    def set_environmental_conditions(
+            cls, light=None, light_attenuation=None, flow=None, temperature=None, aragonite=None
+    ):
+        cls.set_multiple_constants(**locals())
+
+    @property
+    def light(self):
+        """Default light."""
+        return 400 if self._light is None else self._light
+
+    @property
+    def light_attenuation(self):
+        """Default light attenuation coefficient."""
+        return .1 if self._light_attenuation is None else self._light_attenuation
+
+    @property
+    def flow(self):
+        """Default flow velocity."""
+        return 1 if self._flow is None else self._flow
+
+    @property
+    def temperature(self):
+        """Default temperature."""
+        return 28 if self._temperature is None else self._temperature
+
+    @property
+    def aragonite(self):
+        """Default aragonite saturation."""
+        return 5 if self._aragonite is None else self._aragonite
+
+    """Light micro-environment."""
     _theta_max = None
 
     @classmethod
-    def set_light_micro_environment(cls, lac_default=None, theta_max=None):
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
-
-    @property
-    def lac_default(self):
-        """Default light attenuation coefficient [m-1]."""
-        return .1 if self._lac_default is None else self._lac_default
+    def set_light_micro_environment(cls, theta_max=None):
+        cls.set_multiple_constants(**locals())
 
     @property
     def theta_max(self):
         return .5 * np.pi if self._theta_max is None else self._theta_max
 
-    # flow micro-environment
+    """Flow micro-environment."""
     _smagorisnky = None
     _inertia = None
     _friction = None
@@ -169,7 +205,7 @@ class Constants:
             spacing_ratio=None, angle=None, wall_coordinate=None, numeric_theta=None, error=None, max_iter_canopy=None,
             max_iter_attenuation=None
     ):
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
+        cls.set_multiple_constants(**locals())
 
     @property
     def smagorinsky(self):
@@ -219,14 +255,14 @@ class Constants:
     def max_iter_attenuation(self):
         return 1e5 if self._max_iter_attenuation is None else self._max_iter_attenuation
 
-    # thermal micro-environment
+    """Thermal micro-environment."""
     _thermal_morphology = None
     _absorptivity = None
     _thermal_conductivity = None
 
     @classmethod
     def set_thermal_micro_environment(cls, thermal_morphology=None, absorptivity=None, thermal_conductivity=None):
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
+        cls.set_multiple_constants(**locals())
 
     @property
     def thermal_morphology(self):
@@ -240,7 +276,7 @@ class Constants:
     def thermal_conductivity(self):
         return .6089 if self._thermal_conductivity is None else self._thermal_conductivity
 
-    # photosynthetic light dependency
+    """Photosynthetic light dependency."""
     _photo_acc_rate = None
     _max_saturation = None
     _max_photosynthesis = None
@@ -252,7 +288,7 @@ class Constants:
             cls, photo_acc_rate=None, max_saturation=None, max_photosynthesis=None,
             exp_saturation=None, exp_max_photosynthesis=None
     ):
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
+        cls.set_multiple_constants(**locals())
 
     @property
     def photo_acc_rate(self):
@@ -274,7 +310,7 @@ class Constants:
     def exp_max_photosynthesis(self):
         return .09 if self._exp_max_photosynthesis is None else self._exp_max_photosynthesis
 
-    # photosynthetic thermal dependency
+    """Photosynthetic thermal dependency."""
     _activation_energy = None
     _gas_constant = None
     _thermal_variability = None
@@ -284,7 +320,7 @@ class Constants:
     def set_photosynthetic_thermal_dependency(
             cls, activation_energy=None, gas_constant=None, thermal_variability=None, thermal_acclimation_period=None
     ):
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
+        cls.set_multiple_constants(**locals())
 
     @property
     def activation_energy(self):
@@ -302,13 +338,13 @@ class Constants:
     def thermal_acclimation_period(self):
         return 60 if self._thermal_acclimation_period is None else self._thermal_acclimation_period
 
-    # photosynthetic flow dependency
+    """Photosynthetic flow dependency."""
     _min_photosynthetic_flow_dependency = None
     _invariant_flow_velocity = None
 
     @classmethod
     def set_photosynthetic_flow_dependency(cls, min_photosynthetic_flow_dependency=None, invariant_flow_velocity=None):
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
+        cls.set_multiple_constants(**locals())
 
     @property
     def min_photosynthetic_flow_dependency(self):
@@ -320,7 +356,7 @@ class Constants:
         default = .17162374 if Processes.get_process('flow_micro_environment') else .5173
         return default if self._invariant_flow_velocity is None else self._invariant_flow_velocity
 
-    # population dynamics
+    """Population dynamics."""
     _growth_rate = None
     _recovery_rate = None
     _mortality_rate = None
@@ -328,7 +364,7 @@ class Constants:
 
     @classmethod
     def set_population_dynamics(cls, growth_rate=None, recovery_rate=None, mortality_rate=None, bleaching_rate=None):
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
+        cls.set_multiple_constants(**locals())
 
     @property
     def growth_rate(self):
@@ -346,25 +382,18 @@ class Constants:
     def bleaching_rate(self):
         return 8 if self._bleaching_rate is None else self._bleaching_rate
 
-    # calcification
+    """Calcification."""
     _calcification_constant = None
-    _aragonite_saturation = None
     _dissolution_saturation = None
     _half_rate = None
 
     @classmethod
-    def set_calcification(
-            cls, calcification_constant=None, aragonite_saturation=None, dissolution_saturation=None, half_rate=None
-    ):
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
+    def set_calcification(cls, calcification_constant=None, dissolution_saturation=None, half_rate=None):
+        cls.set_multiple_constants(**locals())
 
     @property
     def calcification_constant(self):
         return .5 if self._calcification_constant is None else self._calcification_constant
-
-    @property
-    def aragonite_saturation(self):
-        return 5 if self._aragonite_saturation is None else self._aragonite_saturation
 
     @property
     def dissolution_saturation(self):
@@ -374,7 +403,7 @@ class Constants:
     def half_rate(self):
         return .66236107 if self._half_rate is None else self._half_rate
 
-    # morphological development
+    """Morphological development."""
     _proportionality_form = None
     _proportionality_plate = None
     _proportionality_plate_flow = None
@@ -395,7 +424,7 @@ class Constants:
                 f'{proportionality_space} > {.5 / np.sqrt(2)}'
             raise ValueError(msg)
 
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
+        cls.set_multiple_constants(**locals())
 
     @property
     def proportionality_form(self):
@@ -429,14 +458,14 @@ class Constants:
     def coral_density(self):
         return 1600 if self._coral_density is None else self._coral_density
 
-    # coral dislodgement
+    """Coral dislodgement."""
     _tensile_stress = None
     _drag_coefficient = None
     _water_density = None
 
     @classmethod
     def set_coral_dislodgement(cls, tensile_stress=None, drag_coefficient=None, water_density=None):
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
+        cls.set_multiple_constants(**locals())
 
     @property
     def tensile_stress(self):
@@ -450,14 +479,14 @@ class Constants:
     def water_density(self):
         return 1025 if self._water_density is None else self._water_density
 
-    # coral recruitment
+    """Coral recruitment."""
     _larvae_spawned = None
     _settle_probability = None
     _larval_diameter = None
 
     @classmethod
     def set_coral_recruitment(cls, larvae_spawned=None, settle_probability=None, larval_diameter=None):
-        [cls.set_constant(k, v) for k, v in locals().items() if not v == cls]
+        cls.set_multiple_constants(**locals())
 
     @property
     def larvae_spawned(self):
