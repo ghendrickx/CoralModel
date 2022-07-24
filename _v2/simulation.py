@@ -91,6 +91,11 @@ class Simulation:
             raise TypeError(msg)
 
     def update(self, year):
+        """Annual update of simulation.
+
+        :param year: year of simulation
+        :type year: int
+        """
         # update environmental conditions
         Environment.annual_update(year)
 
