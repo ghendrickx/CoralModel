@@ -29,8 +29,7 @@ class _BasicBiophysics:
         :param coral_reef: grid of corals, i.e. coral reef
         :type coral_reef: Grid
         """
-        if self._verify_essentials():
-            self.update(coral_reef)
+        self.__call__(coral_reef)
 
     def __call__(self, coral_reef):
         """Update coral reef.
