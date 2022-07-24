@@ -89,3 +89,11 @@ class Simulation:
             msg = f'Not all provided processes are of type \"_BasicBiophysics\": ' \
                 f'{[type(process) for process in processes]}'
             raise TypeError(msg)
+
+    def update(self, year):
+        # update environmental conditions
+        Environment.annual_update(year)
+
+        # update biophysical processes
+        for process in self._processes:
+            process(self.grid)
