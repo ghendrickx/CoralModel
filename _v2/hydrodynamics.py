@@ -139,7 +139,7 @@ class Hydrodynamics:
             raise NotImplementedError(msg)
 
     @property
-    def x_coordinates(self):
+    def x(self):
         """
         :return: x-coordinate(s)
         :rtype: None, float, iterable
@@ -147,7 +147,7 @@ class Hydrodynamics:
         return self.model.x
 
     @property
-    def y_coordinates(self):
+    def y(self):
         """
         :return: y-coordinate(s)
         :rtype: None, float, iterable
