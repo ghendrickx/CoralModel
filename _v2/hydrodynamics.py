@@ -52,17 +52,21 @@ class Hydrodynamics:
         :return: hydrodynamic model
         :rtype: _Base
         """
+        # verify mode-definition
         if mode not in cls.__modes:
             msg = f'Unknown mode for hydrodynamic model ({mode}); choose one of {cls.__modes}.'
             raise ValueError(msg)
 
+        # set class-name of model
         model_cls = '_Base' if mode is None else f'Reef{mode}'
 
+        # verify if model must be overwritten, if applicable
         if cls._model is not None:
             print(f'Hydrodynamic model already defined: {cls._model}')
             if not input(f'Overwrite with {model_cls}? [y/n]') == 'y':
                 return
 
+        # set model
         cls._model = getattr(sys.modules[__name__], model_cls)()
 
     def initialise(self):
