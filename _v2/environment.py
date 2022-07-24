@@ -39,7 +39,7 @@ class EnvironmentalConditions:
         self.export_conditions(self)
 
     @classmethod
-    def set_conditions(cls, light, light_attenuation, flow, temperature, aragonite):
+    def set_conditions(cls, light=None, light_attenuation=None, flow=None, temperature=None, aragonite=None):
         """
         :param light: light conditions, defaults to None
         :param light_attenuation: light attenuation conditions, defaults to None
@@ -139,6 +139,8 @@ class EnvironmentalConditions:
         :return: light conditions
         :rtype: numpy.array, None
         """
+        if self._light is None:
+            self._light = Constants.get_constant('light')
         return self._light
 
     @property
@@ -148,7 +150,7 @@ class EnvironmentalConditions:
         :rtype: numpy.array, None
         """
         if self._light_attenuation is None:
-            self._light_attenuation = Constants.get_constant('lac_default')
+            self._light_attenuation = Constants.get_constant('light_attenuation')
         return self._light_attenuation
 
     @property
@@ -157,6 +159,8 @@ class EnvironmentalConditions:
         :return: flow conditions
         :rtype: numpy.array, None
         """
+        if self._flow is None:
+            self._flow = Constants.get_constant('flow')
         return self._flow
 
     @property
@@ -165,6 +169,8 @@ class EnvironmentalConditions:
         :return: thermal conditions
         :rtype: numpy.array, None
         """
+        if self._temperature is None:
+            self._temperature = Constants.get_constant('temperature')
         return self._temperature
 
     @property
@@ -173,6 +179,8 @@ class EnvironmentalConditions:
         :return: aragonite conditions
         :rtype: numpy.array, None
         """
+        if self._aragonite is None:
+            self._aragonite = Constants.get_constant('aragonite')
         return self._aragonite
 
 
