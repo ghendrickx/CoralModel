@@ -1104,7 +1104,7 @@ class Dislodgement:
         """Update morphology due to storm damage.
 
         :param coral: coral animal
-        :param survival_coefficient: percentage of partial survival, defualts to 1
+        :param survival_coefficient: percentage of partial survival, defaults to 1
 
         :type coral: Coral
         :type survival_coefficient: float, optional
@@ -1122,7 +1122,7 @@ class Dislodgement:
         """Percentage surviving storm event.
 
         :param coral: coral animal
-        :param survival_coefficient: percentage of partial survival, defualts to 1
+        :param survival_coefficient: percentage of partial survival, defaults to 1
 
         :type coral: Coral
         :type survival_coefficient: float, optional
