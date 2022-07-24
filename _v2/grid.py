@@ -360,7 +360,7 @@ class Grid:
         # create array of x-coordinates
         array = cls._create_array(x_range, spacing, edge)
         # create cells at x-coordinates
-        [cls._cells.add(Cell(x, 0)) for x in array]
+        [cls._cells.update({(x, 0): Cell(x, 0)}) for x in array]
 
     @classmethod
     def add_square(cls, xy_range, spacing, edge='round'):
@@ -394,7 +394,7 @@ class Grid:
         x_array = cls._create_array(x_range, spacing, edge)
         y_array = cls._create_array(y_range, spacing, edge)
         # create cells at (x,y)-coordinates
-        [cls._cells.add(Cell(x, y)) for x in x_array for y in y_array]
+        [cls._cells.update({(x, y): Cell(x, y)}) for x in x_array for y in y_array]
 
     @classmethod
     def add_cell(cls, x, y, **kwargs):
