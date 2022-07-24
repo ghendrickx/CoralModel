@@ -3,6 +3,7 @@ Simulation framework.
 
 Author: Gijs G. Hendrickx
 """
+from _v2.grid import Grid
 from _v2.hydrodynamics import Hydrodynamics
 
 
@@ -25,8 +26,11 @@ class Simulation:
         :return: model grid
         :rtype: Grid
         """
+        # auto-set grid if none is defined
         if self._grid is None:
             self._extract_grid()
+
+        # return grid
         return self._grid
 
     @classmethod
@@ -36,6 +40,10 @@ class Simulation:
         :param grid: grid
         :type grid: Grid
         """
+        if not isinstance(grid, Grid):
+            msg = f'Grid must be defined as a Grid-object; {type(grid)} provided.'
+            raise TypeError(msg)
+
         cls._grid = grid
 
     def _extract_grid(self):
