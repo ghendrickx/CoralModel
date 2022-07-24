@@ -197,7 +197,7 @@ class Hydrodynamics:
         grid = Grid()
 
         # define grid based on hydrodynamic model
-        if self.model._grid_from_hydrodynamic_model:
+        if self.model.grid_from_hydrodynamic_model:
             grid.reset()
             grid.grid_from_xy(self.model.x, self.model.y)
 
@@ -217,7 +217,7 @@ class _Base:
     update_interval_storm = None
 
     _initialised = False
-    _grid_from_hydrodynamic_model = False
+    grid_from_hydrodynamic_model = False
 
     def __init__(self, calculations=False):
         """
@@ -345,7 +345,9 @@ class Reef0D(_Base):
         self._storm_wave_height = None
         self._storm_wave_period = None
 
-    def set_environment(self, tidal_range, tidal_period, wave_height, wave_period, storm_wave_height, storm_wave_period):
+    def set_environment(
+            self, tidal_range, tidal_period, wave_height, wave_period, storm_wave_height, storm_wave_period
+    ):
         """Set environmental conditions for hydrodynamic model.
 
         :param tidal_range: tidal range
@@ -562,7 +564,7 @@ class Reef2D(_Base):
     _y = None
     _n_internal_cells = None
 
-    _grid_from_hydrodynamic_model = True
+    grid_from_hydrodynamic_model = True
 
     def __new__(cls, *args, **kwargs):
         raise NotImplementedError
