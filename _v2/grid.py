@@ -281,7 +281,6 @@ class Grid:
     @classmethod
     def get_cells(cls):
         """Get grid cells."""
-        cls.reset_corals()
         return cls._cells.values()
 
     @property
