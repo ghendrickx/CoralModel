@@ -413,10 +413,13 @@ class Grid:
     @classmethod
     def reset(cls):
         """Reset grid."""
-        cls._cells = set()
+        if len(cls._cells) > 0:
+            LOG.critical(f'Grid reset: {len(cls._cells)} cells removed.')
+        cls._cells.clear()
 
     @classmethod
     def reset_corals(cls):
         """Reset CoralCollections of all Cells."""
-        if CoralSpecies.get_re_initiate():
+        if CoralSpecies.get_re_initiate() and len(cls._cells) > 0:
+            LOG.critical(f'Corals reset: {len(cls._cells)} cells reset.')
             [cell.reset_corals() for cell in cls._cells]
