@@ -216,7 +216,7 @@ class Cell:
 
 
 class Grid:
-    _cells = set()
+    _cells = dict()
 
     def __init__(self, x=None, y=None):
         """
@@ -408,7 +408,7 @@ class Grid:
         :type x: float
         :type y: float
         """
-        cls._cells.add(Cell(x, y, **kwargs))
+        cls._cells.update({(x, y): Cell(x, y, **kwargs)})
 
     @classmethod
     def reset(cls):
