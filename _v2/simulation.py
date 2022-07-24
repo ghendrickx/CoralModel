@@ -18,7 +18,18 @@ class Simulation:
         :param hydrodynamics: hydrodynamic model
         :type hydrodynamics: Hydrodynamics, str
         """
-        self._hydrodynamics = hydrodynamics if isinstance(hydrodynamics, Hydrodynamics) else Hydrodynamics(hydrodynamics)
+        self._hydrodynamics = self._get_hydrodynamics(hydrodynamics)
+
+    def _get_hydrodynamics(self, hydrodynamics):
+        """Get hydrodynamic model definition as an Hydrodynamics-object.
+
+        :param hydrodynamics: hydrodynamic model
+        :type hydrodynamics: Hydrodynamics, str, None
+
+        :return: hydrodynamic model
+        :rtype: Hydrodynamics
+        """
+        return hydrodynamics if isinstance(hydrodynamics, Hydrodynamics) else Hydrodynamics(hydrodynamics)
 
     @property
     def grid(self):
@@ -40,10 +51,12 @@ class Simulation:
         :param grid: grid
         :type grid: Grid
         """
+        # verify if grid-instance is of type Grid
         if not isinstance(grid, Grid):
             msg = f'Grid must be defined as a Grid-object; {type(grid)} provided.'
             raise TypeError(msg)
 
+        # set grid-object
         cls._grid = grid
 
     def _extract_grid(self):
