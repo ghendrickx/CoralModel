@@ -60,8 +60,10 @@ class Hydrodynamics:
 
         if cls._model is not None:
             print(f'Hydrodynamic model already defined: {cls._model}')
-            if input(f'Overwrite with {model_cls}? [y/n]') == 'y':
-                cls._model = getattr(sys.modules[__name__], model_cls)()
+            if not input(f'Overwrite with {model_cls}? [y/n]') == 'y':
+                return
+
+        cls._model = getattr(sys.modules[__name__], model_cls)()
 
     def initialise(self):
         """Initialise hydrodynamic model."""
