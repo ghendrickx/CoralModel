@@ -14,22 +14,33 @@ from _v2.grid import Grid
 
 LOG = logging.getLogger(__name__)
 
-GRAVITY = 9.81
+_GRAVITY = 9.81
 
 
 class Hydrodynamics:
+    """Interface of hydrodynamic model independently of defined hydrodynamic model. There are four options:
+     1. No hydrodynamic model:  `mode=None` ->  `_Base` (built-in)
+     2. 0-dimensional model:    `mode=0D`   ->  `Reef0D` (built-in)
+     3. 1-dimensional model:    `mode=1D`   ->  `Reef1D` (built-in)
+     4. 2-dimensional model:    `mode=2D`   ->  `Reef2D` (Delft3D-FM)
+    """
     __modes = (None, '0D', '1D', '2D')
     _model = None
 
     _grid = None
-    _init_grid = True  # (re-)initiate grid
+    _grid_initialised = False
 
-    def __init__(self, mode=None):
+    def __init__(self, mode=None, init_grid=True):
         """
         :param mode: mode of hydrodynamic model, defaults to None
+        :param init_grid: initialise grid, defaults to True
+
         :type mode: str, optional
+        :type init_grid: bool, optional
         """
         self._set_model(mode)
+        if init_grid:
+            self.initialise_grid()
 
     @classmethod
     def _set_model(cls, mode):
@@ -41,22 +52,29 @@ class Hydrodynamics:
         :return: hydrodynamic model
         :rtype: _Base
         """
+        # verify mode-definition
         if mode not in cls.__modes:
-            raise ValueError
+            msg = f'Unknown mode for hydrodynamic model ({mode}); choose one of {cls.__modes}.'
+            raise ValueError(msg)
 
+        # set class-name of model
         model_cls = '_Base' if mode is None else f'Reef{mode}'
 
+        # verify if model must be overwritten, if applicable
         if cls._model is not None:
             print(f'Hydrodynamic model already defined: {cls._model}')
-            if input(f'Overwrite with {model_cls}? [y/n]') == 'n':
+            if not input(f'Overwrite with {model_cls}? [y/n]') == 'y':
                 return
 
+        # set model
         cls._model = getattr(sys.modules[__name__], model_cls)()
 
     def initialise(self):
+        """Initialise hydrodynamic model."""
         self._model.initialise()
 
     def initialize(self):
+        """Initialise hydrodynamic model; American-spelling."""
         self.initialise()
 
     def update(self, storm=False):
@@ -69,9 +87,11 @@ class Hydrodynamics:
         self._model.update(self.grid, storm=storm)
 
     def finalise(self):
+        """Finalise hydrodynamic model."""
         self._model.finalise()
 
     def finalize(self):
+        """Finalise hydrodynamic model; American-spelling."""
         self.finalise()
 
     @property
@@ -82,8 +102,44 @@ class Hydrodynamics:
         """
         return self._model
 
+    def set_model_environment(
+            self, tidal_range, tidal_period, wave_height, wave_period, storm_wave_height, storm_wave_period
+    ):
+        """Set environmental conditions for hydrodynamic model.
+
+        :param tidal_range: tidal range
+        :param tidal_period: tidal period
+        :param wave_height: (significant) wave height
+        :param wave_period: (peak) wave period
+        :param storm_wave_height: (significant) storm wave height
+        :param storm_wave_period: (peak) storm wave period
+
+        :type tidal_range: float
+        :type tidal_period: float
+        :type wave_height: float
+        :type wave_period: float
+        :type storm_wave_height: float
+        :type storm_wave_period: float
+        """
+        if self.model is None:
+            # no hydrodynamic model defined: raise error
+            msg = 'No hydrodynamic model defined.'
+            raise InitialisationError(msg)
+
+        elif isinstance(self._model, Reef0D):
+            # set the environmental conditions: Reef0D
+            self._model.set_environment(
+                tidal_range=tidal_range, tidal_period=tidal_period, wave_height=wave_height, wave_period=wave_period,
+                storm_wave_height=storm_wave_height, storm_wave_period=storm_wave_period
+            )
+
+        else:
+            # defined hydrodynamic model does not have such a method: raise error
+            msg = f'The chosen hydrodynamic model ({self.model}) does not require/allow setting its environment.'
+            raise NotImplementedError(msg)
+
     @property
-    def x_coordinates(self):
+    def x(self):
         """
         :return: x-coordinate(s)
         :rtype: None, float, iterable
@@ -91,7 +147,7 @@ class Hydrodynamics:
         return self.model.x
 
     @property
-    def y_coordinates(self):
+    def y(self):
         """
         :return: y-coordinate(s)
         :rtype: None, float, iterable
@@ -104,9 +160,11 @@ class Hydrodynamics:
         :return: (hydrodynamic) grid
         :rtype: Grid
         """
-        if self._init_grid:
-            self._grid = Grid()
-            self._init_grid = False
+        # initialise grid if not done yet
+        if not self._grid_initialised:
+            self.initialise_grid()
+
+        # return (initialised) grid
         return self._grid
 
     @property
@@ -133,12 +191,33 @@ class Hydrodynamics:
         """
         return self.model.wave_period
 
+    def initialise_grid(self):
+        """Initialise grid."""
+        # initialise Grid-object
+        grid = Grid()
+
+        # define grid based on hydrodynamic model
+        if self.model.grid_from_hydrodynamic_model:
+            grid.reset()
+            grid.grid_from_xy(self.model.x, self.model.y)
+
+        # set grid to _grid-property
+        self._grid = grid
+        # grid is initialised
+        self._grid_initialised = True
+
 
 class _Base:
+    """Base hydrodynamic-class. It does nothing, except function as a parent-class for the hydrodynamic model-classes:
+     1. `ReefOD`;
+     2. `Reef1D`;
+     3. `Reef2D`.
+    """
     update_interval = None
     update_interval_storm = None
 
     _initialised = False
+    grid_from_hydrodynamic_model = False
 
     def __init__(self, calculations=False):
         """
@@ -252,6 +331,7 @@ class _Base:
 
 
 class Reef0D(_Base):
+    """Built-in hydrodynamic 0-dimensional model."""
     update_interval = None
     update_interval_storm = None
 
@@ -265,7 +345,9 @@ class Reef0D(_Base):
         self._storm_wave_height = None
         self._storm_wave_period = None
 
-    def set_environment(self, tidal_range, tidal_period, wave_height, wave_period, storm_wave_height, storm_wave_period):
+    def set_environment(
+            self, tidal_range, tidal_period, wave_height, wave_period, storm_wave_height, storm_wave_period
+    ):
         """Set environmental conditions for hydrodynamic model.
 
         :param tidal_range: tidal range
@@ -339,10 +421,10 @@ class Reef0D(_Base):
 
         def dispersion(k):
             """Dispersion relation."""
-            return GRAVITY * k * np.tanh(k * water_depth) - (frequency ** 2)
+            return _GRAVITY * k * np.tanh(k * water_depth) - (frequency ** 2)
 
         # solve for wave number
-        wave_number = opt.newton(dispersion, x0=frequency / np.sqrt(GRAVITY * water_depth))
+        wave_number = opt.newton(dispersion, x0=frequency / np.sqrt(_GRAVITY * water_depth))
 
         # depth-averaged, tidal-averaged horizontal velocity
         return (frequency * wave_height) / (wave_number * water_depth * np.pi)
@@ -428,6 +510,7 @@ class Reef0D(_Base):
 
 
 class Reef1D(_Base):
+    """Built-in hydrodynamic 1-dimensional model."""
     update_interval = None
     update_interval_storm = None
 
@@ -439,10 +522,18 @@ class Reef1D(_Base):
 
     @property
     def x(self):
-        return 0, 0
+        """
+        :return: x-coordinate
+        :rtype: float
+        """
+        return 0
 
     @property
     def y(self):
+        """
+        :return: y-coordinate
+        :rtype: float
+        """
         return 0
 
     def _update(self, cell, storm=False):
@@ -461,6 +552,7 @@ class Reef1D(_Base):
 
 
 class Reef2D(_Base):
+    """Interaction with external 2-dimensional model: Delft3D Flexible Mesh."""
     update_interval = None
     update_interval_storm = None
 
@@ -472,12 +564,13 @@ class Reef2D(_Base):
     _y = None
     _n_internal_cells = None
 
+    grid_from_hydrodynamic_model = True
+
     def __new__(cls, *args, **kwargs):
         raise NotImplementedError
 
     def __init__(self):
         super().__init__(calculations=True)
-
         self._import_wrapper()
 
     @classmethod

@@ -29,18 +29,35 @@ class _BasicBiophysics:
         :param coral_reef: grid of corals, i.e. coral reef
         :type coral_reef: Grid
         """
-        self._verify_essentials()
-        self.update(coral_reef)
+        self.__call__(coral_reef)
+
+    def __call__(self, coral_reef):
+        """Update coral reef.
+
+        :param coral_reef: grid of corals, i.e. coral reef
+        :type coral_reef: Grid
+        """
+        if self._verify_essentials():
+            self.update(coral_reef)
 
     def _verify_essentials(self):
-        """Verify if all essential information is available for the biophysical process to execute."""
+        """Verify if all essential information is available for the biophysical process to execute.
+
+        :return: execute biophysical update
+        :rtype: bool
+        """
         if self.environment is None:
             msg = f'No environmental conditions defined.'
             raise DataError(msg)
 
         if self._essential_data is not None and getattr(self.environment, self._essential_data) is None:
-            msg = f'Essential environmental data missing: \"{self._essential_data}\".'
-            raise DataError(msg)
+            msg = f'Essential environmental data missing for {self.__class__.__name__}: \"{self._essential_data}\".'
+            LOG.critical(msg)
+            # no need to execute biophysical updates
+            return False
+
+        # execute biophysical updates
+        return True
 
     @classmethod
     def set_environment(cls, environment):
@@ -792,6 +809,12 @@ class Calcification(_BasicBiophysics):
 
 class Morphology(_BasicBiophysics):
 
+    @staticmethod
+    def _get_in_canopy_flow(coral):
+        if coral.vars.in_canopy_flow is None:
+            return 0
+        return coral.vars.in_canopy_flow
+
     def _update(self, cell):
         """Update corals: Morphology.
 
@@ -871,7 +894,7 @@ class Morphology(_BasicBiophysics):
         :return: optimal form ratio
         :rtype: float
         """
-        in_canopy_flow = coral.vars.in_canopy_flow
+        in_canopy_flow = self._get_in_canopy_flow(coral)
         return self.constants.proportionality_form * np.mean(coral.vars.light) / np.mean(self.environment.light) * \
             (self.constants.fitting_flow_velocity / (in_canopy_flow if in_canopy_flow > 0 else 1e-6))
 
@@ -884,9 +907,10 @@ class Morphology(_BasicBiophysics):
         :return: optimal plate ratio
         :rtype: float
         """
+        in_canopy_flow = self._get_in_canopy_flow(coral)
         return self.constants.proportionality_plate * (1 + np.tanh(
             self.constants.proportionality_plate_flow * (
-                coral.vars.in_canopy_flow - self.constants.fitting_flow_velocity
+                in_canopy_flow - self.constants.fitting_flow_velocity
             ) / self.constants.fitting_flow_velocity
         ))
 
@@ -899,13 +923,14 @@ class Morphology(_BasicBiophysics):
         :return: optimal spacing ratio
         :rtype: float
         """
+        in_canopy_flow = self._get_in_canopy_flow(coral)
         return self.constants.proportionality_space * (
             1 - np.tanh(
                 self.constants.proportionality_space_light * np.mean(coral.vars.light / np.mean(self.environment.light))
             )
         ) * (1 + np.tanh(
             self.constants.proportionality_space_flow * (
-                coral.vars.in_canopy_flow - self.constants.fitting_flow_velocity
+                in_canopy_flow - self.constants.fitting_flow_velocity
             ) / self.constants.fitting_flow_velocity
         ))
 

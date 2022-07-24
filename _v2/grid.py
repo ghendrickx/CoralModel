@@ -216,7 +216,7 @@ class Cell:
 
 
 class Grid:
-    _cells = set()
+    _cells = dict()
 
     def __init__(self, x=None, y=None):
         """
@@ -228,6 +228,14 @@ class Grid:
         """
         if not (x is None and y is None):
             self.grid_from_xy(0 if x is None else x, 0 if y is None else y)
+
+    def __len__(self):
+        """Length of grid, i.e. size of grid.
+
+        :return: built-in length
+        :rtype: int
+        """
+        return self.get_size()
 
     @classmethod
     def grid_from_xy(cls, x, y):
@@ -273,8 +281,7 @@ class Grid:
     @classmethod
     def get_cells(cls):
         """Get grid cells."""
-        cls.reset_corals()
-        return cls._cells
+        return cls._cells.values()
 
     @property
     def number_of_cells(self):
@@ -353,7 +360,7 @@ class Grid:
         # create array of x-coordinates
         array = cls._create_array(x_range, spacing, edge)
         # create cells at x-coordinates
-        [cls._cells.add(Cell(x, 0)) for x in array]
+        [cls._cells.update({(x, 0): Cell(x, 0)}) for x in array]
 
     @classmethod
     def add_square(cls, xy_range, spacing, edge='round'):
@@ -387,7 +394,7 @@ class Grid:
         x_array = cls._create_array(x_range, spacing, edge)
         y_array = cls._create_array(y_range, spacing, edge)
         # create cells at (x,y)-coordinates
-        [cls._cells.add(Cell(x, y)) for x in x_array for y in y_array]
+        [cls._cells.update({(x, y): Cell(x, y)}) for x in x_array for y in y_array]
 
     @classmethod
     def add_cell(cls, x, y, **kwargs):
@@ -400,15 +407,18 @@ class Grid:
         :type x: float
         :type y: float
         """
-        cls._cells.add(Cell(x, y, **kwargs))
+        cls._cells.update({(x, y): Cell(x, y, **kwargs)})
 
     @classmethod
     def reset(cls):
         """Reset grid."""
-        cls._cells = set()
+        if len(cls._cells) > 0:
+            LOG.critical(f'Grid reset: {len(cls._cells)} cells removed.')
+        cls._cells.clear()
 
     @classmethod
     def reset_corals(cls):
         """Reset CoralCollections of all Cells."""
-        if CoralSpecies.get_re_initiate():
+        if CoralSpecies.get_re_initiate() and len(cls._cells) > 0:
+            LOG.critical(f'Corals reset: {len(cls._cells)} cells reset.')
             [cell.reset_corals() for cell in cls._cells]
