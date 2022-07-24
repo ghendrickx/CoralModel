@@ -809,6 +809,12 @@ class Calcification(_BasicBiophysics):
 
 class Morphology(_BasicBiophysics):
 
+    @staticmethod
+    def _get_in_canopy_flow(coral):
+        if coral.vars.in_canopy_flow is None:
+            return 0
+        return coral.vars.in_canopy_flow
+
     def _update(self, cell):
         """Update corals: Morphology.
 
@@ -888,7 +894,7 @@ class Morphology(_BasicBiophysics):
         :return: optimal form ratio
         :rtype: float
         """
-        in_canopy_flow = coral.vars.in_canopy_flow
+        in_canopy_flow = self._get_in_canopy_flow(coral)
         return self.constants.proportionality_form * np.mean(coral.vars.light) / np.mean(self.environment.light) * \
             (self.constants.fitting_flow_velocity / (in_canopy_flow if in_canopy_flow > 0 else 1e-6))
 
@@ -901,9 +907,10 @@ class Morphology(_BasicBiophysics):
         :return: optimal plate ratio
         :rtype: float
         """
+        in_canopy_flow = self._get_in_canopy_flow(coral)
         return self.constants.proportionality_plate * (1 + np.tanh(
             self.constants.proportionality_plate_flow * (
-                coral.vars.in_canopy_flow - self.constants.fitting_flow_velocity
+                in_canopy_flow - self.constants.fitting_flow_velocity
             ) / self.constants.fitting_flow_velocity
         ))
 
@@ -916,13 +923,14 @@ class Morphology(_BasicBiophysics):
         :return: optimal spacing ratio
         :rtype: float
         """
+        in_canopy_flow = self._get_in_canopy_flow(coral)
         return self.constants.proportionality_space * (
             1 - np.tanh(
                 self.constants.proportionality_space_light * np.mean(coral.vars.light / np.mean(self.environment.light))
             )
         ) * (1 + np.tanh(
             self.constants.proportionality_space_flow * (
-                coral.vars.in_canopy_flow - self.constants.fitting_flow_velocity
+                in_canopy_flow - self.constants.fitting_flow_velocity
             ) / self.constants.fitting_flow_velocity
         ))
 
