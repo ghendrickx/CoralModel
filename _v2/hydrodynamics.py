@@ -18,6 +18,12 @@ _GRAVITY = 9.81
 
 
 class Hydrodynamics:
+    """Interface of hydrodynamic model independently of defined hydrodynamic model. There are four options:
+     1. No hydrodynamic model:  `mode=None` ->  `_Base` (built-in)
+     2. 0-dimensional model:    `mode=0D`   ->  `Reef0D` (built-in)
+     3. 1-dimensional model:    `mode=1D`   ->  `Reef1D` (built-in)
+     4. 2-dimensional model:    `mode=2D`   ->  `Reef2D` (Delft3D-FM)
+    """
     __modes = (None, '0D', '1D', '2D')
     _model = None
 
@@ -196,6 +202,11 @@ class Hydrodynamics:
 
 
 class _Base:
+    """Base hydrodynamic-class. It does nothing, except function as a parent-class for the hydrodynamic model-classes:
+     1. `ReefOD`;
+     2. `Reef1D`;
+     3. `Reef2D`.
+    """
     update_interval = None
     update_interval_storm = None
 
@@ -314,6 +325,7 @@ class _Base:
 
 
 class Reef0D(_Base):
+    """Built-in hydrodynamic 0-dimensional model."""
     update_interval = None
     update_interval_storm = None
 
@@ -490,6 +502,7 @@ class Reef0D(_Base):
 
 
 class Reef1D(_Base):
+    """Built-in hydrodynamic 1-dimensional model."""
     update_interval = None
     update_interval_storm = None
 
@@ -501,10 +514,18 @@ class Reef1D(_Base):
 
     @property
     def x(self):
-        return 0, 0
+        """
+        :return: x-coordinate
+        :rtype: float
+        """
+        return 0
 
     @property
     def y(self):
+        """
+        :return: y-coordinate
+        :rtype: float
+        """
         return 0
 
     def _update(self, cell, storm=False):
@@ -523,6 +544,7 @@ class Reef1D(_Base):
 
 
 class Reef2D(_Base):
+    """Interaction with external 2-dimensional model: Delft3D Flexible Mesh."""
     update_interval = None
     update_interval_storm = None
 
@@ -541,7 +563,6 @@ class Reef2D(_Base):
 
     def __init__(self):
         super().__init__(calculations=True)
-
         self._import_wrapper()
 
     @classmethod
