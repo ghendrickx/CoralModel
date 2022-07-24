@@ -229,6 +229,14 @@ class Grid:
         if not (x is None and y is None):
             self.grid_from_xy(0 if x is None else x, 0 if y is None else y)
 
+    def __len__(self):
+        """Length of grid, i.e. size of grid.
+
+        :return: built-in length
+        :rtype: int
+        """
+        return self.get_size()
+
     @classmethod
     def grid_from_xy(cls, x, y):
         """Create grid from x- and/or y-coordinates.
