@@ -22,8 +22,8 @@ class Simulation:
         PopulationStates,
         Calcification,
         Morphology,
-        Dislodgement,
-        Recruitment,
+        # Dislodgement,
+        # Recruitment,
     ]
 
     def __init__(self, hydrodynamics=None):
