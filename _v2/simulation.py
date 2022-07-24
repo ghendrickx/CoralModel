@@ -3,15 +3,28 @@ Simulation framework.
 
 Author: Gijs G. Hendrickx
 """
+from _v2.biophysics import _BasicBiophysics, Light, Flow, Temperature, Photosynthesis, PopulationStates, \
+    Calcification, Morphology, Dislodgement, Recruitment
+from _v2.environment import Environment
 from _v2.grid import Grid
 from _v2.hydrodynamics import Hydrodynamics
 
 
 class Simulation:
     """CoralModel simulation."""
-
     _grid = None
     _hydrodynamics = None
+    _processes = [
+        Light,
+        Flow,
+        Temperature,
+        Photosynthesis,
+        PopulationStates,
+        Calcification,
+        Morphology,
+        Dislodgement,
+        Recruitment,
+    ]
 
     def __init__(self, hydrodynamics=None):
         """
@@ -63,3 +76,16 @@ class Simulation:
     def _extract_grid(self):
         """Extract grid from hydrodynamic model."""
         self.set_grid(self._hydrodynamics.grid)
+
+    def set_processes(self, processes):
+        """Set biophysical processes to include in the simulation.
+
+        :param processes: list of processes
+        :type processes: list[_BasicBiophysics]
+        """
+        if all(isinstance(process, _BasicBiophysics) for process in processes):
+            self._processes = processes
+        else:
+            msg = f'Not all provided processes are of type \"_BasicBiophysics\": ' \
+                f'{[type(process) for process in processes]}'
+            raise TypeError(msg)
