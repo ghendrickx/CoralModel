@@ -22,14 +22,19 @@ class Hydrodynamics:
     _model = None
 
     _grid = None
-    _init_grid = True  # (re-)initiate grid
+    _grid_initialised = False
 
-    def __init__(self, mode=None):
+    def __init__(self, mode=None, init_grid=True):
         """
         :param mode: mode of hydrodynamic model, defaults to None
+        :param init_grid: initialise grid, defaults to True
+
         :type mode: str, optional
+        :type init_grid: bool, optional
         """
         self._set_model(mode)
+        if init_grid:
+            self.initialise_grid()
 
     @classmethod
     def _set_model(cls, mode):
@@ -143,9 +148,11 @@ class Hydrodynamics:
         :return: (hydrodynamic) grid
         :rtype: Grid
         """
-        if self._init_grid:
-            self._grid = Grid()
-            self._init_grid = False
+        # initialise grid if not done yet
+        if not self._grid_initialised:
+            self.initialise_grid()
+
+        # return (initialised) grid
         return self._grid
 
     @property
@@ -172,12 +179,28 @@ class Hydrodynamics:
         """
         return self.model.wave_period
 
+    def initialise_grid(self):
+        """Initialise grid."""
+        # initialise Grid-object
+        grid = Grid()
+
+        # define grid based on hydrodynamic model
+        if self.model._grid_from_hydrodynamic_model:
+            grid.reset()
+            grid.grid_from_xy(self.model.x, self.model.y)
+
+        # set grid to _grid-property
+        self._grid = grid
+        # grid is initialised
+        self._grid_initialised = True
+
 
 class _Base:
     update_interval = None
     update_interval_storm = None
 
     _initialised = False
+    _grid_from_hydrodynamic_model = False
 
     def __init__(self, calculations=False):
         """
@@ -510,6 +533,8 @@ class Reef2D(_Base):
     _x = None
     _y = None
     _n_internal_cells = None
+
+    _grid_from_hydrodynamic_model = True
 
     def __new__(cls, *args, **kwargs):
         raise NotImplementedError
