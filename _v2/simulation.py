@@ -33,6 +33,14 @@ class Simulation:
         """
         self._hydrodynamics = self._get_hydrodynamics(hydrodynamics)
 
+    def __call__(self, year):
+        """Call Simulation: Annual update of simulation.
+
+        :param year: year of simulation
+        :type year: int
+        """
+        self.update(year)
+
     @staticmethod
     def _get_hydrodynamics(hydrodynamics):
         """Get hydrodynamic model definition as an Hydrodynamics-object.
