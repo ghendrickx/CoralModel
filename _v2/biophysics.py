@@ -33,14 +33,23 @@ class _BasicBiophysics:
         self.update(coral_reef)
 
     def _verify_essentials(self):
-        """Verify if all essential information is available for the biophysical process to execute."""
+        """Verify if all essential information is available for the biophysical process to execute.
+
+        :return: execute biophysical update
+        :rtype: bool
+        """
         if self.environment is None:
             msg = f'No environmental conditions defined.'
             raise DataError(msg)
 
         if self._essential_data is not None and getattr(self.environment, self._essential_data) is None:
-            msg = f'Essential environmental data missing: \"{self._essential_data}\".'
-            raise DataError(msg)
+            msg = f'Essential environmental data missing for {self.__class__.__name__}: \"{self._essential_data}\".'
+            LOG.critical(msg)
+            # no need to execute biophysical updates
+            return False
+
+        # execute biophysical updates
+        return True
 
     @classmethod
     def set_environment(cls, environment):
